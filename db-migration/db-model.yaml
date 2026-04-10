@@ -1,0 +1,9 @@
+tables:
+  agents:
+    columns:
+      agent_id: uuid
+      name: varchar(60)
+      description: varchar(160)
+      status: varchar(32)
+      created_at: timestamptz
+      updated_at: timestamptz

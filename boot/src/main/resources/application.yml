@@ -1,0 +1,48 @@
+environment: localhost
+server:
+  port: 9083
+  servlet:
+    context-path: /atmssox
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5436/AUTOMATION_SOX}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres-pwd}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: ${SPRING_FLYWAY_LOCATIONS:filesystem:./db-migration}
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+forge:
+  security:
+    service-id: sitionixAutomation
+    dev:
+      jwt-secret: ${FORGE_SECURITY_DEV_JWT_SECRET:dev-internal-auth-secret}
+      issuer: ${FORGE_SECURITY_DEV_ISSUER:sitionix-internal}
+      ttl-seconds: ${FORGE_SECURITY_DEV_TTL_SECONDS:300}
+    policies:
+      sitionixBff:
+        allow:
+          - "*"
+    server:
+      excludes:
+        - "/actuator/health"
+        - "/actuator/health/readiness"
+        - "/actuator/health/liveness"
