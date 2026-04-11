@@ -1,0 +1,172 @@
+name: Dev Deploy On Push
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - ".github/workflows/dev-deploy-on-push.yml"
+      - ".github/actions/db-migrate-run/**"
+      - ".github/actions/service-deploy-run/**"
+      - ".github/actions/materialize-maven-settings/**"
+      - "db-migration/**"
+      - "deploy/service/**"
+      - "boot/**"
+      - "api-rest/**"
+      - "application/**"
+      - "domain/**"
+      - "infrastructure/**"
+      - "pipe/**"
+      - "Dockerfile"
+      - "pom.xml"
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect-migration-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      migration_changed: ${{ steps.detect.outputs.migration_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Detect DB migration changes
+        id: detect
+        shell: bash
+        env:
+          GITHUB_BEFORE_SHA: ${{ github.event.before }}
+          GITHUB_AFTER_SHA: ${{ github.sha }}
+        run: |
+          before_sha="${GITHUB_BEFORE_SHA}"
+          after_sha="${GITHUB_AFTER_SHA}"
+
+          if [[ -z "${before_sha}" || "${before_sha}" =~ ^0+$ ]]; then
+            changed_files="$(git diff-tree --no-commit-id --name-only -r "${after_sha}")"
+          else
+            changed_files="$(git diff --name-only "${before_sha}" "${after_sha}")"
+          fi
+
+          if printf '%s\n' "${changed_files}" | grep -q '^db-migration/'; then
+            echo "migration_changed=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "migration_changed=false" >> "${GITHUB_OUTPUT}"
+
+  resolve-migration-contract:
+    needs:
+      - detect-migration-changes
+    if: needs.detect-migration-changes.outputs.migration_changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      database_name: ${{ steps.resolve.outputs.database_name }}
+      database_url: ${{ steps.resolve.outputs.database_url }}
+      database_username: ${{ steps.resolve.outputs.database_username }}
+      database_password_secret_name: ${{ steps.resolve.outputs.database_password_secret_name }}
+      tunnel_local_port: ${{ steps.resolve.outputs.tunnel_local_port }}
+      tunnel_remote_host: ${{ steps.resolve.outputs.tunnel_remote_host }}
+      tunnel_remote_port: ${{ steps.resolve.outputs.tunnel_remote_port }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Resolve dev DB migration contract
+        id: resolve
+        shell: bash
+        run: |
+          ruby - <<'INNER_RUBY'
+          require "yaml"
+          require "pathname"
+
+          output_path = Pathname.new(ENV.fetch("GITHUB_OUTPUT"))
+          workspace = Pathname.new(ENV.fetch("GITHUB_WORKSPACE"))
+          model = YAML.load_file(workspace.join("db-migration/db-model.yaml"))
+
+          database = model.fetch("database")
+          environment = database.fetch("environments").fetch("dev")
+          tunnel = environment.fetch("tunnel")
+
+          output_path.open("a") do |handle|
+            handle.puts("database_name=#{database.fetch("name")}")
+            handle.puts("database_url=#{environment.fetch("url")}")
+            handle.puts("database_username=#{environment.fetch("username")}")
+            handle.puts("database_password_secret_name=#{environment.fetch("password_secret_name")}")
+            handle.puts("tunnel_local_port=#{tunnel.fetch("local_port")}")
+            handle.puts("tunnel_remote_host=#{tunnel.fetch("remote_host")}")
+            handle.puts("tunnel_remote_port=#{tunnel.fetch("remote_port")}")
+          end
+          INNER_RUBY
+
+  migrate-db:
+    needs:
+      - detect-migration-changes
+      - resolve-migration-contract
+    if: needs.detect-migration-changes.outputs.migration_changed == 'true'
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Execute dev DB migration
+        uses: ./.github/actions/db-migrate-run
+        with:
+          environment_id: dev
+          database_name: ${{ needs.resolve-migration-contract.outputs.database_name }}
+        env:
+          FLYWAY_URL: ${{ needs.resolve-migration-contract.outputs.database_url }}
+          FLYWAY_USERNAME: ${{ needs.resolve-migration-contract.outputs.database_username }}
+          FLYWAY_PASSWORD: ${{ secrets[needs.resolve-migration-contract.outputs.database_password_secret_name] }}
+          DEPLOY_VM_HOST: ${{ secrets.DEPLOY_VM_HOST }}
+          DEPLOY_VM_USER: ${{ secrets.DEPLOY_VM_USER }}
+          DEPLOY_VM_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_VM_SSH_PRIVATE_KEY }}
+          SSH_TUNNEL_LOCAL_PORT: ${{ needs.resolve-migration-contract.outputs.tunnel_local_port }}
+          SSH_TUNNEL_REMOTE_HOST: ${{ needs.resolve-migration-contract.outputs.tunnel_remote_host }}
+          SSH_TUNNEL_REMOTE_PORT: ${{ needs.resolve-migration-contract.outputs.tunnel_remote_port }}
+
+  deploy-service:
+    needs:
+      - detect-migration-changes
+      - migrate-db
+    if: |
+      always() &&
+      needs.detect-migration-changes.result == 'success' &&
+      (
+        needs.detect-migration-changes.outputs.migration_changed != 'true' ||
+        needs.migrate-db.result == 'success'
+      )
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DEPLOY_VM_PORT: ${{ vars.DEPLOY_VM_PORT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Execute dev deployment
+        uses: ./.github/actions/service-deploy-run
+        with:
+          github_environment: dev
+        env:
+          DEPLOY_VM_HOST: ${{ secrets.DEPLOY_VM_HOST }}
+          DEPLOY_VM_USER: ${{ secrets.DEPLOY_VM_USER }}
+          DEPLOY_VM_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_VM_SSH_PRIVATE_KEY }}
+          GHCR_PULL_USERNAME: ${{ secrets.GHCR_PULL_USERNAME }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          MAVEN_REPOSITORY_USERNAME: ${{ vars.MAVEN_REPOSITORY_USERNAME }}
+          MAVEN_REPOSITORY_TOKEN: ${{ secrets.MAVEN_REPOSITORY_TOKEN }}
+          AUTOMATION_SOX_DB_PASSWORD: ${{ secrets.AUTOMATION_SOX_DB_PASSWORD }}
