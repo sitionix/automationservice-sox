@@ -1,8 +1,8 @@
 database:
-  name: ATMS_SOX
+  name: atms_sox
   environments:
     dev:
-      url: jdbc:postgresql://127.0.0.1:15436/ATMS_SOX
+      url: jdbc:postgresql://127.0.0.1:15436/atms_sox
       username: atmssox_app
       password_secret_name: ATMS_SOX_DB_PASSWORD
       tunnel:
