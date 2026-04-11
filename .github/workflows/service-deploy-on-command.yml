@@ -62,7 +62,7 @@ jobs:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
           MAVEN_REPOSITORY_USERNAME: ${{ vars.MAVEN_REPOSITORY_USERNAME }}
           MAVEN_REPOSITORY_TOKEN: ${{ secrets.MAVEN_REPOSITORY_TOKEN }}
-          AUTOMATION_SOX_DB_PASSWORD: ${{ secrets.AUTOMATION_SOX_DB_PASSWORD }}
+          ATMS_SOX_DB_PASSWORD: ${{ secrets.ATMS_SOX_DB_PASSWORD }}
 
       - name: Post success comment
         if: success()

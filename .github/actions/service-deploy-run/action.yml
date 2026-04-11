@@ -28,7 +28,7 @@ runs:
           GHCR_PULL_TOKEN \
           MAVEN_REPOSITORY_USERNAME \
           MAVEN_REPOSITORY_TOKEN \
-          AUTOMATION_SOX_DB_PASSWORD; do
+          ATMS_SOX_DB_PASSWORD; do
           if [[ -z "${!required_name:-}" ]]; then
             echo "Missing required deploy value: ${required_name}" >&2
             exit 1
@@ -112,7 +112,7 @@ runs:
         SITIONIX_SERVICE_ENV_PATH=/opt/sitionix/runtime/automationservice-sox/shared/automationservice-sox.${GITHUB_ENVIRONMENT_NAME}.env
         SITIONIX_LOCAL_READINESS_URL=http://127.0.0.1:9083/atmssox/actuator/health/readiness
         SITIONIX_LOCAL_HEALTH_URL=http://127.0.0.1:9083/atmssox/actuator/health
-        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/AUTOMATION_SOX
+        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/ATMS_SOX
         SITIONIX_DB_USERNAME=atmssox_app
         EOF
 
@@ -134,7 +134,7 @@ runs:
         for name in \
           GHCR_PULL_USERNAME \
           GHCR_PULL_TOKEN \
-          AUTOMATION_SOX_DB_PASSWORD; do
+          ATMS_SOX_DB_PASSWORD; do
           value="${!name}"
           printf 'export %s=%q\n' "${name}" "${value}" >> "${secrets_file}"
         done

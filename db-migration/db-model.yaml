@@ -1,10 +1,10 @@
 database:
-  name: AUTOMATION_SOX
+  name: ATMS_SOX
   environments:
     dev:
-      url: jdbc:postgresql://127.0.0.1:15436/AUTOMATION_SOX
+      url: jdbc:postgresql://127.0.0.1:15436/ATMS_SOX
       username: atmssox_app
-      password_secret_name: AUTOMATION_SOX_DB_PASSWORD
+      password_secret_name: ATMS_SOX_DB_PASSWORD
       tunnel:
         local_port: 15436
         remote_host: 127.0.0.1

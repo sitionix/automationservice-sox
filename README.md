@@ -20,7 +20,7 @@ Explicit non-goals:
 Local runtime touchpoints:
 - service context path: `/atmssox`
 - service port: `9083`
-- local database: `AUTOMATION_SOX` on `5436`
+- local database: `ATMS_SOX` on `5436`
 - Flyway migrations: [`db-migration`](/Users/vladvinskevitch/Documents/Java/sitionix/automationservice-sox/db-migration)
 
 Workspace route:
