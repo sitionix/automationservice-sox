@@ -73,6 +73,32 @@ runs:
         echo "release_id=${release_id}" >> "$GITHUB_OUTPUT"
         echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
 
+    - name: Resolve runtime DB contract
+      id: runtime_db
+      shell: bash
+      run: |
+        ruby - <<'INNER_RUBY'
+        require "yaml"
+        require "pathname"
+
+        output_path = Pathname.new(ENV.fetch("GITHUB_OUTPUT"))
+        workspace = Pathname.new(ENV.fetch("GITHUB_WORKSPACE"))
+        model = YAML.load_file(workspace.join("db-migration/db-model.yaml"))
+        database = model.fetch("database")
+        database_name = database.fetch("name")
+        environment = database.fetch("environments").fetch("dev")
+        database_username = environment.fetch("username")
+
+        unless database_name.match?(/\A[a-z0-9_]+\z/)
+          abort("database.name must be lowercase snake_case for runtime deploy: #{database_name}")
+        end
+
+        output_path.open("a") do |handle|
+          handle.puts("database_name=#{database_name}")
+          handle.puts("database_username=#{database_username}")
+        end
+        INNER_RUBY
+
     - name: Build and publish runtime image
       uses: docker/build-push-action@v6
       with:
@@ -112,8 +138,8 @@ runs:
         SITIONIX_SERVICE_ENV_PATH=/opt/sitionix/runtime/automationservice-sox/shared/automationservice-sox.${GITHUB_ENVIRONMENT_NAME}.env
         SITIONIX_LOCAL_READINESS_URL=http://127.0.0.1:9083/atmssox/actuator/health/readiness
         SITIONIX_LOCAL_HEALTH_URL=http://127.0.0.1:9083/atmssox/actuator/health
-        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/ATMS_SOX
-        SITIONIX_DB_USERNAME=atmssox_app
+        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/${{ steps.runtime_db.outputs.database_name }}
+        SITIONIX_DB_USERNAME=${{ steps.runtime_db.outputs.database_username }}
         EOF
 
         cat <<EOF > "${payload_root}/release-manifest.json"
