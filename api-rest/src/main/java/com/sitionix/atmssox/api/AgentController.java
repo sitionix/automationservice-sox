@@ -1,10 +1,11 @@
 package com.sitionix.atmssox.api;
 
 import com.app_afesox.atmssox.api_first.api.AgentApi;
-import com.app_afesox.atmssox.api_first.dto.Agent;
-import com.app_afesox.atmssox.api_first.dto.AgentsResponse;
-import com.app_afesox.atmssox.api_first.dto.CreateAgentRequest;
+import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
+import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
@@ -29,20 +30,20 @@ public class AgentController implements AgentApi {
     private final AgentApiMapper agentApiMapper;
 
     @Override
-    public ResponseEntity<Agent> createAgent(@Valid final CreateAgentRequest createAgentRequest) {
-        final CreateAgentCommand command = this.agentApiMapper.asCreateAgentCommand(createAgentRequest);
-        final com.sitionix.atmssox.domain.model.Agent agent = this.createAgent.execute(command);
+    public ResponseEntity<AgentDTO> createAgent(@Valid final CreateAgentRequestDTO createAgentRequestDTO) {
+        final CreateAgentCommand command = this.agentApiMapper.asCreateAgentCommand(createAgentRequestDTO);
+        final Agent agent = this.createAgent.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(this.agentApiMapper.asAgentDto(agent));
     }
 
     @Override
-    public ResponseEntity<AgentsResponse> getAgents() {
+    public ResponseEntity<AgentsResponseDTO> getAgents() {
         return ResponseEntity.ok(this.agentApiMapper.asAgentsResponseDto(this.getAgents.execute()));
     }
 
     @Override
-    public ResponseEntity<Agent> getAgent(final UUID agentId) {
+    public ResponseEntity<AgentDTO> getAgent(final UUID agentId) {
         return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.getAgent.execute(agentId)));
     }
 }
