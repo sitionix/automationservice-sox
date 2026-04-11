@@ -28,6 +28,11 @@
             <artifactId>spring-tx</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.sitionix.forge</groupId>
+            <artifactId>forge-security-server</artifactId>
+            <version>${forge.security.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>

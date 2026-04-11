@@ -23,7 +23,7 @@ public interface AgentRepository {
      *
      * @return persisted agents.
      */
-    List<Agent> findAll();
+    List<Agent> findAllByUserId(Long userId);
 
     /**
      * Finds agent by identifier.
@@ -31,5 +31,5 @@ public interface AgentRepository {
      * @param agentId unique agent identifier.
      * @return agent when present.
      */
-    Optional<Agent> findById(UUID agentId);
+    Optional<Agent> findByIdAndUserId(UUID agentId, Long userId);
 }

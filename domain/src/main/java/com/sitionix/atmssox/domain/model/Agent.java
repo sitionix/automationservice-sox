@@ -11,6 +11,8 @@ public class Agent {
 
     UUID id;
 
+    Long userId;
+
     String name;
 
     String description;

@@ -19,7 +19,7 @@ import lombok.Setter;
 @Table(
         name = "agents",
         indexes = {
-                @Index(name = "idx_agents_updated_at", columnList = "updated_at")
+                @Index(name = "idx_agents_user_id_updated_at", columnList = "user_id, updated_at")
         }
 )
 @Getter
@@ -31,6 +31,9 @@ public class AgentEntity {
     @Id
     @Column(name = "agent_id", nullable = false)
     private UUID agentId;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "name", nullable = false, length = 60)
     private String name;

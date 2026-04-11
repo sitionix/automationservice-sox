@@ -26,15 +26,15 @@ public class AgentRepositoryImpl implements AgentRepository {
     }
 
     @Override
-    public List<Agent> findAll() {
-        return this.agentJpaRepository.findAllByOrderByUpdatedAtDesc().stream()
+    public List<Agent> findAllByUserId(final Long userId) {
+        return this.agentJpaRepository.findAllByUserIdOrderByUpdatedAtDesc(userId).stream()
                 .map(this.agentInfraMapper::asAgent)
                 .toList();
     }
 
     @Override
-    public Optional<Agent> findById(final UUID agentId) {
-        return this.agentJpaRepository.findById(agentId)
+    public Optional<Agent> findByIdAndUserId(final UUID agentId, final Long userId) {
+        return this.agentJpaRepository.findByAgentIdAndUserId(agentId, userId)
                 .map(this.agentInfraMapper::asAgent);
     }
 }

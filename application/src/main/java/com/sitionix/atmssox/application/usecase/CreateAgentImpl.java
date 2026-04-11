@@ -1,11 +1,13 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.forge.security.server.user.ForgeUserClient;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +22,16 @@ public class CreateAgentImpl implements CreateAgent {
     private static final int DESCRIPTION_MAX_LENGTH = 160;
 
     private final AgentRepository agentRepository;
+    private final ForgeUserClient forgeUserClient;
 
     @Override
     @Transactional
     public Agent execute(final CreateAgentCommand command) {
         final Instant now = Instant.now();
+        final Long userId = this.getUserId();
         return this.agentRepository.save(Agent.builder()
                 .id(UUID.randomUUID())
+                .userId(userId)
                 .name(this.normalizeRequired(command.name(), "Agent name is required", NAME_MAX_LENGTH, "Agent name must be between 1 and 60 characters"))
                 .description(this.normalizeRequired(
                         command.description(),
@@ -52,5 +57,13 @@ public class CreateAgentImpl implements CreateAgent {
             throw new AgentValidationException(lengthMessage);
         }
         return normalized;
+    }
+
+    private Long getUserId() {
+        try {
+            return this.forgeUserClient.getUserId();
+        } catch (final RuntimeException exception) {
+            throw new AuthenticationRequiredException("Authentication required");
+        }
     }
 }

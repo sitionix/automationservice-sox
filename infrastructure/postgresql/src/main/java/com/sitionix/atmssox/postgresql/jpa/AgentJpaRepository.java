@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AgentJpaRepository extends JpaRepository<AgentEntity, UUID> {
 
-    List<AgentEntity> findAllByOrderByUpdatedAtDesc();
+    List<AgentEntity> findAllByUserIdOrderByUpdatedAtDesc(Long userId);
+
+    java.util.Optional<AgentEntity> findByAgentIdAndUserId(UUID agentId, Long userId);
 }
