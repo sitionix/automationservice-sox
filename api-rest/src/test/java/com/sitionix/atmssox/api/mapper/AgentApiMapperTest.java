@@ -1,21 +1,23 @@
 package com.sitionix.atmssox.api.mapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.app_afesox.atmssox.api_first.dto.Agent;
-import com.app_afesox.atmssox.api_first.dto.AgentsResponse;
-import com.app_afesox.atmssox.api_first.dto.CreateAgentRequest;
+import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class AgentApiMapperTest {
@@ -30,7 +32,7 @@ class AgentApiMapperTest {
     @Test
     void givenCreateAgentRequestDto_whenAsCreateAgentCommand_thenReturnCreateAgentCommand() {
         //given
-        final CreateAgentRequest given = this.getCreateAgentRequestDto();
+        final CreateAgentRequestDTO given = this.getCreateAgentRequestDto();
         final CreateAgentCommand expected = this.getCreateAgentCommand();
 
         //when
@@ -43,7 +45,7 @@ class AgentApiMapperTest {
     @Test
     void givenNullCreateAgentRequestDto_whenAsCreateAgentCommand_thenReturnNull() {
         //given
-        final CreateAgentRequest given = null;
+        final CreateAgentRequestDTO given = null;
 
         //when
         final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
@@ -55,11 +57,11 @@ class AgentApiMapperTest {
     @Test
     void givenAgent_whenAsAgentDto_thenReturnAgentDto() {
         //given
-        final com.sitionix.atmssox.domain.model.Agent given = this.getDomainAgent();
-        final Agent expected = this.getApiAgent();
+        final Agent given = this.getDomainAgent();
+        final AgentDTO expected = this.getApiAgent();
 
         //when
-        final Agent actual = this.agentApiMapper.asAgentDto(given);
+        final AgentDTO actual = this.agentApiMapper.asAgentDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -68,10 +70,10 @@ class AgentApiMapperTest {
     @Test
     void givenNullAgent_whenAsAgentDto_thenReturnNull() {
         //given
-        final com.sitionix.atmssox.domain.model.Agent given = null;
+        final Agent given = null;
 
         //when
-        final Agent actual = this.agentApiMapper.asAgentDto(given);
+        final AgentDTO actual = this.agentApiMapper.asAgentDto(given);
 
         //then
         assertThat(actual).isNull();
@@ -80,11 +82,11 @@ class AgentApiMapperTest {
     @Test
     void givenAgentWithNullStatus_whenAsAgentDto_thenReturnAgentDtoWithNullStatus() {
         //given
-        final com.sitionix.atmssox.domain.model.Agent given = this.getDomainAgentWithNullStatus();
-        final Agent expected = this.getApiAgentWithNullStatus();
+        final Agent given = this.getDomainAgentWithNullStatus();
+        final AgentDTO expected = this.getApiAgentWithNullStatus();
 
         //when
-        final Agent actual = this.agentApiMapper.asAgentDto(given);
+        final AgentDTO actual = this.agentApiMapper.asAgentDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -93,11 +95,11 @@ class AgentApiMapperTest {
     @Test
     void givenAgentList_whenAsAgentsResponseDto_thenReturnAgentsResponseDto() {
         //given
-        final List<com.sitionix.atmssox.domain.model.Agent> given = List.of(this.getDomainAgent());
-        final AgentsResponse expected = this.getAgentsResponseDto();
+        final List<Agent> given = List.of(this.getDomainAgent());
+        final AgentsResponseDTO expected = this.getAgentsResponseDto();
 
         //when
-        final AgentsResponse actual = this.agentApiMapper.asAgentsResponseDto(given);
+        final AgentsResponseDTO actual = this.agentApiMapper.asAgentsResponseDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -106,10 +108,10 @@ class AgentApiMapperTest {
     @Test
     void givenNullAgentList_whenAsAgentDtos_thenReturnNull() {
         //given
-        final List<com.sitionix.atmssox.domain.model.Agent> given = null;
+        final List<Agent> given = null;
 
         //when
-        final List<Agent> actual = this.agentApiMapper.asAgentDtos(given);
+        final List<AgentDTO> actual = this.agentApiMapper.asAgentDtos(given);
 
         //then
         assertThat(actual).isNull();
@@ -127,8 +129,8 @@ class AgentApiMapperTest {
         assertThat(actual).isNull();
     }
 
-    private CreateAgentRequest getCreateAgentRequestDto() {
-        return CreateAgentRequest.builder()
+    private CreateAgentRequestDTO getCreateAgentRequestDto() {
+        return CreateAgentRequestDTO.builder()
                 .name("My agent")
                 .description("My description")
                 .build();
@@ -141,10 +143,10 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private com.sitionix.atmssox.domain.model.Agent getDomainAgent() {
+    private Agent getDomainAgent() {
         final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
         final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
-        return com.sitionix.atmssox.domain.model.Agent.builder()
+        return Agent.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .userId(7L)
                 .name("My agent")
@@ -155,21 +157,21 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private Agent getApiAgent() {
-        return Agent.builder()
+    private AgentDTO getApiAgent() {
+        return AgentDTO.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
                 .description("My description")
-                .status(Agent.StatusEnum.DRAFT)
+                .status(AgentDTO.StatusEnum.DRAFT)
                 .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
                 .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
                 .build();
     }
 
-    private com.sitionix.atmssox.domain.model.Agent getDomainAgentWithNullStatus() {
+    private Agent getDomainAgentWithNullStatus() {
         final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
         final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
-        return com.sitionix.atmssox.domain.model.Agent.builder()
+        return Agent.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .userId(7L)
                 .name("My agent")
@@ -180,8 +182,8 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private Agent getApiAgentWithNullStatus() {
-        return Agent.builder()
+    private AgentDTO getApiAgentWithNullStatus() {
+        return AgentDTO.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
                 .description("My description")
@@ -191,8 +193,8 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private AgentsResponse getAgentsResponseDto() {
-        return AgentsResponse.builder()
+    private AgentsResponseDTO getAgentsResponseDto() {
+        return AgentsResponseDTO.builder()
                 .items(List.of(this.getApiAgent()))
                 .build();
     }
