@@ -48,7 +48,7 @@
         <spring.version>3.3.4</spring.version>
         <testcontainers.version>1.20.1</testcontainers.version>
         <forgeit.version>0.0.38</forgeit.version>
-        <forge.security.version>0.0.5</forge.security.version>
+        <forge.security.version>0.0.6</forge.security.version>
     </properties>
 
     <dependencyManagement>

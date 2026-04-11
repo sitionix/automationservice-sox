@@ -1,0 +1,7 @@
+forge:
+  security:
+    server:
+      excludes:
+        - "/actuator/health"
+        - "/actuator/health/readiness"
+        - "/actuator/health/liveness"
