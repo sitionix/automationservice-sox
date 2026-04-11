@@ -112,7 +112,7 @@ runs:
         SITIONIX_SERVICE_ENV_PATH=/opt/sitionix/runtime/automationservice-sox/shared/automationservice-sox.${GITHUB_ENVIRONMENT_NAME}.env
         SITIONIX_LOCAL_READINESS_URL=http://127.0.0.1:9083/atmssox/actuator/health/readiness
         SITIONIX_LOCAL_HEALTH_URL=http://127.0.0.1:9083/atmssox/actuator/health
-        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/ATMS_SOX
+        SITIONIX_DB_URL=jdbc:postgresql://postgres:5432/atms_sox
         SITIONIX_DB_USERNAME=atmssox_app
         EOF
 
