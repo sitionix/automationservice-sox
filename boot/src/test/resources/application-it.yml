@@ -1,0 +1,11 @@
+environment: it
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+forge-it:
+  modules:
+    mock-mvc:
+      default-token: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzaXRpb25peC1pbnRlcm5hbCIsInN1YiI6InNpdGlvbml4QmZmIiwiYXVkIjoic2l0aW9uaXhBdXRvbWF0aW9uIiwiaWF0IjowLCJleHAiOjQxMDI0NDQ4MDB9.InckKA3xQcUWj7HYKD1grVjHKJnJj4IVvlNfG84Eh7g"
