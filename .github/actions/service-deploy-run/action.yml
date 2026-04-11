@@ -66,12 +66,14 @@ runs:
         GITHUB_ENVIRONMENT_NAME: ${{ inputs.github_environment }}
       run: |
         owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-        short_sha="$(git rev-parse --short HEAD)"
+        source_sha="$(git rev-parse HEAD)"
+        short_sha="$(git rev-parse --short "${source_sha}")"
         release_id="${GITHUB_ENVIRONMENT_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${short_sha}"
-        image_ref="ghcr.io/${owner}/automationservice-sox:${GITHUB_SHA}"
+        image_ref="ghcr.io/${owner}/automationservice-sox:${source_sha}"
 
         echo "release_id=${release_id}" >> "$GITHUB_OUTPUT"
         echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
+        echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
 
     - name: Resolve runtime DB contract
       id: runtime_db
@@ -146,7 +148,7 @@ runs:
         {
           "releaseId": "${RELEASE_ID}",
           "imageRef": "${IMAGE_REF}",
-          "githubSha": "${GITHUB_SHA}",
+          "githubSha": "${{ steps.release.outputs.source_sha }}",
           "githubEnvironment": "${GITHUB_ENVIRONMENT_NAME}",
           "dockerNetwork": "sitionix-${GITHUB_ENVIRONMENT_NAME}",
           "containerName": "automationservice-sox",
