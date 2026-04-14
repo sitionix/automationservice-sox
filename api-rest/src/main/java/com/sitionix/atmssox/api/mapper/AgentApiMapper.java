@@ -3,8 +3,10 @@ package com.sitionix.atmssox.api.mapper;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -15,6 +17,8 @@ import org.mapstruct.Mapper;
 public interface AgentApiMapper {
 
     CreateAgentCommand asCreateAgentCommand(CreateAgentRequestDTO src);
+
+    PatchAgentCommand asPatchAgentCommand(PatchAgentRequestDTO src);
 
     AgentDTO asAgentDto(Agent src);
 

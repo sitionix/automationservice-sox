@@ -3,11 +3,14 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
+import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,16 +44,19 @@ class AgentControllerTest {
     private GetAgent getAgent;
 
     @Mock
+    private PatchAgent patchAgent;
+
+    @Mock
     private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentController = new AgentController(this.createAgent, this.getAgents, this.getAgent, this.agentApiMapper);
+        this.agentController = new AgentController(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.createAgent, this.getAgents, this.getAgent, this.agentApiMapper);
+        verifyNoMoreInteractions(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
     }
 
     @Test
@@ -110,6 +116,29 @@ class AgentControllerTest {
         //then
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
         verify(this.getAgent).execute(given);
+        verify(this.agentApiMapper).asAgentDto(agent);
+    }
+
+    @Test
+    void givenPatchAgentRequestDto_whenPatchAgent_thenReturnAgentDto() {
+        //given
+        final UUID givenAgentId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        final PatchAgentRequestDTO givenRequest = mock(PatchAgentRequestDTO.class);
+        final PatchAgentCommand givenCommand = mock(PatchAgentCommand.class);
+        final com.sitionix.atmssox.domain.model.Agent agent = mock(com.sitionix.atmssox.domain.model.Agent.class);
+        final AgentDTO expected = mock(AgentDTO.class);
+
+        when(this.agentApiMapper.asPatchAgentCommand(givenRequest)).thenReturn(givenCommand);
+        when(this.patchAgent.execute(givenAgentId, givenCommand)).thenReturn(agent);
+        when(this.agentApiMapper.asAgentDto(agent)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentDTO> actual = this.agentController.patchAgent(givenAgentId, givenRequest);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.agentApiMapper).asPatchAgentCommand(givenRequest);
+        verify(this.patchAgent).execute(givenAgentId, givenCommand);
         verify(this.agentApiMapper).asAgentDto(agent);
     }
 }
