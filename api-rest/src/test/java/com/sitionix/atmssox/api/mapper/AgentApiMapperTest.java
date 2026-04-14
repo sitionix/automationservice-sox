@@ -3,9 +3,11 @@ package com.sitionix.atmssox.api.mapper;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +51,31 @@ class AgentApiMapperTest {
 
         //when
         final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenPatchAgentRequestDto_whenAsPatchAgentCommand_thenReturnPatchAgentCommand() {
+        //given
+        final PatchAgentRequestDTO given = this.getPatchAgentRequestDto();
+        final PatchAgentCommand expected = this.getPatchAgentCommand();
+
+        //when
+        final PatchAgentCommand actual = this.agentApiMapper.asPatchAgentCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenNullPatchAgentRequestDto_whenAsPatchAgentCommand_thenReturnNull() {
+        //given
+        final PatchAgentRequestDTO given = null;
+
+        //when
+        final PatchAgentCommand actual = this.agentApiMapper.asPatchAgentCommand(given);
 
         //then
         assertThat(actual).isNull();
@@ -140,6 +167,20 @@ class AgentApiMapperTest {
         return CreateAgentCommand.builder()
                 .name("My agent")
                 .description("My description")
+                .build();
+    }
+
+    private PatchAgentRequestDTO getPatchAgentRequestDto() {
+        return PatchAgentRequestDTO.builder()
+                .name("My patched agent")
+                .description("My patched description")
+                .build();
+    }
+
+    private PatchAgentCommand getPatchAgentCommand() {
+        return PatchAgentCommand.builder()
+                .name("My patched agent")
+                .description("My patched description")
                 .build();
     }
 
