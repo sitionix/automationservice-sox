@@ -8,6 +8,7 @@ import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
+import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,16 +42,19 @@ class AgentControllerTest {
     private GetAgent getAgent;
 
     @Mock
+    private PatchAgent patchAgent;
+
+    @Mock
     private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentController = new AgentController(this.createAgent, this.getAgents, this.getAgent, this.agentApiMapper);
+        this.agentController = new AgentController(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.createAgent, this.getAgents, this.getAgent, this.agentApiMapper);
+        verifyNoMoreInteractions(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
     }
 
     @Test
