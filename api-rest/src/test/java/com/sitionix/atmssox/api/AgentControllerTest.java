@@ -165,4 +165,42 @@ class AgentControllerTest {
         verify(this.patchAgent).execute(givenAgentId, givenCommand);
         verify(this.agentApiMapper).asAgentDto(agent);
     }
+
+    @Test
+    void givenAgentId_whenActivateAgent_thenReturnAgentDto() {
+        //given
+        final UUID givenAgentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        final com.sitionix.atmssox.domain.model.Agent agent = mock(com.sitionix.atmssox.domain.model.Agent.class);
+        final AgentDTO expected = mock(AgentDTO.class);
+
+        when(this.activateAgent.execute(givenAgentId)).thenReturn(agent);
+        when(this.agentApiMapper.asAgentDto(agent)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentDTO> actual = this.agentController.activateAgent(givenAgentId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.activateAgent).execute(givenAgentId);
+        verify(this.agentApiMapper).asAgentDto(agent);
+    }
+
+    @Test
+    void givenAgentId_whenArchiveAgent_thenReturnAgentDto() {
+        //given
+        final UUID givenAgentId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        final com.sitionix.atmssox.domain.model.Agent agent = mock(com.sitionix.atmssox.domain.model.Agent.class);
+        final AgentDTO expected = mock(AgentDTO.class);
+
+        when(this.archiveAgent.execute(givenAgentId)).thenReturn(agent);
+        when(this.agentApiMapper.asAgentDto(agent)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentDTO> actual = this.agentController.archiveAgent(givenAgentId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.archiveAgent).execute(givenAgentId);
+        verify(this.agentApiMapper).asAgentDto(agent);
+    }
 }
