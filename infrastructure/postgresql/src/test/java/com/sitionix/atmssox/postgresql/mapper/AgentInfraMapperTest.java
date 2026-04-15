@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.agent.AgentStatusEntity;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,7 @@ class AgentInfraMapperTest {
 
     @BeforeEach
     void setUp() {
-        this.agentInfraMapper = new AgentInfraMapperImpl();
+        this.agentInfraMapper = new AgentInfraMapperImpl(new AgentStatusInfraMapperImpl());
     }
 
     @Test
@@ -90,7 +91,10 @@ class AgentInfraMapperTest {
                 17L,
                 "My agent",
                 "My description",
-                AgentStatus.DRAFT,
+                AgentStatusEntity.builder()
+                        .id(1L)
+                        .description("DRAFT")
+                        .build(),
                 Instant.parse("2026-01-10T10:15:30Z"),
                 Instant.parse("2026-01-10T10:20:30Z")
         );

@@ -7,6 +7,8 @@ import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
+import com.sitionix.atmssox.domain.usecase.ActivateAgent;
+import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
@@ -47,16 +49,38 @@ class AgentControllerTest {
     private PatchAgent patchAgent;
 
     @Mock
+    private ActivateAgent activateAgent;
+
+    @Mock
+    private ArchiveAgent archiveAgent;
+
+    @Mock
     private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentController = new AgentController(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
+        this.agentController = new AgentController(
+                this.createAgent,
+                this.getAgents,
+                this.getAgent,
+                this.patchAgent,
+                this.activateAgent,
+                this.archiveAgent,
+                this.agentApiMapper
+        );
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.createAgent, this.getAgents, this.getAgent, this.patchAgent, this.agentApiMapper);
+        verifyNoMoreInteractions(
+                this.createAgent,
+                this.getAgents,
+                this.getAgent,
+                this.patchAgent,
+                this.activateAgent,
+                this.archiveAgent,
+                this.agentApiMapper
+        );
     }
 
     @Test

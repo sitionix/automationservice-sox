@@ -8,6 +8,8 @@ import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.usecase.ActivateAgent;
+import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
@@ -30,6 +32,10 @@ public class AgentController implements AgentApi {
     private final GetAgent getAgent;
 
     private final PatchAgent patchAgent;
+
+    private final ActivateAgent activateAgent;
+
+    private final ArchiveAgent archiveAgent;
 
     private final AgentApiMapper agentApiMapper;
 
@@ -56,5 +62,15 @@ public class AgentController implements AgentApi {
         return ResponseEntity.ok(this.agentApiMapper.asAgentDto(
                 this.patchAgent.execute(agentId, this.agentApiMapper.asPatchAgentCommand(patchAgentRequestDTO))
         ));
+    }
+
+    @Override
+    public ResponseEntity<AgentDTO> activateAgent(final UUID agentId) {
+        return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.activateAgent.execute(agentId)));
+    }
+
+    @Override
+    public ResponseEntity<AgentDTO> archiveAgent(final UUID agentId) {
+        return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.archiveAgent.execute(agentId)));
     }
 }
