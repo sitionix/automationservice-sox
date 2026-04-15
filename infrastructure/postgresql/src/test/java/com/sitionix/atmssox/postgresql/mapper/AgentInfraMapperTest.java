@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.postgresql.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -18,9 +20,12 @@ class AgentInfraMapperTest {
 
     private AgentInfraMapper agentInfraMapper;
 
+    @Mock
+    private AgentStatusInfraMapper agentStatusInfraMapper;
+
     @BeforeEach
     void setUp() {
-        this.agentInfraMapper = new AgentInfraMapperImpl(new AgentStatusInfraMapperImpl());
+        this.agentInfraMapper = new AgentInfraMapperImpl(this.agentStatusInfraMapper);
     }
 
     @Test
@@ -28,6 +33,8 @@ class AgentInfraMapperTest {
         //given
         final Agent given = this.getAgent();
         final AgentEntity expected = this.getAgentEntity();
+
+        when(this.agentStatusInfraMapper.asStatusEntity(given.getStatus())).thenReturn(expected.getStatus());
 
         //when
         final AgentEntity actual = this.agentInfraMapper.asAgentEntity(given);
@@ -41,6 +48,8 @@ class AgentInfraMapperTest {
         //given
         final AgentEntity given = this.getAgentEntity();
         final Agent expected = this.getAgent();
+
+        when(this.agentStatusInfraMapper.asStatus(given.getStatus())).thenReturn(expected.getStatus());
 
         //when
         final Agent actual = this.agentInfraMapper.asAgent(given);
