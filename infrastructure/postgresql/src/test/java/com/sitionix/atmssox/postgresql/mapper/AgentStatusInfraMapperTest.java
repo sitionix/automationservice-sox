@@ -19,10 +19,8 @@ class AgentStatusInfraMapperTest {
     @Test
     void givenNullStatusEntity_whenAsStatus_thenReturnNull() {
         // Given
-        final AgentStatusEntity statusEntity = null;
-
         // When
-        final AgentStatus result = mapper.asStatus(statusEntity);
+        final AgentStatus result = mapper.asStatus(null);
 
         // Then
         assertThat(result).isNull();
