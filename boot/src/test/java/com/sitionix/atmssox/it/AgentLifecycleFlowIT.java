@@ -41,7 +41,11 @@ class AgentLifecycleFlowIT {
                 .ping(ControllerEndpoint.activateAgent())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(agentId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Architecture Reviewer"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault();
 
         //then
@@ -84,7 +88,11 @@ class AgentLifecycleFlowIT {
                 .ping(ControllerEndpoint.archiveAgent())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(agentId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Architecture Reviewer"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ARCHIVED"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault();
 
         //then
@@ -365,6 +373,40 @@ class AgentLifecycleFlowIT {
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", anotherUserAgent.getAgentId()))
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
+                .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), anotherUserAgent.getUpdatedAt()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("Should return not found when archiving agent that belongs to another user")
+    void givenAgentOfAnotherUser_whenArchive_thenReturnNotFoundAndDoNotChangeStatus() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .header("X-Forge-User-Sub", "2")
+                .assertDefault();
+
+        final AgentEntity anotherUserAgent = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getUserId(), 2L))
+                .max(Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Expected user 2 agent to exist"));
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.archiveAgent())
                 .withPathParameters(PathParams.create().add("agentId", anotherUserAgent.getAgentId()))
                 .expectStatus(HttpStatus.NOT_FOUND)
                 .assertDefault();
