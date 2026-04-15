@@ -11,12 +11,16 @@ database:
         remote_port: 5432
 
 tables:
+  agent_statuses:
+    columns:
+      id: bigint
+      description: varchar(64)
   agents:
     columns:
       agent_id: uuid
       user_id: bigint
       name: varchar(60)
       description: varchar(160)
-      status: varchar(32)
+      status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz

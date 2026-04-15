@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.it;
 
-import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
@@ -44,7 +43,7 @@ class CreateAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), AgentStatus.DRAFT))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> Objects.nonNull(entity.getAgentId()))
                 .andExpected(entity -> Objects.nonNull(entity.getCreatedAt()))
                 .andExpected(entity -> Objects.nonNull(entity.getUpdatedAt()))
@@ -75,7 +74,7 @@ class CreateAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), AgentStatus.DRAFT))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .assertEntity();
     }
 
@@ -165,7 +164,7 @@ class CreateAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), AgentStatus.DRAFT))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .allMatch();
 
         final List<AgentEntity> agents = this.testManager.postgresql().get(AgentEntity.class).getAll();
@@ -195,7 +194,7 @@ class CreateAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), AgentStatus.DRAFT))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .assertEntity();
     }
 }

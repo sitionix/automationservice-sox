@@ -2,6 +2,7 @@ package com.sitionix.atmssox.api.handler;
 
 import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
+import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import jakarta.validation.ConstraintViolation;
@@ -24,6 +25,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(AgentValidationException.class)
     public ResponseEntity<ErrorDTO> handleValidation(final AgentValidationException exception) {
         return buildError(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(AgentLifecycleTransitionException.class)
+    public ResponseEntity<ErrorDTO> handleTransition(final AgentLifecycleTransitionException exception) {
+        return buildError(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(AgentNotFoundException.class)

@@ -156,6 +156,18 @@ class AgentApiMapperTest {
         assertThat(actual).isNull();
     }
 
+    @Test
+    void givenInstant_whenMap_thenReturnOffsetDateTimeInUtc() {
+        //given
+        final Instant given = Instant.parse("2026-01-15T12:13:14Z");
+
+        //when
+        final OffsetDateTime actual = this.agentApiMapper.map(given);
+
+        //then
+        assertThat(actual).isEqualTo(OffsetDateTime.parse("2026-01-15T12:13:14Z"));
+    }
+
     private CreateAgentRequestDTO getCreateAgentRequestDto() {
         return CreateAgentRequestDTO.builder()
                 .name("My agent")
