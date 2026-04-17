@@ -12,7 +12,8 @@ CREATE TABLE agents (
     agent_id UUID PRIMARY KEY,
     user_id BIGINT NOT NULL,
     name VARCHAR(60) NOT NULL,
-    description VARCHAR(160) NOT NULL,
+    description VARCHAR(160),
+    instruction TEXT,
     status_id BIGINT NOT NULL REFERENCES agent_statuses(id),
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL

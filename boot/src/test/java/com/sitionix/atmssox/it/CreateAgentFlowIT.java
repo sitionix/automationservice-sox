@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -42,7 +43,7 @@ class CreateAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
+                .andExpected(entity -> Objects.isNull(entity.getDescription()))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> Objects.nonNull(entity.getAgentId()))
                 .andExpected(entity -> Objects.nonNull(entity.getCreatedAt()))
@@ -63,7 +64,7 @@ class CreateAgentFlowIT {
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .assertDefault(defaults -> defaults.mutateRequest(request -> {
                     request.setName("   Architecture Reviewer   ");
-                    request.setDescription("   Minimal internal agent foundation entry   ");
+                    request.setDescription(JsonNullable.of("   Minimal internal agent foundation entry   "));
                 }));
 
         //then
@@ -127,19 +128,22 @@ class CreateAgentFlowIT {
     }
 
     @Test
-    @DisplayName("Should return bad request and persist nothing for missing description")
-    void givenMissingDescription_whenCreateAgent_thenReturnBadRequestAndPersistNothing() {
+    @DisplayName("Should create agent with null description")
+    void givenMissingDescription_whenCreateAgent_thenPersistNullDescription() {
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgent())
-                .expectStatus(HttpStatus.BAD_REQUEST)
+                .expectStatus(HttpStatus.CREATED)
                 .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription(null)));
+                        .mutateRequest(request -> request.setDescription(JsonNullable.of(null))));
 
         //then
         this.testManager.postgresql()
                 .get(AgentEntity.class)
-                .hasSize(0);
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .assertEntity();
     }
 
     @Test
@@ -163,7 +167,7 @@ class CreateAgentFlowIT {
                 .hasSize(2)
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
+                .andExpected(entity -> Objects.isNull(entity.getDescription()))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .allMatch();
 
@@ -185,7 +189,7 @@ class CreateAgentFlowIT {
                 .ping(ControllerEndpoint.createAgent())
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription("   ")));
+                        .mutateRequest(request -> request.setDescription(JsonNullable.of("   "))));
 
         //then
         this.testManager.postgresql()
@@ -193,7 +197,7 @@ class CreateAgentFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
+                .andExpected(entity -> Objects.isNull(entity.getDescription()))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .assertEntity();
     }

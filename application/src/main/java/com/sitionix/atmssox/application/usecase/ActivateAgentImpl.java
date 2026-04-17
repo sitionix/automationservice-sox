@@ -30,6 +30,7 @@ public class ActivateAgentImpl implements ActivateAgent {
                 .userId(current.getUserId())
                 .name(current.getName())
                 .description(current.getDescription())
+                .instruction(current.getInstruction())
                 .status(current.getStatus().activate())
                 .createdAt(current.getCreatedAt())
                 .updatedAt(Instant.now())

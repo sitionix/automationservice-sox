@@ -21,6 +21,7 @@ tables:
       user_id: bigint
       name: varchar(60)
       description: varchar(160)
+      instruction: text
       status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz

@@ -38,8 +38,11 @@ public class AgentEntity {
     @Column(name = "name", nullable = false, length = 60)
     private String name;
 
-    @Column(name = "description", nullable = false, length = 160)
+    @Column(name = "description", nullable = true, length = 160)
     private String description;
+
+    @Column(name = "instruction", columnDefinition = "TEXT")
+    private String instruction;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")

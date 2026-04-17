@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -158,7 +159,7 @@ class GetAgentAndGetAgentsFlowIT {
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault(defaults -> defaults.mutateRequest(request -> {
                     request.setName(name);
-                    request.setDescription(description);
+                    request.setDescription(JsonNullable.of(description));
                 }));
 
         return this.testManager.postgresql()

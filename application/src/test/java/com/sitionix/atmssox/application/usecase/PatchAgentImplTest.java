@@ -70,6 +70,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
+        verify(givenCommand).instruction();
         verify(this.agentRepository).save(agentCaptor.capture());
         verifyNoMoreInteractions(givenCommand);
 
@@ -105,6 +106,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
+        verify(givenCommand).instruction();
         verify(this.agentRepository).save(agentCaptor.capture());
         verifyNoMoreInteractions(givenCommand);
 
@@ -134,6 +136,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand, times(2)).description();
+        verify(givenCommand).instruction();
         verify(this.agentRepository).save(agentCaptor.capture());
         verifyNoMoreInteractions(givenCommand);
 
@@ -157,12 +160,13 @@ class PatchAgentImplTest {
         //then
         assertThatThrownBy(() -> this.patchAgent.execute(givenAgentId, givenCommand))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("At least one field (name or description) must be provided");
+                .hasMessage("At least one field (name, description or instruction) must be provided");
 
         verify(this.forgeUserClient).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand).description();
+        verify(givenCommand).instruction();
         verifyNoMoreInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
@@ -187,6 +191,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
+        verify(givenCommand).instruction();
         verifyNoMoreInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
@@ -211,6 +216,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
+        verify(givenCommand).instruction();
         verifyNoMoreInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
@@ -235,6 +241,7 @@ class PatchAgentImplTest {
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
+        verify(givenCommand).instruction();
         verifyNoMoreInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
@@ -253,12 +260,13 @@ class PatchAgentImplTest {
         //then
         assertThatThrownBy(() -> this.patchAgent.execute(givenAgentId, givenCommand))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("Agent description is required");
+                .hasMessage("Agent description must be between 1 and 160 characters");
 
         verify(this.forgeUserClient).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
+        verify(givenCommand).instruction();
         verifyNoMoreInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
@@ -307,6 +315,7 @@ class PatchAgentImplTest {
         final PatchAgentCommand patchAgentCommand = mock(PatchAgentCommand.class);
         when(patchAgentCommand.name()).thenReturn(name);
         when(patchAgentCommand.description()).thenReturn(description);
+        when(patchAgentCommand.instruction()).thenReturn(null);
         return patchAgentCommand;
     }
 

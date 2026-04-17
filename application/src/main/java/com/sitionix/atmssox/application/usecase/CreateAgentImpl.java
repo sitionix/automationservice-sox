@@ -33,12 +33,12 @@ public class CreateAgentImpl implements CreateAgent {
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .name(this.normalizeRequired(command.name(), "Agent name is required", NAME_MAX_LENGTH, "Agent name must be between 1 and 60 characters"))
-                .description(this.normalizeRequired(
+                .description(this.normalizeOptional(
                         command.description(),
-                        "Agent description is required",
                         DESCRIPTION_MAX_LENGTH,
                         "Agent description must be between 1 and 160 characters"
                 ))
+                .instruction(null)
                 .status(AgentStatus.DRAFT)
                 .createdAt(now)
                 .updatedAt(now)
@@ -54,6 +54,19 @@ public class CreateAgentImpl implements CreateAgent {
             throw new AgentValidationException(missingMessage);
         }
         if (normalized.length() > maxLength) {
+            throw new AgentValidationException(lengthMessage);
+        }
+        return normalized;
+    }
+
+    private String normalizeOptional(final String value,
+                                     final int maxLength,
+                                     final String lengthMessage) {
+        if (value == null) {
+            return null;
+        }
+        final String normalized = value.trim();
+        if (normalized.isEmpty() || normalized.length() > maxLength) {
             throw new AgentValidationException(lengthMessage);
         }
         return normalized;

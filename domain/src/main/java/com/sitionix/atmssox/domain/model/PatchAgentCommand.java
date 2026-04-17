@@ -5,6 +5,7 @@ import lombok.Builder;
 @Builder
 public record PatchAgentCommand(
         String name,
-        String description
+        String description,
+        String instruction
 ) {
 }

@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.hamcrest.Matchers.nullValue;
+
 @IntegrationTest
 class AgentLifecycleFlowIT {
 
@@ -42,7 +44,7 @@ class AgentLifecycleFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(agentId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Architecture Reviewer"))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value(nullValue()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
@@ -89,7 +91,7 @@ class AgentLifecycleFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(agentId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Architecture Reviewer"))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value(nullValue()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ARCHIVED"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
