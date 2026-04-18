@@ -50,7 +50,7 @@ class GetAgentImplTest {
         final Agent expected = mock(Agent.class);
 
         when(this.forgeUserClient.getUserId()).thenReturn(17L);
-        when(this.agentRepository.findByIdAndUserId(given, 17L)).thenReturn(Optional.of(expected));
+        when(this.agentRepository.findVisibleByIdAndUserId(given, 17L)).thenReturn(Optional.of(expected));
 
         //when
         final Agent actual = this.getAgent.execute(given);
@@ -58,7 +58,7 @@ class GetAgentImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(given, 17L);
+        verify(this.agentRepository).findVisibleByIdAndUserId(given, 17L);
     }
 
     @Test
@@ -67,7 +67,7 @@ class GetAgentImplTest {
         final UUID given = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         when(this.forgeUserClient.getUserId()).thenReturn(17L);
-        when(this.agentRepository.findByIdAndUserId(given, 17L)).thenReturn(Optional.empty());
+        when(this.agentRepository.findVisibleByIdAndUserId(given, 17L)).thenReturn(Optional.empty());
 
         //when
         //then
@@ -76,7 +76,7 @@ class GetAgentImplTest {
                 .hasMessage("Agent not found");
 
         verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(given, 17L);
+        verify(this.agentRepository).findVisibleByIdAndUserId(given, 17L);
     }
 
     @Test

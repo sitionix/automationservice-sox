@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.AgentInfraMapper;
@@ -64,7 +65,7 @@ class AgentRepositoryImplTest {
     }
 
     @Test
-    void givenUserId_whenFindAllByUserId_thenReturnMappedAgents() {
+    void givenUserId_whenFindAllVisibleByUserId_thenReturnMappedAgents() {
         //given
         final Long given = 17L;
         final AgentEntity firstEntity = mock(AgentEntity.class);
@@ -73,16 +74,17 @@ class AgentRepositoryImplTest {
         final Agent secondAgent = mock(Agent.class);
         final List<Agent> expected = List.of(firstAgent, secondAgent);
 
-        when(this.agentJpaRepository.findAllByUserIdOrderByUpdatedAtDesc(given)).thenReturn(List.of(firstEntity, secondEntity));
+        when(this.agentJpaRepository.findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId()))
+                .thenReturn(List.of(firstEntity, secondEntity));
         when(this.agentInfraMapper.asAgent(firstEntity)).thenReturn(firstAgent);
         when(this.agentInfraMapper.asAgent(secondEntity)).thenReturn(secondAgent);
 
         //when
-        final List<Agent> actual = this.agentRepository.findAllByUserId(given);
+        final List<Agent> actual = this.agentRepository.findAllVisibleByUserId(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findAllByUserIdOrderByUpdatedAtDesc(given);
+        verify(this.agentJpaRepository).findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId());
         verify(this.agentInfraMapper).asAgent(firstEntity);
         verify(this.agentInfraMapper).asAgent(secondEntity);
     }

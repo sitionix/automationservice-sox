@@ -10,9 +10,11 @@ import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
+import com.sitionix.atmssox.domain.usecase.RestoreAgent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +57,12 @@ class AgentControllerTest {
     private ArchiveAgent archiveAgent;
 
     @Mock
+    private RestoreAgent restoreAgent;
+
+    @Mock
+    private DeleteAgent deleteAgent;
+
+    @Mock
     private AgentApiMapper agentApiMapper;
 
     @BeforeEach
@@ -66,6 +74,8 @@ class AgentControllerTest {
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
+                this.restoreAgent,
+                this.deleteAgent,
                 this.agentApiMapper
         );
     }
@@ -79,6 +89,8 @@ class AgentControllerTest {
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
+                this.restoreAgent,
+                this.deleteAgent,
                 this.agentApiMapper
         );
     }

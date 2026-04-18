@@ -18,7 +18,7 @@ public class GetAgentsImpl implements GetAgents {
 
     @Override
     public List<Agent> execute() {
-        return this.agentRepository.findAllByUserId(this.getUserId());
+        return this.agentRepository.findAllVisibleByUserId(this.getUserId());
     }
 
     private Long getUserId() {

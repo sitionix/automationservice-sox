@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 public enum AgentStatus {
     DRAFT(1L),
     ACTIVE(2L),
-    ARCHIVED(3L);
+    ARCHIVED(3L),
+    DELETED(4L);
 
     private final Long id;
 
@@ -33,9 +34,23 @@ public enum AgentStatus {
     }
 
     public AgentStatus archive() {
-        if (this == ACTIVE) {
+        if (this == DRAFT || this == ACTIVE) {
             return ARCHIVED;
         }
         throw new AgentLifecycleTransitionException("Invalid agent transition: " + this + " -> ARCHIVED");
+    }
+
+    public AgentStatus restore() {
+        if (this == ARCHIVED) {
+            return DRAFT;
+        }
+        throw new AgentLifecycleTransitionException("Invalid agent transition: " + this + " -> DRAFT");
+    }
+
+    public AgentStatus delete() {
+        if (this == DRAFT || this == ACTIVE || this == ARCHIVED) {
+            return DELETED;
+        }
+        throw new AgentLifecycleTransitionException("Invalid agent transition: " + this + " -> DELETED");
     }
 }

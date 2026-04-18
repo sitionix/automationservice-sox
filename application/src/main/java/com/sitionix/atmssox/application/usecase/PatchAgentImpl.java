@@ -27,7 +27,7 @@ public class PatchAgentImpl implements PatchAgent {
     @Override
     @Transactional
     public Agent execute(final UUID agentId, final PatchAgentCommand command) {
-        final Agent current = this.agentRepository.findByIdAndUserId(agentId, this.getUserId())
+        final Agent current = this.agentRepository.findVisibleByIdAndUserId(agentId, this.getUserId())
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
         final boolean hasName = command.name() != null;

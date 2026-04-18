@@ -49,7 +49,7 @@ class GetAgentsImplTest {
         final List<Agent> expected = List.of(firstAgent, secondAgent);
 
         when(this.forgeUserClient.getUserId()).thenReturn(17L);
-        when(this.agentRepository.findAllByUserId(17L)).thenReturn(expected);
+        when(this.agentRepository.findAllVisibleByUserId(17L)).thenReturn(expected);
 
         //when
         final List<Agent> actual = this.getAgents.execute();
@@ -57,7 +57,7 @@ class GetAgentsImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findAllByUserId(17L);
+        verify(this.agentRepository).findAllVisibleByUserId(17L);
     }
 
     @Test

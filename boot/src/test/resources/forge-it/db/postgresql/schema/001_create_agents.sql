@@ -6,7 +6,8 @@ CREATE TABLE agent_statuses (
 INSERT INTO agent_statuses (id, description)
 VALUES (1, 'DRAFT'),
        (2, 'ACTIVE'),
-       (3, 'ARCHIVED');
+       (3, 'ARCHIVED'),
+       (4, 'DELETED');
 
 CREATE TABLE agents (
     agent_id UUID PRIMARY KEY,

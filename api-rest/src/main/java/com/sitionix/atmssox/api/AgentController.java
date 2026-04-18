@@ -11,9 +11,11 @@ import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
+import com.sitionix.atmssox.domain.usecase.RestoreAgent;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,10 @@ public class AgentController implements AgentApi {
     private final ActivateAgent activateAgent;
 
     private final ArchiveAgent archiveAgent;
+
+    private final RestoreAgent restoreAgent;
+
+    private final DeleteAgent deleteAgent;
 
     private final AgentApiMapper agentApiMapper;
 
@@ -72,5 +78,15 @@ public class AgentController implements AgentApi {
     @Override
     public ResponseEntity<AgentDTO> archiveAgent(final UUID agentId) {
         return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.archiveAgent.execute(agentId)));
+    }
+
+    @Override
+    public ResponseEntity<AgentDTO> restoreAgent(final UUID agentId) {
+        return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.restoreAgent.execute(agentId)));
+    }
+
+    @Override
+    public ResponseEntity<AgentDTO> deleteAgent(final UUID agentId) {
+        return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.deleteAgent.execute(agentId)));
     }
 }

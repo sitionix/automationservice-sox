@@ -84,6 +84,30 @@ public class ControllerEndpoint {
         );
     }
 
+    public static Endpoint<Void, AgentDTO> restoreAgent() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/restore",
+                HttpMethod.POST,
+                Void.class,
+                AgentDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, AgentDTO> deleteAgent() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/delete",
+                HttpMethod.POST,
+                Void.class,
+                AgentDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
     private ControllerEndpoint() {
     }
 }

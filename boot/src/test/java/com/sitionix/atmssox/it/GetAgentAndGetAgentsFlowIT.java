@@ -104,6 +104,44 @@ class GetAgentAndGetAgentsFlowIT {
     }
 
     @Test
+    @DisplayName("Should return not found when agent is deleted")
+    void givenDeletedAgent_whenGetAgent_thenReturnNotFound() {
+        // given
+        final UUID agentId = this.createAgentForUser("1", "Deleted single fetch", "Deleted single fetch description");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        // when/then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("Should exclude deleted agents from current user list")
+    void givenDeletedAndVisibleAgents_whenGetAgents_thenExcludeDeletedFromList() {
+        // given
+        final UUID visibleAgentId = this.createAgentForUser("1", "Visible user one", "Visible description");
+        final UUID deletedAgentId = this.createAgentForUser("1", "Deleted user one", "Deleted description");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgent())
+                .withPathParameters(PathParams.create().add("agentId", deletedAgentId))
+                .assertDefault();
+
+        // when/then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgents())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].id").value(visibleAgentId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].name").value("Visible user one"))
+                .assertDefault();
+    }
+
+    @Test
     @DisplayName("Should return bad request for invalid agent id format")
     void givenInvalidAgentIdFormat_whenGetAgent_thenReturnBadRequest() {
         this.testManager.mockMvc()

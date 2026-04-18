@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
@@ -98,22 +97,23 @@ class ArchiveAgentImplTest {
     }
 
     @Test
-    void givenDraftAgent_whenExecute_thenThrowInvalidTransitionException() {
+    void givenDraftAgent_whenExecute_thenArchiveAgent() {
         //given
         final UUID givenAgentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        final Agent current = this.getAgent(AgentStatus.DRAFT);
 
         when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L))
-                .thenReturn(Optional.of(this.getAgent(AgentStatus.DRAFT)));
+        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        //then
-        assertThatThrownBy(() -> this.archiveAgent.execute(givenAgentId))
-                .isInstanceOf(AgentLifecycleTransitionException.class)
-                .hasMessage("Invalid agent transition: DRAFT -> ARCHIVED");
+        final Agent actual = this.archiveAgent.execute(givenAgentId);
 
+        //then
         verify(this.forgeUserClient).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.agentRepository).save(any(Agent.class));
+        assertThat(actual.getStatus()).isEqualTo(AgentStatus.ARCHIVED);
     }
 
     @Test
