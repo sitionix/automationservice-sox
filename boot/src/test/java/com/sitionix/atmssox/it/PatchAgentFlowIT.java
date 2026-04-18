@@ -42,7 +42,7 @@ class PatchAgentFlowIT {
                 .withRequest("patchAgentInstructionOnlyRequest.json")
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(createdAgent.getAgentId().toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Architecture Reviewer"))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value(nullValue()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.instruction").value("Follow security-first code review checklist"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("DRAFT"))
                 .assertDefault();
@@ -54,7 +54,7 @@ class PatchAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getAgentId(), createdAgent.getAgentId()))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.equals(entity.getInstruction(), "Follow security-first code review checklist"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(createdAgent.getUpdatedAt()))
@@ -120,7 +120,7 @@ class PatchAgentFlowIT {
                 .withRequest("patchAgentNameAndInstructionRequest.json")
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(createdAgent.getAgentId().toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Updated Architecture Reviewer"))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value(nullValue()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.instruction").value("Document expected outputs for each run"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("DRAFT"))
                 .assertDefault();
@@ -132,7 +132,7 @@ class PatchAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getAgentId(), createdAgent.getAgentId()))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Updated Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.equals(entity.getInstruction(), "Document expected outputs for each run"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(createdAgent.getUpdatedAt()))
@@ -168,7 +168,7 @@ class PatchAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getAgentId(), createdAgent.getAgentId()))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.isNull(entity.getInstruction()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforePatchUpdatedAt))
                 .assertEntity();
@@ -233,7 +233,7 @@ class PatchAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getAgentId(), createdAgent.getAgentId()))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.isNull(entity.getInstruction()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforePatchUpdatedAt))
                 .assertEntity();
@@ -268,7 +268,7 @@ class PatchAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getAgentId(), createdAgent.getAgentId()))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.isNull(entity.getInstruction()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforePatchUpdatedAt))
                 .assertEntity();

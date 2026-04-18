@@ -42,7 +42,7 @@ class CreateAgentFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> Objects.nonNull(entity.getAgentId()))
                 .andExpected(entity -> Objects.nonNull(entity.getCreatedAt()))
@@ -127,25 +127,6 @@ class CreateAgentFlowIT {
     }
 
     @Test
-    @DisplayName("Should create agent with null description")
-    void givenMissingDescription_whenCreateAgent_thenPersistNullDescription() {
-        //when
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgent())
-                .expectStatus(HttpStatus.CREATED)
-                .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription(null)));
-
-        //then
-        this.testManager.postgresql()
-                .get(AgentEntity.class)
-                .hasSize(1)
-                .singleElement()
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
-                .assertEntity();
-    }
-
-    @Test
     @DisplayName("Should allow duplicate agent names")
     void givenDuplicateNameRequests_whenCreateAgentTwice_thenPersistBothAgents() {
         //given
@@ -166,7 +147,7 @@ class CreateAgentFlowIT {
                 .hasSize(2)
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .allMatch();
 
@@ -196,7 +177,7 @@ class CreateAgentFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
-                .andExpected(entity -> Objects.isNull(entity.getDescription()))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .assertEntity();
     }

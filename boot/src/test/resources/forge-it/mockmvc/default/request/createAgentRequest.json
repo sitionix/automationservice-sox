@@ -1,3 +1,4 @@
 {
-  "name": "Architecture Reviewer"
+  "name": "Architecture Reviewer",
+  "description": "Minimal internal agent foundation entry"
 }
