@@ -71,6 +71,7 @@ class ActivateAgentImplTest {
         assertThat(saved.getUserId()).isEqualTo(current.getUserId());
         assertThat(saved.getName()).isEqualTo(current.getName());
         assertThat(saved.getDescription()).isEqualTo(current.getDescription());
+        assertThat(saved.getInstruction()).isEqualTo(current.getInstruction());
         assertThat(saved.getStatus()).isEqualTo(AgentStatus.ACTIVE);
         assertThat(saved.getCreatedAt()).isEqualTo(current.getCreatedAt());
         assertThat(saved.getUpdatedAt()).isNotNull();
@@ -137,6 +138,7 @@ class ActivateAgentImplTest {
                 .userId(7L)
                 .name("Agent Name")
                 .description("Agent Description")
+                .instruction("Agent instruction")
                 .status(status)
                 .createdAt(Instant.parse("2026-01-01T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-01-01T10:00:00Z"))

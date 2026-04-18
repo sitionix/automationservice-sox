@@ -82,6 +82,25 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenCreateAgentRequestDtoWithNullDescription_whenAsCreateAgentCommand_thenReturnCommandWithNullDescription() {
+        //given
+        final CreateAgentRequestDTO given = CreateAgentRequestDTO.builder()
+                .name("My agent")
+                .description(null)
+                .build();
+        final CreateAgentCommand expected = CreateAgentCommand.builder()
+                .name("My agent")
+                .description(null)
+                .build();
+
+        //when
+        final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     void givenAgent_whenAsAgentDto_thenReturnAgentDto() {
         //given
         final Agent given = this.getDomainAgent();

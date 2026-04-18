@@ -147,6 +147,62 @@ class PatchAgentImplTest {
     }
 
     @Test
+    void givenInstructionOnlyPatchCommand_whenExecute_thenUpdateOnlyInstruction() {
+        //given
+        final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        final Agent current = this.getAgent("Current Name", "Current Description", "Current instruction");
+        final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, null, "  Updated instruction  ");
+
+        when(this.forgeUserClient.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        //when
+        final Agent actual = this.patchAgent.execute(givenAgentId, givenCommand);
+
+        //then
+        final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        verify(this.forgeUserClient).getUserId();
+        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(givenCommand).name();
+        verify(givenCommand).description();
+        verify(givenCommand, times(2)).instruction();
+        verify(this.agentRepository).save(agentCaptor.capture());
+        verifyNoMoreInteractions(givenCommand);
+
+        final Agent saved = agentCaptor.getValue();
+        assertThat(saved.getName()).isEqualTo(current.getName());
+        assertThat(saved.getDescription()).isEqualTo(current.getDescription());
+        assertThat(saved.getInstruction()).isEqualTo("Updated instruction");
+        assertThat(actual).isEqualTo(saved);
+    }
+
+    @Test
+    void givenBlankInstructionPatchCommand_whenExecute_thenThrowValidationException() {
+        //given
+        final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        final Agent current = this.getAgent("Current Name", "Current Description", "Current instruction");
+        final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, null, "   ");
+
+        when(this.forgeUserClient.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.patchAgent.execute(givenAgentId, givenCommand))
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("Agent instruction must not be blank");
+
+        verify(this.forgeUserClient).getUserId();
+        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(givenCommand).name();
+        verify(givenCommand).description();
+        verify(givenCommand, times(2)).instruction();
+        verifyNoMoreInteractions(givenCommand);
+        verifyNoMoreInteractions(this.agentRepository);
+    }
+
+    @Test
     void givenEmptyPatchCommand_whenExecute_thenThrowValidationException() {
         //given
         final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
@@ -312,19 +368,28 @@ class PatchAgentImplTest {
     }
 
     private PatchAgentCommand getPatchAgentCommand(final String name, final String description) {
+        return this.getPatchAgentCommand(name, description, null);
+    }
+
+    private PatchAgentCommand getPatchAgentCommand(final String name, final String description, final String instruction) {
         final PatchAgentCommand patchAgentCommand = mock(PatchAgentCommand.class);
         when(patchAgentCommand.name()).thenReturn(name);
         when(patchAgentCommand.description()).thenReturn(description);
-        when(patchAgentCommand.instruction()).thenReturn(null);
+        when(patchAgentCommand.instruction()).thenReturn(instruction);
         return patchAgentCommand;
     }
 
     private Agent getAgent(final String name, final String description) {
+        return this.getAgent(name, description, null);
+    }
+
+    private Agent getAgent(final String name, final String description, final String instruction) {
         return Agent.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .userId(7L)
                 .name(name)
                 .description(description)
+                .instruction(instruction)
                 .status(AgentStatus.DRAFT)
                 .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-10T10:10:00Z"))
