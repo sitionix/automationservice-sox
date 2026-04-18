@@ -30,6 +30,7 @@ public class ArchiveAgentImpl implements ArchiveAgent {
                 .userId(current.getUserId())
                 .name(current.getName())
                 .description(current.getDescription())
+                .instruction(current.getInstruction())
                 .status(current.getStatus().archive())
                 .createdAt(current.getCreatedAt())
                 .updatedAt(Instant.now())

@@ -2,6 +2,7 @@
   "id": "00000000-0000-0000-0000-000000000000",
   "name": "Architecture Reviewer",
   "description": "Minimal internal agent foundation entry",
+  "instruction": null,
   "status": "DRAFT",
   "createdAt": "2026-01-01T00:00:00Z",
   "updatedAt": "2026-01-01T00:00:00Z"

@@ -155,23 +155,25 @@ class CreateAgentImplTest {
     }
 
     @Test
-    void givenNullDescription_whenExecute_thenThrowValidationException() {
+    void givenNullDescription_whenExecute_thenSaveAgentWithNullDescription() {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("Valid name", null);
 
         when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        //then
-        assertThatThrownBy(() -> this.createAgent.execute(given))
-                .isInstanceOf(AgentValidationException.class)
-                .hasMessage("Agent description is required");
+        final Agent actual = this.createAgent.execute(given);
 
+        //then
+        final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        verify(this.agentRepository).save(agentCaptor.capture());
         verify(this.forgeUserClient).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
-        verifyNoInteractions(this.agentRepository);
+        assertThat(agentCaptor.getValue().getDescription()).isNull();
+        assertThat(actual).isEqualTo(agentCaptor.getValue());
     }
 
     @Test
@@ -185,7 +187,7 @@ class CreateAgentImplTest {
         //then
         assertThatThrownBy(() -> this.createAgent.execute(given))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("Agent description is required");
+                .hasMessage("Agent description must be between 1 and 160 characters");
 
         verify(this.forgeUserClient).getUserId();
         verify(given).name();

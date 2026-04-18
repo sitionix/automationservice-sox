@@ -88,6 +88,7 @@ class AgentInfraMapperTest {
                 .userId(17L)
                 .name("My agent")
                 .description("My description")
+                .instruction("My instruction")
                 .status(AgentStatus.DRAFT)
                 .createdAt(Instant.parse("2026-01-10T10:15:30Z"))
                 .updatedAt(Instant.parse("2026-01-10T10:20:30Z"))
@@ -100,6 +101,7 @@ class AgentInfraMapperTest {
                 17L,
                 "My agent",
                 "My description",
+                "My instruction",
                 AgentStatusEntity.builder()
                         .id(1L)
                         .description("DRAFT")

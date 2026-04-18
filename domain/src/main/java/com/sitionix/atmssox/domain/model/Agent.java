@@ -17,6 +17,8 @@ public class Agent {
 
     String description;
 
+    String instruction;
+
     AgentStatus status;
 
     Instant createdAt;

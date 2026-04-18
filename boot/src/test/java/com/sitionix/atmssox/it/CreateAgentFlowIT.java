@@ -127,22 +127,6 @@ class CreateAgentFlowIT {
     }
 
     @Test
-    @DisplayName("Should return bad request and persist nothing for missing description")
-    void givenMissingDescription_whenCreateAgent_thenReturnBadRequestAndPersistNothing() {
-        //when
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgent())
-                .expectStatus(HttpStatus.BAD_REQUEST)
-                .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription(null)));
-
-        //then
-        this.testManager.postgresql()
-                .get(AgentEntity.class)
-                .hasSize(0);
-    }
-
-    @Test
     @DisplayName("Should allow duplicate agent names")
     void givenDuplicateNameRequests_whenCreateAgentTwice_thenPersistBothAgents() {
         //given

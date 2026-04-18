@@ -82,6 +82,25 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenCreateAgentRequestDtoWithNullDescription_whenAsCreateAgentCommand_thenReturnCommandWithNullDescription() {
+        //given
+        final CreateAgentRequestDTO given = CreateAgentRequestDTO.builder()
+                .name("My agent")
+                .description(null)
+                .build();
+        final CreateAgentCommand expected = CreateAgentCommand.builder()
+                .name("My agent")
+                .description(null)
+                .build();
+
+        //when
+        final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     void givenAgent_whenAsAgentDto_thenReturnAgentDto() {
         //given
         final Agent given = this.getDomainAgent();
@@ -186,6 +205,7 @@ class AgentApiMapperTest {
         return PatchAgentRequestDTO.builder()
                 .name("My patched agent")
                 .description("My patched description")
+                .instruction("My patched instruction")
                 .build();
     }
 
@@ -193,6 +213,7 @@ class AgentApiMapperTest {
         return PatchAgentCommand.builder()
                 .name("My patched agent")
                 .description("My patched description")
+                .instruction("My patched instruction")
                 .build();
     }
 
@@ -204,6 +225,7 @@ class AgentApiMapperTest {
                 .userId(7L)
                 .name("My agent")
                 .description("My description")
+                .instruction("My instruction")
                 .status(AgentStatus.DRAFT)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
@@ -215,6 +237,7 @@ class AgentApiMapperTest {
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
                 .description("My description")
+                .instruction("My instruction")
                 .status(AgentDTO.StatusEnum.DRAFT)
                 .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
                 .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
@@ -229,6 +252,7 @@ class AgentApiMapperTest {
                 .userId(7L)
                 .name("My agent")
                 .description("My description")
+                .instruction("My instruction")
                 .status(null)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
@@ -240,6 +264,7 @@ class AgentApiMapperTest {
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
                 .description("My description")
+                .instruction("My instruction")
                 .status(null)
                 .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
                 .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
