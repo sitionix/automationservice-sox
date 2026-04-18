@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -64,7 +63,7 @@ class CreateAgentFlowIT {
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Minimal internal agent foundation entry"))
                 .assertDefault(defaults -> defaults.mutateRequest(request -> {
                     request.setName("   Architecture Reviewer   ");
-                    request.setDescription(JsonNullable.of("   Minimal internal agent foundation entry   "));
+                    request.setDescription("   Minimal internal agent foundation entry   ");
                 }));
 
         //then
@@ -135,7 +134,7 @@ class CreateAgentFlowIT {
                 .ping(ControllerEndpoint.createAgent())
                 .expectStatus(HttpStatus.CREATED)
                 .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription(JsonNullable.of(null))));
+                        .mutateRequest(request -> request.setDescription(null)));
 
         //then
         this.testManager.postgresql()
@@ -189,7 +188,7 @@ class CreateAgentFlowIT {
                 .ping(ControllerEndpoint.createAgent())
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults
-                        .mutateRequest(request -> request.setDescription(JsonNullable.of("   "))));
+                        .mutateRequest(request -> request.setDescription("   ")));
 
         //then
         this.testManager.postgresql()

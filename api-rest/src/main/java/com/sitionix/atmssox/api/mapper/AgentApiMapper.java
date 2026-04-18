@@ -12,7 +12,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.mapstruct.Mapper;
-import org.openapitools.jackson.nullable.JsonNullable;
 
 @Mapper(componentModel = "spring")
 public interface AgentApiMapper {
@@ -27,14 +26,6 @@ public interface AgentApiMapper {
 
     default OffsetDateTime map(final Instant value) {
         return value == null ? null : value.atOffset(ZoneOffset.UTC);
-    }
-
-    default String map(final JsonNullable<String> value) {
-        return value == null ? null : value.orElse(null);
-    }
-
-    default JsonNullable<String> map(final String value) {
-        return JsonNullable.of(value);
     }
 
     default AgentsResponseDTO asAgentsResponseDto(final List<Agent> agents) {

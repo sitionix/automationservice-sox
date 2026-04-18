@@ -18,7 +18,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.openapitools.jackson.nullable.JsonNullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -172,7 +171,7 @@ class AgentApiMapperTest {
     private CreateAgentRequestDTO getCreateAgentRequestDto() {
         return CreateAgentRequestDTO.builder()
                 .name("My agent")
-                .description(JsonNullable.of("My description"))
+                .description("My description")
                 .build();
     }
 
@@ -186,8 +185,8 @@ class AgentApiMapperTest {
     private PatchAgentRequestDTO getPatchAgentRequestDto() {
         return PatchAgentRequestDTO.builder()
                 .name("My patched agent")
-                .description(JsonNullable.of("My patched description"))
-                .instruction(JsonNullable.of("My patched instruction"))
+                .description("My patched description")
+                .instruction("My patched instruction")
                 .build();
     }
 
@@ -218,8 +217,8 @@ class AgentApiMapperTest {
         return AgentDTO.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
-                .description(JsonNullable.of("My description"))
-                .instruction(JsonNullable.of("My instruction"))
+                .description("My description")
+                .instruction("My instruction")
                 .status(AgentDTO.StatusEnum.DRAFT)
                 .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
                 .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
@@ -245,8 +244,8 @@ class AgentApiMapperTest {
         return AgentDTO.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .name("My agent")
-                .description(JsonNullable.of("My description"))
-                .instruction(JsonNullable.of("My instruction"))
+                .description("My description")
+                .instruction("My instruction")
                 .status(null)
                 .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
                 .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
