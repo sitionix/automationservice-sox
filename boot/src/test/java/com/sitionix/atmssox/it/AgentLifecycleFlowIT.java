@@ -377,7 +377,7 @@ class AgentLifecycleFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 4L))
-                .andExpected(entity -> entity.getUpdatedAt().isAfter(deletedUpdatedAt))
+                .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), deletedUpdatedAt))
                 .assertEntity();
     }
 

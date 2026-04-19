@@ -3,6 +3,7 @@ package com.sitionix.atmssox.application.usecase;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.forge.security.server.user.ForgeUserClient;
@@ -24,6 +25,10 @@ public class DeleteAgentImpl implements DeleteAgent {
     public Agent execute(final UUID agentId) {
         final Agent current = this.agentRepository.findByIdAndUserId(agentId, this.getUserId())
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
+
+        if (current.getStatus() == AgentStatus.DELETED) {
+            return current;
+        }
 
         return this.agentRepository.save(Agent.builder()
                 .id(current.getId())
