@@ -339,8 +339,8 @@ class AgentLifecycleFlowIT {
     }
 
     @Test
-    @DisplayName("Should return conflict and keep deleted status when deleting deleted agent again")
-    void givenDeletedAgent_whenDeleteAgain_thenReturnConflictAndKeepDeletedStatus() {
+    @DisplayName("Should return success and keep deleted status when deleting deleted agent again")
+    void givenDeletedAgent_whenDeleteAgain_thenReturnSuccessAndKeepDeletedStatus() {
         //given
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgent())
@@ -367,9 +367,8 @@ class AgentLifecycleFlowIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.deleteAgent())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
-                .expectStatus(HttpStatus.CONFLICT)
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.code").value(409))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.details").value("Invalid agent transition: DELETED -> DELETED"))
+                .expectStatus(HttpStatus.OK)
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("DELETED"))
                 .assertDefault();
 
         //then
@@ -378,7 +377,7 @@ class AgentLifecycleFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 4L))
-                .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), deletedUpdatedAt))
+                .andExpected(entity -> entity.getUpdatedAt().isAfter(deletedUpdatedAt))
                 .assertEntity();
     }
 

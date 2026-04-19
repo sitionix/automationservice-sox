@@ -98,8 +98,8 @@ public class ControllerEndpoint {
 
     public static Endpoint<Void, AgentDTO> deleteAgent() {
         return Endpoint.createContract(
-                "/api/v1/agents/{agentId}/delete",
-                HttpMethod.POST,
+                "/api/v1/agents/{agentId}",
+                HttpMethod.DELETE,
                 Void.class,
                 AgentDTO.class,
                 (MockmvcDefault) context -> context

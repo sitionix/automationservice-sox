@@ -48,7 +48,7 @@ public enum AgentStatus {
     }
 
     public AgentStatus delete() {
-        if (this == DRAFT || this == ACTIVE || this == ARCHIVED) {
+        if (this == DRAFT || this == ACTIVE || this == ARCHIVED || this == DELETED) {
             return DELETED;
         }
         throw new AgentLifecycleTransitionException("Invalid agent transition: " + this + " -> DELETED");
