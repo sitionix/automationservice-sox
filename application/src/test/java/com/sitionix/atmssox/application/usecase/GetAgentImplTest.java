@@ -12,7 +12,7 @@ import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -31,16 +31,16 @@ class GetAgentImplTest {
     private AgentRepository agentRepository;
 
     @Mock
-    private ForgeUserClient forgeUserClient;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @BeforeEach
     void setUp() {
-        this.getAgent = new GetAgentImpl(this.agentRepository, this.forgeUserClient);
+        this.getAgent = new GetAgentImpl(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.agentRepository, this.forgeUserClient);
+        verifyNoMoreInteractions(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @Test
@@ -49,7 +49,7 @@ class GetAgentImplTest {
         final UUID given = UUID.fromString("11111111-1111-1111-1111-111111111111");
         final Agent expected = mock(Agent.class);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(given, 17L)).thenReturn(Optional.of(expected));
 
         //when
@@ -57,7 +57,7 @@ class GetAgentImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findVisibleByIdAndUserId(given, 17L);
     }
 
@@ -66,7 +66,7 @@ class GetAgentImplTest {
         //given
         final UUID given = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(given, 17L)).thenReturn(Optional.empty());
 
         //when
@@ -75,16 +75,16 @@ class GetAgentImplTest {
                 .isInstanceOf(AgentNotFoundException.class)
                 .hasMessage("Agent not found");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findVisibleByIdAndUserId(given, 17L);
     }
 
     @Test
-    void givenForgeUserClientThrows_whenExecute_thenThrowAuthenticationRequiredException() {
+    void givenAuthenticatedUserProviderThrows_whenExecute_thenThrowAuthenticationRequiredException() {
         //given
         final UUID given = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-        when(this.forgeUserClient.getUserId()).thenThrow(new RuntimeException("No auth context"));
+        when(this.authenticatedUserProvider.getUserId()).thenThrow(new AuthenticationRequiredException("Authentication required"));
 
         //when
         //then
@@ -92,7 +92,7 @@ class GetAgentImplTest {
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessage("Authentication required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(this.agentRepository);
     }
 }

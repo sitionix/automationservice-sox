@@ -1,13 +1,12 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +21,12 @@ public class PatchAgentImpl implements PatchAgent {
     private static final int DESCRIPTION_MAX_LENGTH = 160;
 
     private final AgentRepository agentRepository;
-    private final ForgeUserClient forgeUserClient;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Override
     @Transactional
     public Agent execute(final UUID agentId, final PatchAgentCommand command) {
-        final Agent current = this.agentRepository.findVisibleByIdAndUserId(agentId, this.getUserId())
+        final Agent current = this.agentRepository.findVisibleByIdAndUserId(agentId, this.authenticatedUserProvider.getUserId())
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
         final boolean hasName = command.name() != null;
@@ -98,11 +97,4 @@ public class PatchAgentImpl implements PatchAgent {
         return normalized;
     }
 
-    private Long getUserId() {
-        try {
-            return this.forgeUserClient.getUserId();
-        } catch (final RuntimeException exception) {
-            throw new AuthenticationRequiredException("Authentication required");
-        }
-    }
 }

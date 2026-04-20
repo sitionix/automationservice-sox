@@ -1,12 +1,11 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
-import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class DeleteAgentImpl implements DeleteAgent {
 
     private final AgentRepository agentRepository;
-    private final ForgeUserClient forgeUserClient;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Override
     @Transactional
     public Agent execute(final UUID agentId) {
-        final Agent current = this.agentRepository.findByIdAndUserId(agentId, this.getUserId())
+        final Agent current = this.agentRepository.findByIdAndUserId(agentId, this.authenticatedUserProvider.getUserId())
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
         if (current.getStatus() == AgentStatus.DELETED) {
@@ -34,13 +33,5 @@ public class DeleteAgentImpl implements DeleteAgent {
                 .status(current.getStatus().delete())
                 .updatedAt(Instant.now())
                 .build());
-    }
-
-    private Long getUserId() {
-        try {
-            return this.forgeUserClient.getUserId();
-        } catch (final RuntimeException exception) {
-            throw new AuthenticationRequiredException("Authentication required");
-        }
     }
 }

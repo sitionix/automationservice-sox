@@ -15,7 +15,7 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,16 +33,16 @@ class CreateAgentImplTest {
     private AgentRepository agentRepository;
 
     @Mock
-    private ForgeUserClient forgeUserClient;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @BeforeEach
     void setUp() {
-        this.createAgent = new CreateAgentImpl(this.agentRepository, this.forgeUserClient);
+        this.createAgent = new CreateAgentImpl(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.agentRepository, this.forgeUserClient);
+        verifyNoMoreInteractions(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @Test
@@ -50,7 +50,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("  My Agent  ", "  Useful description  ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -59,7 +59,7 @@ class CreateAgentImplTest {
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
         verify(this.agentRepository).save(agentCaptor.capture());
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
@@ -81,7 +81,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("n".repeat(60), "d".repeat(160));
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -90,7 +90,7 @@ class CreateAgentImplTest {
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
         verify(this.agentRepository).save(agentCaptor.capture());
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
@@ -102,7 +102,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithName("   ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -110,7 +110,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent name is required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verifyNoMoreInteractions(given);
         verifyNoInteractions(this.agentRepository);
@@ -121,7 +121,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithName(null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -129,7 +129,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent name is required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verifyNoMoreInteractions(given);
         verifyNoInteractions(this.agentRepository);
@@ -140,7 +140,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithName("a".repeat(61));
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -148,7 +148,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent name must be between 1 and 60 characters");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verifyNoMoreInteractions(given);
         verifyNoInteractions(this.agentRepository);
@@ -159,7 +159,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("Valid name", null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -168,7 +168,7 @@ class CreateAgentImplTest {
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
         verify(this.agentRepository).save(agentCaptor.capture());
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
@@ -181,7 +181,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("Valid name", "   ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -189,7 +189,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent description must be between 1 and 160 characters");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
@@ -201,7 +201,7 @@ class CreateAgentImplTest {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommandWithNameAndDescription("Valid name", "a".repeat(161));
 
-        when(this.forgeUserClient.getUserId()).thenReturn(17L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -209,7 +209,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent description must be between 1 and 160 characters");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verify(given).description();
         verifyNoMoreInteractions(given);
@@ -217,11 +217,11 @@ class CreateAgentImplTest {
     }
 
     @Test
-    void givenForgeUserClientThrows_whenExecute_thenThrowAuthenticationRequiredException() {
+    void givenAuthenticatedUserProviderThrows_whenExecute_thenThrowAuthenticationRequiredException() {
         //given
         final CreateAgentCommand given = this.getCreateAgentCommand();
 
-        when(this.forgeUserClient.getUserId()).thenThrow(new RuntimeException("No auth context"));
+        when(this.authenticatedUserProvider.getUserId()).thenThrow(new AuthenticationRequiredException("Authentication required"));
 
         //when
         //then
@@ -229,7 +229,7 @@ class CreateAgentImplTest {
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessage("Authentication required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(given);
         verifyNoInteractions(this.agentRepository);
     }
