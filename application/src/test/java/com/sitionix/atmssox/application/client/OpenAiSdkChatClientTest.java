@@ -127,6 +127,36 @@ class OpenAiSdkChatClientTest {
                 .hasMessage("OpenAI request failed");
     }
 
+    @Test
+    void givenOptionalClientSettingsConfigured_whenCreateClient_thenBuildClientSuccessfully() {
+        //given
+        this.openAiChatProperties.setBaseUrl("http://localhost:8080/v1");
+        this.openAiChatProperties.setOrgId("org_test");
+        this.openAiChatProperties.setProjectId("proj_test");
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
+
+        //when
+        final OpenAIClient actual = client.createClient();
+
+        //then
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void givenOptionalClientSettingsMissing_whenCreateClient_thenBuildClientSuccessfully() {
+        //given
+        this.openAiChatProperties.setBaseUrl(null);
+        this.openAiChatProperties.setOrgId(null);
+        this.openAiChatProperties.setProjectId(null);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
+
+        //when
+        final OpenAIClient actual = client.createClient();
+
+        //then
+        assertThat(actual).isNotNull();
+    }
+
     private Response getResponseWithText(final String text) {
         final ResponseOutputText outputText = ResponseOutputText.builder()
                 .text(text)
