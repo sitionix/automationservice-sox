@@ -3,8 +3,6 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.api.AgentApi;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
@@ -12,7 +10,6 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
-import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
@@ -41,8 +38,6 @@ public class AgentController implements AgentApi {
     private final ActivateAgent activateAgent;
 
     private final ArchiveAgent archiveAgent;
-
-    private final ChatAgent chatAgent;
 
     private final RestoreAgent restoreAgent;
 
@@ -83,13 +78,6 @@ public class AgentController implements AgentApi {
     @Override
     public ResponseEntity<AgentDTO> archiveAgent(final UUID agentId) {
         return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.archiveAgent.execute(agentId)));
-    }
-
-    @Override
-    public ResponseEntity<ChatAgentResponseDTO> chatAgent(final UUID agentId, @Valid final ChatAgentRequestDTO chatAgentRequestDTO) {
-        return ResponseEntity.ok(this.agentApiMapper.asChatAgentResponseDto(
-                this.chatAgent.execute(agentId, this.agentApiMapper.asChatAgentCommand(chatAgentRequestDTO))
-        ));
     }
 
     @Override
