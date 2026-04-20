@@ -4,7 +4,9 @@ import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
+import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
+import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Set;
@@ -56,6 +58,18 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void givenAgentChatNotAllowedException_whenHandleChatNotAllowed_thenReturnConflict() {
+        //given
+        final AgentChatNotAllowedException given = new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleChatNotAllowed(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.CONFLICT, "Only ACTIVE agent can execute chat"));
+    }
+
+    @Test
     void givenNotFoundException_whenHandleNotFound_thenReturnNotFound() {
         //given
         final AgentNotFoundException given = new AgentNotFoundException("Agent not found");
@@ -77,6 +91,18 @@ class RestExceptionHandlerTest {
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.UNAUTHORIZED, "Authentication required"));
+    }
+
+    @Test
+    void givenOpenAiExecutionException_whenHandleOpenAiExecutionException_thenReturnBadGateway() {
+        //given
+        final OpenAiExecutionException given = new OpenAiExecutionException("OpenAI request failed");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "OpenAI request failed"));
     }
 
     @Test
