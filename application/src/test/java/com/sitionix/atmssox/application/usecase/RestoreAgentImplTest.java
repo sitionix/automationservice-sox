@@ -1,12 +1,12 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,9 +27,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ActivateAgentImplTest {
+class RestoreAgentImplTest {
 
-    private ActivateAgentImpl activateAgent;
+    private RestoreAgentImpl restoreAgent;
 
     @Mock
     private AgentRepository agentRepository;
@@ -39,7 +39,7 @@ class ActivateAgentImplTest {
 
     @BeforeEach
     void setUp() {
-        this.activateAgent = new ActivateAgentImpl(this.agentRepository, this.authenticatedUserProvider);
+        this.restoreAgent = new RestoreAgentImpl(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @AfterEach
@@ -48,17 +48,17 @@ class ActivateAgentImplTest {
     }
 
     @Test
-    void givenDraftAgent_whenExecute_thenSaveAgentWithActiveStatus() {
+    void givenArchivedAgent_whenExecute_thenSaveAgentWithDraftStatus() {
         //given
         final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        final Agent current = this.getAgent(AgentStatus.DRAFT);
+        final Agent current = this.getAgent(AgentStatus.ARCHIVED);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
         when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        final Agent actual = this.activateAgent.execute(givenAgentId);
+        final Agent actual = this.restoreAgent.execute(givenAgentId);
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
@@ -72,7 +72,7 @@ class ActivateAgentImplTest {
         assertThat(saved.getName()).isEqualTo(current.getName());
         assertThat(saved.getDescription()).isEqualTo(current.getDescription());
         assertThat(saved.getInstruction()).isEqualTo(current.getInstruction());
-        assertThat(saved.getStatus()).isEqualTo(AgentStatus.ACTIVE);
+        assertThat(saved.getStatus()).isEqualTo(AgentStatus.DRAFT);
         assertThat(saved.getCreatedAt()).isEqualTo(current.getCreatedAt());
         assertThat(saved.getUpdatedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isAfterOrEqualTo(current.getUpdatedAt());
@@ -89,7 +89,7 @@ class ActivateAgentImplTest {
 
         //when
         //then
-        assertThatThrownBy(() -> this.activateAgent.execute(givenAgentId))
+        assertThatThrownBy(() -> this.restoreAgent.execute(givenAgentId))
                 .isInstanceOf(AgentNotFoundException.class)
                 .hasMessage("Agent not found");
 
@@ -98,19 +98,19 @@ class ActivateAgentImplTest {
     }
 
     @Test
-    void givenActiveAgent_whenExecute_thenThrowInvalidTransitionException() {
+    void givenDraftAgent_whenExecute_thenThrowInvalidTransitionException() {
         //given
         final UUID givenAgentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
         when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L))
-                .thenReturn(Optional.of(this.getAgent(AgentStatus.ACTIVE)));
+                .thenReturn(Optional.of(this.getAgent(AgentStatus.DRAFT)));
 
         //when
         //then
-        assertThatThrownBy(() -> this.activateAgent.execute(givenAgentId))
+        assertThatThrownBy(() -> this.restoreAgent.execute(givenAgentId))
                 .isInstanceOf(AgentLifecycleTransitionException.class)
-                .hasMessage("Invalid agent transition: ACTIVE -> ACTIVE");
+                .hasMessage("Invalid agent transition: DRAFT -> DRAFT");
 
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
@@ -124,7 +124,7 @@ class ActivateAgentImplTest {
 
         //when
         //then
-        assertThatThrownBy(() -> this.activateAgent.execute(givenAgentId))
+        assertThatThrownBy(() -> this.restoreAgent.execute(givenAgentId))
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessage("Authentication required");
 

@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentJpaRepository;
@@ -26,10 +27,16 @@ public class AgentRepositoryImpl implements AgentRepository {
     }
 
     @Override
-    public List<Agent> findAllByUserId(final Long userId) {
-        return this.agentJpaRepository.findAllByUserIdOrderByUpdatedAtDesc(userId).stream()
+    public List<Agent> findAllVisibleByUserId(final Long userId) {
+        return this.agentJpaRepository.findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(userId, AgentStatus.DELETED.getId()).stream()
                 .map(this.agentInfraMapper::asAgent)
                 .toList();
+    }
+
+    @Override
+    public Optional<Agent> findVisibleByIdAndUserId(final UUID agentId, final Long userId) {
+        return this.agentJpaRepository.findByAgentIdAndUserIdAndStatusIdNot(agentId, userId, AgentStatus.DELETED.getId())
+                .map(this.agentInfraMapper::asAgent);
     }
 
     @Override

@@ -17,7 +17,7 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,16 +38,16 @@ class PatchAgentImplTest {
     private AgentRepository agentRepository;
 
     @Mock
-    private ForgeUserClient forgeUserClient;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @BeforeEach
     void setUp() {
-        this.patchAgent = new PatchAgentImpl(this.agentRepository, this.forgeUserClient);
+        this.patchAgent = new PatchAgentImpl(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.agentRepository, this.forgeUserClient);
+        verifyNoMoreInteractions(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @Test
@@ -57,8 +57,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand("  Updated Name  ", null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -66,8 +66,8 @@ class PatchAgentImplTest {
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
         verify(givenCommand).instruction();
@@ -93,8 +93,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, "  Updated Description  ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -102,8 +102,8 @@ class PatchAgentImplTest {
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
         verify(givenCommand).instruction();
@@ -123,8 +123,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand("  Updated Name  ", "  Updated Description  ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -132,8 +132,8 @@ class PatchAgentImplTest {
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand, times(2)).description();
         verify(givenCommand).instruction();
@@ -153,8 +153,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description", "Current instruction");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, null, "  Updated instruction  ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
@@ -162,8 +162,8 @@ class PatchAgentImplTest {
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand).description();
         verify(givenCommand, times(2)).instruction();
@@ -184,8 +184,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description", "Current instruction");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, null, "   ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -193,8 +193,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent instruction must not be blank");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand).description();
         verify(givenCommand, times(2)).instruction();
@@ -209,8 +209,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -218,8 +218,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("At least one field (name, description or instruction) must be provided");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand).description();
         verify(givenCommand).instruction();
@@ -234,8 +234,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand("   ", null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -243,8 +243,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent name is required");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
         verify(givenCommand).instruction();
@@ -259,8 +259,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, "a".repeat(161));
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -268,8 +268,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent description must be between 1 and 160 characters");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
         verify(givenCommand).instruction();
@@ -284,8 +284,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand("a".repeat(61), null);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -293,8 +293,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent name must be between 1 and 60 characters");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand, times(2)).name();
         verify(givenCommand).description();
         verify(givenCommand).instruction();
@@ -309,8 +309,8 @@ class PatchAgentImplTest {
         final Agent current = this.getAgent("Current Name", "Current Description");
         final PatchAgentCommand givenCommand = this.getPatchAgentCommand(null, "   ");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
 
         //when
         //then
@@ -318,8 +318,8 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Agent description must be between 1 and 160 characters");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verify(givenCommand).name();
         verify(givenCommand, times(2)).description();
         verify(givenCommand).instruction();
@@ -333,8 +333,8 @@ class PatchAgentImplTest {
         final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         final PatchAgentCommand givenCommand = mock(PatchAgentCommand.class);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.empty());
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findVisibleByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.empty());
 
         //when
         //then
@@ -342,19 +342,19 @@ class PatchAgentImplTest {
                 .isInstanceOf(AgentNotFoundException.class)
                 .hasMessage("Agent not found");
 
-        verify(this.forgeUserClient).getUserId();
-        verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRepository).findVisibleByIdAndUserId(givenAgentId, 7L);
         verifyNoInteractions(givenCommand);
         verifyNoMoreInteractions(this.agentRepository);
     }
 
     @Test
-    void givenForgeUserClientThrows_whenExecute_thenThrowAuthenticationRequiredException() {
+    void givenAuthenticatedUserProviderThrows_whenExecute_thenThrowAuthenticationRequiredException() {
         //given
         final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         final PatchAgentCommand givenCommand = mock(PatchAgentCommand.class);
 
-        when(this.forgeUserClient.getUserId()).thenThrow(new RuntimeException("No auth context"));
+        when(this.authenticatedUserProvider.getUserId()).thenThrow(new AuthenticationRequiredException("Authentication required"));
 
         //when
         //then
@@ -362,7 +362,7 @@ class PatchAgentImplTest {
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessage("Authentication required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(givenCommand);
         verifyNoInteractions(this.agentRepository);
     }

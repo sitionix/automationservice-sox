@@ -4,7 +4,7 @@ import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.atmssox.domain.usecase.ActivateAgent;
+import com.sitionix.atmssox.domain.usecase.RestoreAgent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ActivateAgentImpl implements ActivateAgent {
+public class RestoreAgentImpl implements RestoreAgent {
 
     private final AgentRepository agentRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
@@ -25,7 +25,7 @@ public class ActivateAgentImpl implements ActivateAgent {
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
         return this.agentRepository.save(current.toBuilder()
-                .status(current.getStatus().activate())
+                .status(current.getStatus().restore())
                 .updatedAt(Instant.now())
                 .build());
     }

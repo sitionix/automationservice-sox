@@ -23,10 +23,18 @@ public interface AgentRepository {
      *
      * @return persisted agents.
      */
-    List<Agent> findAllByUserId(Long userId);
+    List<Agent> findAllVisibleByUserId(Long userId);
 
     /**
-     * Finds agent by identifier.
+     * Finds visible (non-deleted) agent by identifier.
+     *
+     * @param agentId unique agent identifier.
+     * @return agent when present.
+     */
+    Optional<Agent> findVisibleByIdAndUserId(UUID agentId, Long userId);
+
+    /**
+     * Finds agent by identifier including deleted state.
      *
      * @param agentId unique agent identifier.
      * @return agent when present.

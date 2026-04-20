@@ -1,12 +1,11 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
-import com.sitionix.forge.security.server.user.ForgeUserClient;
+import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,16 +34,16 @@ class ArchiveAgentImplTest {
     private AgentRepository agentRepository;
 
     @Mock
-    private ForgeUserClient forgeUserClient;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @BeforeEach
     void setUp() {
-        this.archiveAgent = new ArchiveAgentImpl(this.agentRepository, this.forgeUserClient);
+        this.archiveAgent = new ArchiveAgentImpl(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.agentRepository, this.forgeUserClient);
+        verifyNoMoreInteractions(this.agentRepository, this.authenticatedUserProvider);
     }
 
     @Test
@@ -53,7 +52,7 @@ class ArchiveAgentImplTest {
         final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         final Agent current = this.getAgent(AgentStatus.ACTIVE);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
         when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
         when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -62,7 +61,7 @@ class ArchiveAgentImplTest {
 
         //then
         final ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
         verify(this.agentRepository).save(agentCaptor.capture());
 
@@ -84,7 +83,7 @@ class ArchiveAgentImplTest {
         //given
         final UUID givenAgentId = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
         when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.empty());
 
         //when
@@ -93,34 +92,35 @@ class ArchiveAgentImplTest {
                 .isInstanceOf(AgentNotFoundException.class)
                 .hasMessage("Agent not found");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
     }
 
     @Test
-    void givenDraftAgent_whenExecute_thenThrowInvalidTransitionException() {
+    void givenDraftAgent_whenExecute_thenArchiveAgent() {
         //given
         final UUID givenAgentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        final Agent current = this.getAgent(AgentStatus.DRAFT);
 
-        when(this.forgeUserClient.getUserId()).thenReturn(7L);
-        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L))
-                .thenReturn(Optional.of(this.getAgent(AgentStatus.DRAFT)));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(7L);
+        when(this.agentRepository.findByIdAndUserId(givenAgentId, 7L)).thenReturn(Optional.of(current));
+        when(this.agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        //then
-        assertThatThrownBy(() -> this.archiveAgent.execute(givenAgentId))
-                .isInstanceOf(AgentLifecycleTransitionException.class)
-                .hasMessage("Invalid agent transition: DRAFT -> ARCHIVED");
+        final Agent actual = this.archiveAgent.execute(givenAgentId);
 
-        verify(this.forgeUserClient).getUserId();
+        //then
+        verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findByIdAndUserId(givenAgentId, 7L);
+        verify(this.agentRepository).save(any(Agent.class));
+        assertThat(actual.getStatus()).isEqualTo(AgentStatus.ARCHIVED);
     }
 
     @Test
     void givenNoAuthenticationContext_whenExecute_thenThrowAuthenticationRequiredException() {
         //given
         final UUID givenAgentId = UUID.fromString("44444444-4444-4444-4444-444444444444");
-        when(this.forgeUserClient.getUserId()).thenThrow(new RuntimeException("No auth context"));
+        when(this.authenticatedUserProvider.getUserId()).thenThrow(new AuthenticationRequiredException("Authentication required"));
 
         //when
         //then
@@ -128,7 +128,7 @@ class ArchiveAgentImplTest {
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessage("Authentication required");
 
-        verify(this.forgeUserClient).getUserId();
+        verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(this.agentRepository);
     }
 
