@@ -22,20 +22,7 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         this.validateConfiguration();
 
         try {
-            final OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
-                    .apiKey(this.openAiChatProperties.getApiKey());
-
-            if (StringUtils.hasText(this.openAiChatProperties.getBaseUrl())) {
-                clientBuilder.baseUrl(this.openAiChatProperties.getBaseUrl());
-            }
-            if (StringUtils.hasText(this.openAiChatProperties.getOrgId())) {
-                clientBuilder.organization(this.openAiChatProperties.getOrgId());
-            }
-            if (StringUtils.hasText(this.openAiChatProperties.getProjectId())) {
-                clientBuilder.project(this.openAiChatProperties.getProjectId());
-            }
-
-            final OpenAIClient openAIClient = clientBuilder.build();
+            final OpenAIClient openAIClient = this.createClient();
 
             final ResponseCreateParams params = ResponseCreateParams.builder()
                     .model(this.openAiChatProperties.getModel())
@@ -61,6 +48,23 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         } catch (Exception exception) {
             throw new OpenAiExecutionException("OpenAI request failed", exception);
         }
+    }
+
+    OpenAIClient createClient() {
+        final OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
+                .apiKey(this.openAiChatProperties.getApiKey());
+
+        if (StringUtils.hasText(this.openAiChatProperties.getBaseUrl())) {
+            clientBuilder.baseUrl(this.openAiChatProperties.getBaseUrl());
+        }
+        if (StringUtils.hasText(this.openAiChatProperties.getOrgId())) {
+            clientBuilder.organization(this.openAiChatProperties.getOrgId());
+        }
+        if (StringUtils.hasText(this.openAiChatProperties.getProjectId())) {
+            clientBuilder.project(this.openAiChatProperties.getProjectId());
+        }
+
+        return clientBuilder.build();
     }
 
     private void validateConfiguration() {
