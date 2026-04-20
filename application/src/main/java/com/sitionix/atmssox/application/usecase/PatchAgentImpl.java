@@ -54,14 +54,10 @@ public class PatchAgentImpl implements PatchAgent {
         )
                 : current.getInstruction();
 
-        return this.agentRepository.save(Agent.builder()
-                .id(current.getId())
-                .userId(current.getUserId())
+        return this.agentRepository.save(current.toBuilder()
                 .name(updatedName)
                 .description(updatedDescription)
                 .instruction(updatedInstruction)
-                .status(current.getStatus())
-                .createdAt(current.getCreatedAt())
                 .updatedAt(Instant.now())
                 .build());
     }

@@ -25,14 +25,8 @@ public class ArchiveAgentImpl implements ArchiveAgent {
         final Agent current = this.agentRepository.findByIdAndUserId(agentId, this.getUserId())
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
-        return this.agentRepository.save(Agent.builder()
-                .id(current.getId())
-                .userId(current.getUserId())
-                .name(current.getName())
-                .description(current.getDescription())
-                .instruction(current.getInstruction())
+        return this.agentRepository.save(current.toBuilder()
                 .status(current.getStatus().archive())
-                .createdAt(current.getCreatedAt())
                 .updatedAt(Instant.now())
                 .build());
     }

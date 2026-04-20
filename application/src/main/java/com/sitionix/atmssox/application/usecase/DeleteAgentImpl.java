@@ -30,14 +30,8 @@ public class DeleteAgentImpl implements DeleteAgent {
             return current;
         }
 
-        return this.agentRepository.save(Agent.builder()
-                .id(current.getId())
-                .userId(current.getUserId())
-                .name(current.getName())
-                .description(current.getDescription())
-                .instruction(current.getInstruction())
+        return this.agentRepository.save(current.toBuilder()
                 .status(current.getStatus().delete())
-                .createdAt(current.getCreatedAt())
                 .updatedAt(Instant.now())
                 .build());
     }
