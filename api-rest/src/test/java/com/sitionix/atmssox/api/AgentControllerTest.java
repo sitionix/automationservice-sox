@@ -2,18 +2,13 @@ package com.sitionix.atmssox.api;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
-import com.sitionix.atmssox.domain.model.ChatAgentCommand;
-import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
-import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
@@ -62,9 +57,6 @@ class AgentControllerTest {
     private ArchiveAgent archiveAgent;
 
     @Mock
-    private ChatAgent chatAgent;
-
-    @Mock
     private RestoreAgent restoreAgent;
 
     @Mock
@@ -82,7 +74,6 @@ class AgentControllerTest {
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
-                this.chatAgent,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper
@@ -98,7 +89,6 @@ class AgentControllerTest {
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
-                this.chatAgent,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper
@@ -224,28 +214,5 @@ class AgentControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
         verify(this.archiveAgent).execute(givenAgentId);
         verify(this.agentApiMapper).asAgentDto(agent);
-    }
-
-    @Test
-    void givenChatAgentRequestDto_whenChatAgent_thenReturnChatAgentResponseDto() {
-        //given
-        final UUID givenAgentId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-        final ChatAgentRequestDTO givenRequest = mock(ChatAgentRequestDTO.class);
-        final ChatAgentCommand command = mock(ChatAgentCommand.class);
-        final ChatAgentResponse response = mock(ChatAgentResponse.class);
-        final ChatAgentResponseDTO expected = mock(ChatAgentResponseDTO.class);
-
-        when(this.agentApiMapper.asChatAgentCommand(givenRequest)).thenReturn(command);
-        when(this.chatAgent.execute(givenAgentId, command)).thenReturn(response);
-        when(this.agentApiMapper.asChatAgentResponseDto(response)).thenReturn(expected);
-
-        //when
-        final ResponseEntity<ChatAgentResponseDTO> actual = this.agentController.chatAgent(givenAgentId, givenRequest);
-
-        //then
-        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
-        verify(this.agentApiMapper).asChatAgentCommand(givenRequest);
-        verify(this.chatAgent).execute(givenAgentId, command);
-        verify(this.agentApiMapper).asChatAgentResponseDto(response);
     }
 }

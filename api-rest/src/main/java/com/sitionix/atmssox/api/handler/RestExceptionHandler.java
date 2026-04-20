@@ -2,11 +2,9 @@ package com.sitionix.atmssox.api.handler;
 
 import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
-import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
-import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Optional;
@@ -34,11 +32,6 @@ public class RestExceptionHandler {
         return buildError(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler(AgentChatNotAllowedException.class)
-    public ResponseEntity<ErrorDTO> handleChatNotAllowed(final AgentChatNotAllowedException exception) {
-        return buildError(HttpStatus.CONFLICT, exception.getMessage());
-    }
-
     @ExceptionHandler(AgentNotFoundException.class)
     public ResponseEntity<ErrorDTO> handleNotFound(final AgentNotFoundException exception) {
         return buildError(HttpStatus.NOT_FOUND, exception.getMessage());
@@ -47,11 +40,6 @@ public class RestExceptionHandler {
     @ExceptionHandler(AuthenticationRequiredException.class)
     public ResponseEntity<ErrorDTO> handleAuthenticationRequired(final AuthenticationRequiredException exception) {
         return buildError(HttpStatus.UNAUTHORIZED, exception.getMessage());
-    }
-
-    @ExceptionHandler(OpenAiExecutionException.class)
-    public ResponseEntity<ErrorDTO> handleOpenAiExecutionException(final OpenAiExecutionException exception) {
-        return buildError(HttpStatus.BAD_GATEWAY, exception.getMessage());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
