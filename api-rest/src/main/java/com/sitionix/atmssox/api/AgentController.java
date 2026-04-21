@@ -83,8 +83,8 @@ public class AgentController implements AgentApi {
     }
 
     @Override
-    public ResponseEntity<AgentConversationDetailsDTO> getAgentConversation(final UUID agentId, final UUID conversationId) {
-        final ConversationDetails details = this.getAgentConversation.execute(agentId, conversationId);
+    public ResponseEntity<AgentConversationDetailsDTO> getAgentConversation(final UUID conversationId) {
+        final ConversationDetails details = this.getAgentConversation.execute(conversationId);
         return ResponseEntity.ok(this.agentApiMapper.asAgentConversationDetailsDto(details));
     }
 

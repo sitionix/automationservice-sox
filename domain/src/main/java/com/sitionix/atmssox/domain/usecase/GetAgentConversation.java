@@ -9,11 +9,10 @@ import java.util.UUID;
 public interface GetAgentConversation {
 
     /**
-     * Returns one active direct conversation for one agent.
+     * Returns one active direct conversation.
      *
-     * @param agentId agent identifier.
      * @param conversationId conversation identifier.
      * @return conversation metadata with ordered messages.
      */
-    ConversationDetails execute(UUID agentId, UUID conversationId);
+    ConversationDetails execute(UUID conversationId);
 }

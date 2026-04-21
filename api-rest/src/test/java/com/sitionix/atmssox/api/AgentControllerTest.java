@@ -201,23 +201,22 @@ class AgentControllerTest {
     }
 
     @Test
-    void givenAgentIdAndConversationId_whenGetAgentConversation_thenReturnAgentConversationDetailsDto() {
+    void givenConversationId_whenGetAgentConversation_thenReturnAgentConversationDetailsDto() {
         //given
-        final UUID givenAgentId = UUID.fromString("11111111-1111-1111-1111-111111111113");
         final UUID givenConversationId = UUID.fromString("11111111-1111-1111-1111-111111111114");
         final ConversationDetails details = mock(ConversationDetails.class);
         final AgentConversationDetailsDTO expected = mock(AgentConversationDetailsDTO.class);
 
-        when(this.getAgentConversation.execute(givenAgentId, givenConversationId)).thenReturn(details);
+        when(this.getAgentConversation.execute(givenConversationId)).thenReturn(details);
         when(this.agentApiMapper.asAgentConversationDetailsDto(details)).thenReturn(expected);
 
         //when
         final ResponseEntity<AgentConversationDetailsDTO> actual =
-                this.agentController.getAgentConversation(givenAgentId, givenConversationId);
+                this.agentController.getAgentConversation(givenConversationId);
 
         //then
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
-        verify(this.getAgentConversation).execute(givenAgentId, givenConversationId);
+        verify(this.getAgentConversation).execute(givenConversationId);
         verify(this.agentApiMapper).asAgentConversationDetailsDto(details);
     }
 

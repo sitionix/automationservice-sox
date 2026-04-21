@@ -19,6 +19,15 @@ public interface ConversationRepository {
     Conversation save(Conversation conversation);
 
     /**
+     * Loads active conversation owned by current user.
+     *
+     * @param conversationId conversation identifier.
+     * @param userId current user identifier.
+     * @return active conversation when present.
+     */
+    Optional<Conversation> findActiveByIdAndUserId(UUID conversationId, Long userId);
+
+    /**
      * Loads active conversation owned by current user and scoped to one agent.
      *
      * @param conversationId conversation identifier.
