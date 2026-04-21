@@ -25,3 +25,28 @@ tables:
       status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz
+  conversations:
+    columns:
+      conversation_id: uuid
+      user_id: bigint
+      title: varchar(80)
+      type: varchar(32)
+      status: varchar(32)
+      created_at: timestamptz
+      updated_at: timestamptz
+      last_message_at: timestamptz
+  conversation_participants:
+    columns:
+      participant_id: uuid
+      conversation_id: uuid
+      participant_type: varchar(32)
+      participant_ref: varchar(64)
+      joined_at: timestamptz
+  conversation_messages:
+    columns:
+      message_id: uuid
+      conversation_id: uuid
+      author_type: varchar(32)
+      author_id: varchar(64)
+      content: text
+      created_at: timestamptz
