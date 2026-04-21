@@ -1,11 +1,25 @@
 package com.sitionix.atmssox.api.mapper;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.ChatAgentCommand;
+import com.sitionix.atmssox.domain.model.ChatAgentResponse;
+import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationDetails;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.ConversationStatus;
+import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +78,25 @@ class AgentApiMapperTest {
 
         //when
         final PatchAgentCommand actual = this.agentApiMapper.asPatchAgentCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenChatAgentRequestDto_whenAsChatAgentCommand_thenReturnChatAgentCommand() {
+        //given
+        final ChatAgentRequestDTO given = ChatAgentRequestDTO.builder()
+                .conversationId(UUID.fromString("21111111-1111-1111-1111-111111111111"))
+                .message("Explain clean architecture")
+                .build();
+        final ChatAgentCommand expected = ChatAgentCommand.builder()
+                .conversationId(UUID.fromString("21111111-1111-1111-1111-111111111111"))
+                .message("Explain clean architecture")
+                .build();
+
+        //when
+        final ChatAgentCommand actual = this.agentApiMapper.asChatAgentCommand(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -146,6 +179,137 @@ class AgentApiMapperTest {
 
         //when
         final AgentsResponseDTO actual = this.agentApiMapper.asAgentsResponseDto(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenConversations_whenAsAgentConversationsResponseDto_thenReturnAgentConversationsResponseDto() {
+        //given
+        final Conversation conversation = Conversation.builder()
+                .id(UUID.fromString("31111111-1111-1111-1111-111111111111"))
+                .userId(7L)
+                .title("Explain clean architecture")
+                .type(ConversationType.DIRECT)
+                .status(ConversationStatus.ACTIVE)
+                .createdAt(Instant.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(Instant.parse("2026-04-21T10:01:00Z"))
+                .lastMessageAt(Instant.parse("2026-04-21T10:01:00Z"))
+                .build();
+        final AgentConversationDTO expectedItem = AgentConversationDTO.builder()
+                .id(UUID.fromString("31111111-1111-1111-1111-111111111111"))
+                .title("Explain clean architecture")
+                .type(AgentConversationDTO.TypeEnum.DIRECT)
+                .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .lastMessageAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .build();
+        final AgentConversationsResponseDTO expected = AgentConversationsResponseDTO.builder()
+                .items(List.of(expectedItem))
+                .build();
+
+        //when
+        final AgentConversationsResponseDTO actual =
+                this.agentApiMapper.asAgentConversationsResponseDto(List.of(conversation));
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenConversationDetails_whenAsAgentConversationDetailsDto_thenReturnAgentConversationDetailsDto() {
+        //given
+        final Conversation conversation = Conversation.builder()
+                .id(UUID.fromString("41111111-1111-1111-1111-111111111111"))
+                .userId(7L)
+                .title("Explain clean architecture")
+                .type(ConversationType.DIRECT)
+                .status(ConversationStatus.ACTIVE)
+                .createdAt(Instant.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(Instant.parse("2026-04-21T10:01:00Z"))
+                .lastMessageAt(Instant.parse("2026-04-21T10:01:00Z"))
+                .build();
+        final ConversationMessage userMessage = ConversationMessage.builder()
+                .id(UUID.fromString("51111111-1111-1111-1111-111111111111"))
+                .conversationId(conversation.getId())
+                .authorType(ConversationAuthorType.USER)
+                .authorId("7")
+                .content("Explain clean architecture")
+                .createdAt(Instant.parse("2026-04-21T10:00:00Z"))
+                .build();
+        final ConversationMessage agentMessage = ConversationMessage.builder()
+                .id(UUID.fromString("61111111-1111-1111-1111-111111111111"))
+                .conversationId(conversation.getId())
+                .authorType(ConversationAuthorType.AGENT)
+                .authorId("agent-1")
+                .content("Clean architecture separates domain from framework.")
+                .createdAt(Instant.parse("2026-04-21T10:01:00Z"))
+                .build();
+        final ConversationDetails details = ConversationDetails.builder()
+                .conversation(conversation)
+                .messages(List.of(userMessage, agentMessage))
+                .build();
+        final AgentConversationDetailsDTO expected = AgentConversationDetailsDTO.builder()
+                .id(UUID.fromString("41111111-1111-1111-1111-111111111111"))
+                .title("Explain clean architecture")
+                .type(AgentConversationDetailsDTO.TypeEnum.DIRECT)
+                .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .lastMessageAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .messages(List.of(
+                        AgentConversationMessageDTO.builder()
+                                .id(UUID.fromString("51111111-1111-1111-1111-111111111111"))
+                                .authorType(AgentConversationMessageDTO.AuthorTypeEnum.USER)
+                                .authorId("7")
+                                .content("Explain clean architecture")
+                                .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
+                                .build(),
+                        AgentConversationMessageDTO.builder()
+                                .id(UUID.fromString("61111111-1111-1111-1111-111111111111"))
+                                .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
+                                .authorId("agent-1")
+                                .content("Clean architecture separates domain from framework.")
+                                .createdAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                                .build()
+                ))
+                .build();
+
+        //when
+        final AgentConversationDetailsDTO actual = this.agentApiMapper.asAgentConversationDetailsDto(details);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenChatAgentResponse_whenAsChatAgentResponseDto_thenReturnChatAgentResponseDto() {
+        //given
+        final ConversationMessage reply = ConversationMessage.builder()
+                .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))
+                .conversationId(UUID.fromString("81111111-1111-1111-1111-111111111111"))
+                .authorType(ConversationAuthorType.AGENT)
+                .authorId("agent-1")
+                .content("A simple example is...")
+                .createdAt(Instant.parse("2026-04-21T10:03:00Z"))
+                .build();
+        final ChatAgentResponse given = ChatAgentResponse.builder()
+                .conversationId(UUID.fromString("81111111-1111-1111-1111-111111111111"))
+                .reply(reply)
+                .build();
+        final ChatAgentResponseDTO expected = ChatAgentResponseDTO.builder()
+                .conversationId(UUID.fromString("81111111-1111-1111-1111-111111111111"))
+                .reply(AgentConversationMessageDTO.builder()
+                        .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))
+                        .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
+                        .authorId("agent-1")
+                        .content("A simple example is...")
+                        .createdAt(OffsetDateTime.parse("2026-04-21T10:03:00Z"))
+                        .build())
+                .build();
+
+        //when
+        final ChatAgentResponseDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
