@@ -1,10 +1,9 @@
-package com.sitionix.atmssox.application.client;
+package com.sitionix.atmssox.client;
 
 import com.openai.client.OpenAIClient;
-import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
-import com.sitionix.atmssox.application.config.OpenAiChatProperties;
+import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,8 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class OpenAiSdkChatClient implements OpenAiChatClient {
 
+    private final OpenAIClient openAIClient;
+
     private final OpenAiChatProperties openAiChatProperties;
 
     @Override
@@ -22,14 +23,12 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         this.validateConfiguration();
 
         try {
-            final OpenAIClient openAIClient = this.createClient();
-
             final ResponseCreateParams params = ResponseCreateParams.builder()
                     .model(this.openAiChatProperties.getModel())
                     .instructions(instruction)
                     .input(message)
                     .build();
-            final Response response = openAIClient.responses().create(params);
+            final Response response = this.openAIClient.responses().create(params);
             final String output = response.output().stream()
                     .flatMap(item -> item.message().stream())
                     .flatMap(outputMessage -> outputMessage.content().stream())
@@ -48,23 +47,6 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         } catch (Exception exception) {
             throw new OpenAiExecutionException("OpenAI request failed", exception);
         }
-    }
-
-    OpenAIClient createClient() {
-        final OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
-                .apiKey(this.openAiChatProperties.getApiKey());
-
-        if (StringUtils.hasText(this.openAiChatProperties.getBaseUrl())) {
-            clientBuilder.baseUrl(this.openAiChatProperties.getBaseUrl());
-        }
-        if (StringUtils.hasText(this.openAiChatProperties.getOrgId())) {
-            clientBuilder.organization(this.openAiChatProperties.getOrgId());
-        }
-        if (StringUtils.hasText(this.openAiChatProperties.getProjectId())) {
-            clientBuilder.project(this.openAiChatProperties.getProjectId());
-        }
-
-        return clientBuilder.build();
     }
 
     private void validateConfiguration() {

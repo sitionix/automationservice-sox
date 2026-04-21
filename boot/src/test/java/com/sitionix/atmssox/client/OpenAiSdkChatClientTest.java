@@ -1,15 +1,15 @@
-package com.sitionix.atmssox.application.client;
+package com.sitionix.atmssox.client;
 
 import com.openai.client.OpenAIClient;
 import com.openai.core.JsonValue;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
-import com.openai.models.responses.ResponseStatus;
 import com.openai.models.responses.ResponseOutputMessage;
 import com.openai.models.responses.ResponseOutputText;
+import com.openai.models.responses.ResponseStatus;
 import com.openai.models.responses.ToolChoiceOptions;
 import com.openai.services.blocking.ResponseService;
-import com.sitionix.atmssox.application.config.OpenAiChatProperties;
+import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import java.util.List;
 import java.util.Optional;
@@ -27,51 +27,42 @@ class OpenAiSdkChatClientTest {
 
     private OpenAiChatProperties openAiChatProperties;
 
+    private OpenAIClient openAIClient;
+
+    private ResponseService responseService;
+
     @BeforeEach
     void setUp() {
         this.openAiChatProperties = new OpenAiChatProperties();
         this.openAiChatProperties.setApiKey("test-key");
         this.openAiChatProperties.setModel("gpt-4.1-mini");
+        this.openAIClient = Mockito.mock(OpenAIClient.class);
+        this.responseService = Mockito.mock(ResponseService.class);
+        when(this.openAIClient.responses()).thenReturn(this.responseService);
     }
 
     @Test
     void givenValidConfigurationAndSdkReply_whenExecute_thenReturnTrimmedReply() {
         //given
-        final OpenAIClient openAIClient = Mockito.mock(OpenAIClient.class);
-        final ResponseService responseService = Mockito.mock(ResponseService.class);
         final Response response = this.getResponseWithText("  Hello from assistant.  ");
-        when(openAIClient.responses()).thenReturn(responseService);
-        when(responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties) {
-            @Override
-            OpenAIClient createClient() {
-                return openAIClient;
-            }
-        };
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
         final String actual = client.execute("instruction", "message");
 
         //then
         assertThat(actual).isEqualTo("Hello from assistant.");
-        verify(openAIClient).responses();
-        verify(responseService).create(any(ResponseCreateParams.class));
+        verify(this.openAIClient).responses();
+        verify(this.responseService).create(any(ResponseCreateParams.class));
     }
 
     @Test
     void givenValidConfigurationAndEmptyReply_whenExecute_thenThrowOpenAiExecutionException() {
         //given
-        final OpenAIClient openAIClient = Mockito.mock(OpenAIClient.class);
-        final ResponseService responseService = Mockito.mock(ResponseService.class);
         final Response response = this.getResponseWithText("   ");
-        when(openAIClient.responses()).thenReturn(responseService);
-        when(responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties) {
-            @Override
-            OpenAIClient createClient() {
-                return openAIClient;
-            }
-        };
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
         //then
@@ -84,7 +75,7 @@ class OpenAiSdkChatClientTest {
     void givenMissingApiKey_whenExecute_thenThrowOpenAiExecutionException() {
         //given
         this.openAiChatProperties.setApiKey(" ");
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
         //then
@@ -97,7 +88,7 @@ class OpenAiSdkChatClientTest {
     void givenMissingModel_whenExecute_thenThrowOpenAiExecutionException() {
         //given
         this.openAiChatProperties.setModel(" ");
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
         //then
@@ -109,52 +100,14 @@ class OpenAiSdkChatClientTest {
     @Test
     void givenUnexpectedSdkFailure_whenExecute_thenWrapAsOpenAiExecutionException() {
         //given
-        final OpenAIClient openAIClient = Mockito.mock(OpenAIClient.class);
-        final ResponseService responseService = Mockito.mock(ResponseService.class);
-        when(openAIClient.responses()).thenReturn(responseService);
-        when(responseService.create(any(ResponseCreateParams.class))).thenThrow(new RuntimeException("boom"));
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties) {
-            @Override
-            OpenAIClient createClient() {
-                return openAIClient;
-            }
-        };
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(new RuntimeException("boom"));
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
         //then
         assertThatThrownBy(() -> client.execute("instruction", "message"))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI request failed");
-    }
-
-    @Test
-    void givenOptionalClientSettingsConfigured_whenCreateClient_thenBuildClientSuccessfully() {
-        //given
-        this.openAiChatProperties.setBaseUrl("http://localhost:8080/v1");
-        this.openAiChatProperties.setOrgId("org_test");
-        this.openAiChatProperties.setProjectId("proj_test");
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
-
-        //when
-        final OpenAIClient actual = client.createClient();
-
-        //then
-        assertThat(actual).isNotNull();
-    }
-
-    @Test
-    void givenOptionalClientSettingsMissing_whenCreateClient_thenBuildClientSuccessfully() {
-        //given
-        this.openAiChatProperties.setBaseUrl(null);
-        this.openAiChatProperties.setOrgId(null);
-        this.openAiChatProperties.setProjectId(null);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAiChatProperties);
-
-        //when
-        final OpenAIClient actual = client.createClient();
-
-        //then
-        assertThat(actual).isNotNull();
     }
 
     private Response getResponseWithText(final String text) {

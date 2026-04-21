@@ -1,4 +1,4 @@
-package com.sitionix.atmssox.application.config;
+package com.sitionix.atmssox.config;
 
 import lombok.Getter;
 import lombok.Setter;
