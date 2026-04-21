@@ -17,6 +17,8 @@ import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
+import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
+import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
@@ -53,6 +55,12 @@ class AgentControllerTest {
     private GetAgent getAgent;
 
     @Mock
+    private GetAgentConversations getAgentConversations;
+
+    @Mock
+    private GetAgentConversation getAgentConversation;
+
+    @Mock
     private PatchAgent patchAgent;
 
     @Mock
@@ -79,6 +87,8 @@ class AgentControllerTest {
                 this.createAgent,
                 this.getAgents,
                 this.getAgent,
+                this.getAgentConversations,
+                this.getAgentConversation,
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
@@ -95,6 +105,8 @@ class AgentControllerTest {
                 this.createAgent,
                 this.getAgents,
                 this.getAgent,
+                this.getAgentConversations,
+                this.getAgentConversation,
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
