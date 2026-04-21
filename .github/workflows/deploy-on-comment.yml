@@ -15,9 +15,12 @@ jobs:
     outputs:
       enabled: ${{ steps.route.outputs.enabled }}
       target_type: ${{ steps.route.outputs.target_type }}
-      pr_head_ref: ${{ steps.pr.outputs.head_ref }}
-      checkout_ref: ${{ steps.pr.outputs.head_sha }}
-      same_repo: ${{ steps.pr.outputs.same_repo }}
+      environment_id: ${{ steps.route.outputs.environment_id }}
+      summary: ${{ steps.route.outputs.summary }}
+      is_pull_request: ${{ steps.route.outputs.is_pull_request }}
+      pr_head_ref: ${{ steps.pr.outputs.head_ref || steps.develop.outputs.head_ref }}
+      checkout_ref: ${{ steps.pr.outputs.head_sha || steps.develop.outputs.head_sha }}
+      same_repo: ${{ steps.pr.outputs.same_repo || 'true' }}
     steps:
       - name: Read pull request metadata
         id: pr
@@ -38,6 +41,20 @@ jobs:
               pr.data.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}` ? "true" : "false"
             );
 
+      - name: Read develop metadata for issue commands
+        id: develop
+        if: ${{ !github.event.issue.pull_request }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = await github.rest.repos.getBranch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: "develop",
+            });
+            core.setOutput("head_ref", "develop");
+            core.setOutput("head_sha", branch.data.commit.sha);
+
       - name: Route comment command
         id: route
         shell: bash
@@ -57,16 +74,13 @@ jobs:
             end
           end
 
-          if ENV.fetch("IS_PULL_REQUEST") != "true"
-            emit(output_path, "enabled", "false")
-            emit(output_path, "target_type", "")
-            exit 0
-          end
-
           first_non_empty_line = ENV.fetch("COMMENT_BODY", "").each_line.map(&:strip).find { |line| !line.empty? }
           if first_non_empty_line.nil?
             emit(output_path, "enabled", "false")
             emit(output_path, "target_type", "")
+            emit(output_path, "environment_id", "")
+            emit(output_path, "summary", "")
+            emit(output_path, "is_pull_request", ENV.fetch("IS_PULL_REQUEST"))
             exit 0
           end
 
@@ -76,26 +90,72 @@ jobs:
             abort("Malformed deployment comment: #{error.message}")
           end
 
-          unless tokens[0] == "/deploy"
-            emit(output_path, "enabled", "false")
-            emit(output_path, "target_type", "")
+          is_pull_request = ENV.fetch("IS_PULL_REQUEST") == "true"
+
+          if tokens[0] == "/deploy"
+            unless is_pull_request
+              emit(output_path, "enabled", "false")
+              emit(output_path, "target_type", "")
+              emit(output_path, "environment_id", "")
+              emit(output_path, "summary", "")
+              emit(output_path, "is_pull_request", "false")
+              exit 0
+            end
+
+            target_type = tokens[1].to_s
+            unless %w[db service].include?(target_type)
+              emit(output_path, "enabled", "false")
+              emit(output_path, "target_type", "")
+              emit(output_path, "environment_id", "")
+              emit(output_path, "summary", "")
+              emit(output_path, "is_pull_request", "true")
+              exit 0
+            end
+
+            emit(output_path, "enabled", "true")
+            emit(output_path, "target_type", target_type)
+            emit(output_path, "environment_id", "")
+            emit(output_path, "summary", "")
+            emit(output_path, "is_pull_request", "true")
             exit 0
           end
 
-          target_type = tokens[1].to_s
-          unless %w[db service].include?(target_type)
-            emit(output_path, "enabled", "false")
-            emit(output_path, "target_type", "")
+          if tokens[0] == "/refresh" && tokens[1].to_s == "scope"
+            options = {}
+            cursor = 2
+            while cursor < tokens.length
+              token = tokens[cursor]
+              case token
+              when "--env"
+                cursor += 1
+                options["env"] = tokens[cursor]
+              else
+                abort("Unsupported /refresh scope option: #{token}")
+              end
+              cursor += 1
+            end
+
+            environment_id = options["env"].to_s.strip
+            environment_id = "dev" if environment_id.empty?
+
+            emit(output_path, "enabled", "true")
+            emit(output_path, "target_type", "refresh_scope")
+            emit(output_path, "environment_id", environment_id)
+            emit(output_path, "summary", "automationservice-sox scope refresh -> #{environment_id}")
+            emit(output_path, "is_pull_request", is_pull_request ? "true" : "false")
             exit 0
           end
 
-          emit(output_path, "enabled", "true")
-          emit(output_path, "target_type", target_type)
+          emit(output_path, "enabled", "false")
+          emit(output_path, "target_type", "")
+          emit(output_path, "environment_id", "")
+          emit(output_path, "summary", "")
+          emit(output_path, "is_pull_request", is_pull_request ? "true" : "false")
           INNER_RUBY
 
   reject-fork:
     needs: prepare
-    if: needs.prepare.outputs.enabled == 'true' && needs.prepare.outputs.same_repo != 'true'
+    if: needs.prepare.outputs.enabled == 'true' && needs.prepare.outputs.is_pull_request == 'true' && needs.prepare.outputs.same_repo != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -233,6 +293,40 @@ jobs:
                 prNumber: Number(process.env.PR_NUMBER),
                 targetSummary: process.env.TARGET_SUMMARY,
                 prHeadRef: process.env.PR_HEAD_REF,
+                checkoutRef: process.env.CHECKOUT_REF,
+                environmentId: process.env.ENVIRONMENT_ID,
+              },
+            });
+
+  dispatch-refresh-scope:
+    needs: prepare
+    if: needs.prepare.outputs.enabled == 'true' && needs.prepare.outputs.target_type == 'refresh_scope'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Dispatch scope refresh workflow
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TARGET_SUMMARY: ${{ needs.prepare.outputs.summary }}
+          SOURCE_REF: ${{ needs.prepare.outputs.pr_head_ref }}
+          CHECKOUT_REF: ${{ needs.prepare.outputs.checkout_ref }}
+          ENVIRONMENT_ID: ${{ needs.prepare.outputs.environment_id }}
+          IS_PULL_REQUEST: ${{ needs.prepare.outputs.is_pull_request }}
+        with:
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: "service-deploy-command",
+              client_payload: {
+                issueNumber: Number(process.env.ISSUE_NUMBER),
+                commentTargetType: process.env.IS_PULL_REQUEST === "true" ? "pr" : "issue",
+                targetSummary: process.env.TARGET_SUMMARY,
+                prHeadRef: process.env.SOURCE_REF,
                 checkoutRef: process.env.CHECKOUT_REF,
                 environmentId: process.env.ENVIRONMENT_ID,
               },

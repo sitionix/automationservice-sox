@@ -13,6 +13,7 @@ jobs:
       contents: read
       packages: write
       pull-requests: write
+      issues: write
     env:
       DEPLOY_VM_PORT: ${{ vars.DEPLOY_VM_PORT }}
     steps:
@@ -24,12 +25,12 @@ jobs:
       - name: Post start comment
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ github.event.client_payload.prNumber }}
+          ISSUE_NUMBER: ${{ github.event.client_payload.issueNumber || github.event.client_payload.prNumber }}
+          COMMENT_TARGET_TYPE: ${{ github.event.client_payload.commentTargetType || 'pr' }}
           TARGET_SUMMARY: ${{ github.event.client_payload.targetSummary }}
           PR_HEAD_REF: ${{ github.event.client_payload.prHeadRef }}
         with:
           script: |
-            const pullNumber = Number(process.env.PR_NUMBER);
             const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const body = [
               "---",
@@ -41,13 +42,23 @@ jobs:
               "---",
             ].join("\n");
 
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pullNumber,
-              body,
-              event: "COMMENT",
-            });
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (process.env.COMMENT_TARGET_TYPE === "issue") {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body,
+              });
+            } else {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: issueNumber,
+                body,
+                event: "COMMENT",
+              });
+            }
 
       - name: Execute deployment
         uses: ./.github/actions/service-deploy-run
@@ -73,12 +84,12 @@ jobs:
         if: success()
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ github.event.client_payload.prNumber }}
+          ISSUE_NUMBER: ${{ github.event.client_payload.issueNumber || github.event.client_payload.prNumber }}
+          COMMENT_TARGET_TYPE: ${{ github.event.client_payload.commentTargetType || 'pr' }}
           TARGET_SUMMARY: ${{ github.event.client_payload.targetSummary }}
           ENVIRONMENT_ID: ${{ github.event.client_payload.environmentId }}
         with:
           script: |
-            const pullNumber = Number(process.env.PR_NUMBER);
             const body = [
               "---",
               "### Service deploy succeeded",
@@ -88,23 +99,33 @@ jobs:
               "---",
             ].join("\n");
 
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pullNumber,
-              body,
-              event: "COMMENT",
-            });
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (process.env.COMMENT_TARGET_TYPE === "issue") {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body,
+              });
+            } else {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: issueNumber,
+                body,
+                event: "COMMENT",
+              });
+            }
 
       - name: Post failure comment
         if: failure()
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ github.event.client_payload.prNumber }}
+          ISSUE_NUMBER: ${{ github.event.client_payload.issueNumber || github.event.client_payload.prNumber }}
+          COMMENT_TARGET_TYPE: ${{ github.event.client_payload.commentTargetType || 'pr' }}
           TARGET_SUMMARY: ${{ github.event.client_payload.targetSummary }}
         with:
           script: |
-            const pullNumber = Number(process.env.PR_NUMBER);
             const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const body = [
               "---",
@@ -115,10 +136,20 @@ jobs:
               "---",
             ].join("\n");
 
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pullNumber,
-              body,
-              event: "COMMENT",
-            });
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (process.env.COMMENT_TARGET_TYPE === "issue") {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body,
+              });
+            } else {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: issueNumber,
+                body,
+                event: "COMMENT",
+              });
+            }
