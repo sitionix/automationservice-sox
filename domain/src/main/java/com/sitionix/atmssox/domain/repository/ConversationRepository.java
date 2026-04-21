@@ -1,0 +1,39 @@
+package com.sitionix.atmssox.domain.repository;
+
+import com.sitionix.atmssox.domain.model.Conversation;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Persistence contract for direct agent conversations.
+ */
+public interface ConversationRepository {
+
+    /**
+     * Persists conversation metadata.
+     *
+     * @param conversation conversation metadata.
+     * @return persisted conversation metadata.
+     */
+    Conversation save(Conversation conversation);
+
+    /**
+     * Loads active conversation owned by current user and scoped to one agent.
+     *
+     * @param conversationId conversation identifier.
+     * @param userId current user identifier.
+     * @param agentId agent identifier.
+     * @return active conversation when present.
+     */
+    Optional<Conversation> findActiveByIdAndUserIdAndAgentId(UUID conversationId, Long userId, UUID agentId);
+
+    /**
+     * Loads all active conversations for one user-agent context.
+     *
+     * @param userId current user identifier.
+     * @param agentId agent identifier.
+     * @return active conversations sorted by recency.
+     */
+    List<Conversation> findAllActiveByUserIdAndAgentId(Long userId, UUID agentId);
+}

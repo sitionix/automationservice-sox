@@ -1,0 +1,78 @@
+package com.sitionix.atmssox.postgresql.repository;
+
+import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
+import com.sitionix.atmssox.domain.model.ConversationStatus;
+import com.sitionix.atmssox.domain.repository.ConversationRepository;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
+import com.sitionix.atmssox.postgresql.jpa.ConversationJpaRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+@Repository
+@RequiredArgsConstructor
+public class ConversationRepositoryImpl implements ConversationRepository {
+
+    private final ConversationJpaRepository conversationJpaRepository;
+
+    @Override
+    public Conversation save(final Conversation conversation) {
+        return this.toDomain(this.conversationJpaRepository.save(this.toEntity(conversation)));
+    }
+
+    @Override
+    public Optional<Conversation> findActiveByIdAndUserIdAndAgentId(final UUID conversationId, final Long userId, final UUID agentId) {
+        return this.conversationJpaRepository
+                .findActiveByIdAndUserIdAndAgent(
+                        conversationId,
+                        ConversationStatus.ACTIVE,
+                        userId,
+                        ConversationParticipantType.AGENT,
+                        agentId.toString()
+                )
+                .map(this::toDomain);
+    }
+
+    @Override
+    public List<Conversation> findAllActiveByUserIdAndAgentId(final Long userId, final UUID agentId) {
+        return this.conversationJpaRepository
+                .findAllActiveByUserIdAndAgent(
+                        ConversationStatus.ACTIVE,
+                        userId,
+                        ConversationParticipantType.AGENT,
+                        agentId.toString()
+                )
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    private ConversationEntity toEntity(final Conversation conversation) {
+        return new ConversationEntity(
+                conversation.getId(),
+                conversation.getUserId(),
+                conversation.getTitle(),
+                conversation.getType(),
+                conversation.getStatus(),
+                conversation.getCreatedAt(),
+                conversation.getUpdatedAt(),
+                conversation.getLastMessageAt()
+        );
+    }
+
+    private Conversation toDomain(final ConversationEntity entity) {
+        return Conversation.builder()
+                .id(entity.getConversationId())
+                .userId(entity.getUserId())
+                .title(entity.getTitle())
+                .type(entity.getType())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .lastMessageAt(entity.getLastMessageAt())
+                .build();
+    }
+}

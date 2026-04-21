@@ -1,5 +1,6 @@
 package com.sitionix.atmssox.domain.model;
 
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Value;
 
@@ -7,5 +8,7 @@ import lombok.Value;
 @Builder
 public class ChatAgentResponse {
 
-    String reply;
+    UUID conversationId;
+
+    ConversationMessage reply;
 }
