@@ -43,3 +43,10 @@ forge:
         - "/actuator/health"
         - "/actuator/health/readiness"
         - "/actuator/health/liveness"
+openai:
+  chat:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_CHAT_MODEL:gpt-5-nano}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    org-id: ${OPENAI_ORG_ID:}
+    project-id: ${OPENAI_PROJECT_ID:}
