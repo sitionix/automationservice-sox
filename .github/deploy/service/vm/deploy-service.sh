@@ -42,6 +42,16 @@ wait_for_url() {
   return 1
 }
 
+append_optional_env_if_present() {
+  local variable_name="$1"
+  local file_path="$2"
+  local value="${!variable_name:-}"
+
+  if [[ -n "${value}" ]]; then
+    printf '%s=%s\n' "${variable_name}" "${value}" >> "${file_path}"
+  fi
+}
+
 rollback_previous_container() {
   if [[ -z "${previous_container_name:-}" ]]; then
     return
@@ -101,6 +111,13 @@ docker pull "${SITIONIX_IMAGE_REF}"
   printf 'SPRING_DATASOURCE_USERNAME=%s\n' "${SITIONIX_DB_USERNAME}"
   printf 'SPRING_DATASOURCE_PASSWORD=%s\n' "${ATMS_SOX_DB_PASSWORD}"
 } > "${SITIONIX_SERVICE_ENV_PATH}"
+
+append_optional_env_if_present "OPENAI_API_KEY" "${SITIONIX_SERVICE_ENV_PATH}"
+append_optional_env_if_present "OPENAI_CHAT_MODEL" "${SITIONIX_SERVICE_ENV_PATH}"
+append_optional_env_if_present "OPENAI_BASE_URL" "${SITIONIX_SERVICE_ENV_PATH}"
+append_optional_env_if_present "OPENAI_ORG_ID" "${SITIONIX_SERVICE_ENV_PATH}"
+append_optional_env_if_present "OPENAI_PROJECT_ID" "${SITIONIX_SERVICE_ENV_PATH}"
+
 chmod 0600 "${SITIONIX_SERVICE_ENV_PATH}"
 
 if ! docker network inspect "${SITIONIX_DOCKER_NETWORK}" >/dev/null 2>&1; then

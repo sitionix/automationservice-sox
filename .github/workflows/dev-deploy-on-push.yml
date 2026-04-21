@@ -170,3 +170,8 @@ jobs:
           MAVEN_REPOSITORY_USERNAME: ${{ vars.MAVEN_REPOSITORY_USERNAME }}
           MAVEN_REPOSITORY_TOKEN: ${{ secrets.MAVEN_REPOSITORY_TOKEN }}
           ATMS_SOX_DB_PASSWORD: ${{ secrets.ATMS_SOX_DB_PASSWORD }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_CHAT_MODEL: ${{ vars.OPENAI_CHAT_MODEL }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          OPENAI_ORG_ID: ${{ vars.OPENAI_ORG_ID }}
+          OPENAI_PROJECT_ID: ${{ vars.OPENAI_PROJECT_ID }}

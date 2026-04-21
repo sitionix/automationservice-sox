@@ -162,7 +162,12 @@ runs:
         for name in \
           GHCR_PULL_USERNAME \
           GHCR_PULL_TOKEN \
-          ATMS_SOX_DB_PASSWORD; do
+          ATMS_SOX_DB_PASSWORD \
+          OPENAI_API_KEY \
+          OPENAI_CHAT_MODEL \
+          OPENAI_BASE_URL \
+          OPENAI_ORG_ID \
+          OPENAI_PROJECT_ID; do
           value="${!name}"
           printf 'export %s=%q\n' "${name}" "${value}" >> "${secrets_file}"
         done
