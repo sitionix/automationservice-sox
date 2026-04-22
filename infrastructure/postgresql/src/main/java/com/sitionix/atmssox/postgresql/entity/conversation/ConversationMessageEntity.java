@@ -1,6 +1,6 @@
 package com.sitionix.atmssox.postgresql.entity.conversation;
 
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,7 +41,7 @@ public class ConversationMessageEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "author_type", nullable = false, length = 32)
-    private ConversationAuthorType authorType;
+    private ConversationParticipantType authorType;
 
     @Column(name = "author_id", nullable = false, length = 64)
     private String authorId;

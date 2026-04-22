@@ -13,7 +13,7 @@ public class ConversationMessage {
 
     UUID conversationId;
 
-    ConversationAuthorType authorType;
+    ConversationParticipantType authorType;
 
     String authorId;
 

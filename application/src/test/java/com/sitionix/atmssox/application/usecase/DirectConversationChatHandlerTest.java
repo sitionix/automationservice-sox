@@ -9,10 +9,9 @@ import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
-import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
@@ -95,13 +94,13 @@ class DirectConversationChatHandlerTest {
         final Agent agent = this.getAgent(AgentStatus.ACTIVE, "  Keep answers concise.  ");
         final ConversationMessage userMessage = this.getMessage(
                 conversationId,
-                ConversationAuthorType.USER,
+                ConversationParticipantType.USER,
                 "17",
                 "Explain clean architecture."
         );
         final ConversationMessage replyMessage = this.getMessage(
                 conversationId,
-                ConversationAuthorType.AGENT,
+                ConversationParticipantType.AGENT,
                 agentId.toString(),
                 "It separates business rules from external frameworks."
         );
@@ -143,8 +142,8 @@ class DirectConversationChatHandlerTest {
                 .message("hello")
                 .build();
         final Agent agent = this.getAgent(AgentStatus.ACTIVE, null);
-        final ConversationMessage userMessage = this.getMessage(conversationId, ConversationAuthorType.USER, "17", "hello");
-        final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationAuthorType.AGENT, agentId.toString(), "hi");
+        final ConversationMessage userMessage = this.getMessage(conversationId, ConversationParticipantType.USER, "17", "hello");
+        final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, agentId.toString(), "hi");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
@@ -171,7 +170,7 @@ class DirectConversationChatHandlerTest {
     }
 
     @Test
-    void givenConversationWithoutAgentParticipant_whenHandle_thenThrowValidationException() {
+    void givenConversationWithoutAgentParticipant_whenHandle_thenThrowNotFoundException() {
         //given
         final UUID conversationId = UUID.fromString("a28ea11a-aa2c-4ec8-b790-9b6c9b7f5639");
         final Conversation conversation = this.getConversation(conversationId);
@@ -193,8 +192,8 @@ class DirectConversationChatHandlerTest {
                 ChatAgentCommand.builder().message("hello").build(),
                 17L
         ))
-                .isInstanceOf(AgentValidationException.class)
-                .hasMessage("DIRECT conversation must contain exactly one AGENT participant");
+                .isInstanceOf(AgentNotFoundException.class)
+                .hasMessage("Agent not found");
         verifyNoInteractions(
                 this.agentRepository,
                 this.conversationRepository,
@@ -297,7 +296,7 @@ class DirectConversationChatHandlerTest {
     }
 
     private ConversationMessage getMessage(final UUID conversationId,
-                                           final ConversationAuthorType authorType,
+                                           final ConversationParticipantType authorType,
                                            final String authorId,
                                            final String content) {
         return ConversationMessage.builder()

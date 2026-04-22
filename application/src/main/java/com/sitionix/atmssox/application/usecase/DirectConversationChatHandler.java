@@ -9,7 +9,7 @@ import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
@@ -79,14 +79,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     }
 
     private UUID resolveAgentId(final List<ConversationParticipant> participants) {
-        final List<ConversationParticipant> agentParticipants = participants.stream()
+        final ConversationParticipant agentParticipant = participants.stream()
                 .filter(participant -> participant.getParticipantType() == ConversationParticipantType.AGENT)
-                .toList();
-        if (agentParticipants.size() != 1) {
-            throw new AgentValidationException("DIRECT conversation must contain exactly one AGENT participant");
-        }
+                .findFirst()
+                .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
-        final String participantId = agentParticipants.get(0).getParticipantId();
+        final String participantId = agentParticipant.getParticipantId();
         try {
             return UUID.fromString(participantId);
         } catch (IllegalArgumentException exception) {
@@ -98,7 +96,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         return ConversationMessage.builder()
                 .id(UUID.randomUUID())
                 .conversationId(conversationId)
-                .authorType(ConversationAuthorType.USER)
+                .authorType(ConversationParticipantType.USER)
                 .authorId(String.valueOf(userId))
                 .content(message)
                 .createdAt(Instant.now())
@@ -109,7 +107,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         return ConversationMessage.builder()
                 .id(UUID.randomUUID())
                 .conversationId(conversationId)
-                .authorType(ConversationAuthorType.AGENT)
+                .authorType(ConversationParticipantType.AGENT)
                 .authorId(agentId.toString())
                 .content(message)
                 .createdAt(Instant.now())

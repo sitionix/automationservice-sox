@@ -1,6 +1,6 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ public class ConversationContextBuilder {
         final StringBuilder builder = new StringBuilder();
         builder.append("Conversation history:\n");
         for (ConversationMessage message : orderedHistory) {
-            if (message.getAuthorType() == ConversationAuthorType.USER) {
+            if (message.getAuthorType() == ConversationParticipantType.USER) {
                 builder.append("USER: ");
             } else {
                 builder.append("AGENT: ");

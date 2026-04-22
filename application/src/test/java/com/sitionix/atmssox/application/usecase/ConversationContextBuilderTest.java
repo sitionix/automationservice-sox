@@ -2,7 +2,7 @@ package com.sitionix.atmssox.application.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.time.Instant;
 import java.util.List;
@@ -24,14 +24,14 @@ class ConversationContextBuilderTest {
         //given
         final ConversationMessage userMessage = this.getConversationMessage(
                 UUID.fromString("11111111-1111-1111-1111-111111111111"),
-                ConversationAuthorType.USER,
+                ConversationParticipantType.USER,
                 "17",
                 "Explain clean architecture",
                 Instant.parse("2026-04-21T10:00:00Z")
         );
         final ConversationMessage agentMessage = this.getConversationMessage(
                 UUID.fromString("22222222-2222-2222-2222-222222222222"),
-                ConversationAuthorType.AGENT,
+                ConversationParticipantType.AGENT,
                 "agent-1",
                 "It separates core business logic from frameworks.",
                 Instant.parse("2026-04-21T10:01:00Z")
@@ -65,7 +65,7 @@ class ConversationContextBuilderTest {
 
     private ConversationMessage getConversationMessage(
             final UUID messageId,
-            final ConversationAuthorType authorType,
+            final ConversationParticipantType authorType,
             final String authorId,
             final String content,
             final Instant createdAt

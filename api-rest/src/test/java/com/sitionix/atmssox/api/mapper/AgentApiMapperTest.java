@@ -15,7 +15,7 @@ import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
@@ -411,7 +411,7 @@ class AgentApiMapperTest {
         final ConversationMessage userMessage = this.getConversationMessage(
                 UUID.fromString("51111111-1111-1111-1111-111111111111"),
                 conversationId,
-                ConversationAuthorType.USER,
+                ConversationParticipantType.USER,
                 "7",
                 "Explain clean architecture",
                 Instant.parse("2026-04-21T10:00:00Z")
@@ -419,7 +419,7 @@ class AgentApiMapperTest {
         final ConversationMessage agentMessage = this.getConversationMessage(
                 UUID.fromString("61111111-1111-1111-1111-111111111111"),
                 conversationId,
-                ConversationAuthorType.AGENT,
+                ConversationParticipantType.AGENT,
                 "agent-1",
                 "Clean architecture separates domain from framework.",
                 Instant.parse("2026-04-21T10:01:00Z")
@@ -461,7 +461,7 @@ class AgentApiMapperTest {
         final ConversationMessage reply = this.getConversationMessage(
                 UUID.fromString("71111111-1111-1111-1111-111111111111"),
                 conversationId,
-                ConversationAuthorType.AGENT,
+                ConversationParticipantType.AGENT,
                 "agent-1",
                 "A simple example is...",
                 Instant.parse("2026-04-21T10:03:00Z")
@@ -488,7 +488,7 @@ class AgentApiMapperTest {
     private ConversationMessage getConversationMessage(
             final UUID id,
             final UUID conversationId,
-            final ConversationAuthorType authorType,
+            final ConversationParticipantType authorType,
             final String authorId,
             final String content,
             final Instant createdAt

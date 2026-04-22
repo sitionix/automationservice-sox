@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.sitionix.atmssox.domain.model.ConversationAuthorType;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
@@ -67,7 +67,7 @@ class ConversationMessageRepositoryImplTest {
         verify(this.conversationMessageJpaRepository).save(captor.capture());
         assertThat(captor.getValue().getMessageId()).isEqualTo(messageId);
         assertThat(captor.getValue().getConversation()).isEqualTo(conversationRef);
-        assertThat(captor.getValue().getAuthorType()).isEqualTo(ConversationAuthorType.AGENT);
+        assertThat(captor.getValue().getAuthorType()).isEqualTo(ConversationParticipantType.AGENT);
         assertThat(captor.getValue().getAuthorId()).isEqualTo("agent-1");
         assertThat(captor.getValue().getContent()).isEqualTo("Clean architecture separates concerns.");
     }
@@ -102,7 +102,7 @@ class ConversationMessageRepositoryImplTest {
         return ConversationMessage.builder()
                 .id(messageId)
                 .conversationId(conversationId)
-                .authorType(ConversationAuthorType.AGENT)
+                .authorType(ConversationParticipantType.AGENT)
                 .authorId("agent-1")
                 .content("Clean architecture separates concerns.")
                 .createdAt(Instant.parse("2026-04-21T10:01:00Z"))
@@ -113,7 +113,7 @@ class ConversationMessageRepositoryImplTest {
         return new ConversationMessageEntity(
                 messageId,
                 conversationRef,
-                ConversationAuthorType.AGENT,
+                ConversationParticipantType.AGENT,
                 "agent-1",
                 "Clean architecture separates concerns.",
                 Instant.parse("2026-04-21T10:01:00Z")

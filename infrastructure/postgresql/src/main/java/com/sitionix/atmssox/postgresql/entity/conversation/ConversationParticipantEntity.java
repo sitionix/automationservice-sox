@@ -23,7 +23,7 @@ import lombok.Setter;
         name = "conversation_participants",
         indexes = {
                 @Index(name = "idx_conversation_participants_conversation", columnList = "conversation_id"),
-                @Index(name = "idx_conversation_participants_lookup", columnList = "participant_type,participant_id,conversation_id")
+                @Index(name = "idx_conversation_participants_lookup", columnList = "participant_type,participant_ref,conversation_id")
         }
 )
 @Getter
