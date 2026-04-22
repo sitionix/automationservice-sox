@@ -83,6 +83,50 @@ class ConversationParticipantRepositoryImplTest {
         assertThat(actual.get(1).getParticipantRef()).isEqualTo("agent-1");
     }
 
+    @Test
+    void givenConversationId_whenFindAllByConversationId_thenReturnMappedParticipants() {
+        //given
+        final UUID conversationId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final ConversationEntity conversationEntity = this.getConversationEntity(conversationId);
+        final ConversationParticipantEntity userParticipant = new ConversationParticipantEntity(
+                UUID.fromString("11111111-1111-1111-1111-111111111111"),
+                conversationEntity,
+                ConversationParticipantType.USER,
+                "17",
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final ConversationParticipantEntity agentParticipant = new ConversationParticipantEntity(
+                UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                conversationEntity,
+                ConversationParticipantType.AGENT,
+                "agent-1",
+                Instant.parse("2026-04-21T10:00:10Z")
+        );
+        when(this.conversationParticipantJpaRepository.findAllByConversationConversationId(conversationId))
+                .thenReturn(List.of(userParticipant, agentParticipant));
+
+        //when
+        final List<ConversationParticipant> actual = this.conversationParticipantRepository.findAllByConversationId(conversationId);
+
+        //then
+        assertThat(actual).isEqualTo(List.of(
+                this.getConversationParticipant(
+                        UUID.fromString("11111111-1111-1111-1111-111111111111"),
+                        conversationId,
+                        ConversationParticipantType.USER,
+                        "17"
+                ),
+                ConversationParticipant.builder()
+                        .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                        .conversationId(conversationId)
+                        .participantType(ConversationParticipantType.AGENT)
+                        .participantId("agent-1")
+                        .joinedAt(Instant.parse("2026-04-21T10:00:10Z"))
+                        .build()
+        ));
+        verify(this.conversationParticipantJpaRepository).findAllByConversationConversationId(conversationId);
+    }
+
     private ConversationParticipant getConversationParticipant(
             final UUID participantId,
             final UUID conversationId,

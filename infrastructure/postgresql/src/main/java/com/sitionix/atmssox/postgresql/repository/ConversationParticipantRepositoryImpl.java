@@ -7,6 +7,7 @@ import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipa
 import com.sitionix.atmssox.postgresql.jpa.ConversationParticipantJpaRepository;
 import jakarta.persistence.EntityManager;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -24,6 +25,13 @@ public class ConversationParticipantRepositoryImpl implements ConversationPartic
                 .toList());
     }
 
+    @Override
+    public List<ConversationParticipant> findAllByConversationId(final UUID conversationId) {
+        return this.conversationParticipantJpaRepository.findAllByConversationConversationId(conversationId).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
     private ConversationParticipantEntity toEntity(final ConversationParticipant participant) {
         final ConversationEntity conversationRef = this.entityManager.getReference(ConversationEntity.class, participant.getConversationId());
         return new ConversationParticipantEntity(
@@ -33,5 +41,15 @@ public class ConversationParticipantRepositoryImpl implements ConversationPartic
                 participant.getParticipantId(),
                 participant.getJoinedAt()
         );
+    }
+
+    private ConversationParticipant toDomain(final ConversationParticipantEntity entity) {
+        return ConversationParticipant.builder()
+                .id(entity.getParticipantId())
+                .conversationId(entity.getConversation().getConversationId())
+                .participantType(entity.getParticipantType())
+                .participantId(entity.getParticipantRef())
+                .joinedAt(entity.getJoinedAt())
+                .build();
     }
 }
