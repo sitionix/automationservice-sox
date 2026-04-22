@@ -79,11 +79,19 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     }
 
     private UUID resolveAgentId(final List<ConversationParticipant> participants) {
-        final ConversationParticipant agentParticipant = participants.stream()
+        final List<ConversationParticipant> agentParticipants = participants.stream()
                 .filter(participant -> participant.getParticipantType() == ConversationParticipantType.AGENT)
-                .findFirst()
-                .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
-        return UUID.fromString(agentParticipant.getParticipantId());
+                .toList();
+        if (agentParticipants.size() != 1) {
+            throw new AgentValidationException("DIRECT conversation must contain exactly one AGENT participant");
+        }
+
+        final String participantId = agentParticipants.get(0).getParticipantId();
+        try {
+            return UUID.fromString(participantId);
+        } catch (IllegalArgumentException exception) {
+            throw new AgentValidationException("Invalid AGENT participant identifier");
+        }
     }
 
     private ConversationMessage buildUserMessage(final UUID conversationId, final Long userId, final String message) {

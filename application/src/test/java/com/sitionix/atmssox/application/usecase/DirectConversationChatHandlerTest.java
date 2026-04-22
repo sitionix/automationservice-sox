@@ -171,7 +171,7 @@ class DirectConversationChatHandlerTest {
     }
 
     @Test
-    void givenConversationWithoutAgentParticipant_whenHandle_thenThrowNotFound() {
+    void givenConversationWithoutAgentParticipant_whenHandle_thenThrowValidationException() {
         //given
         final UUID conversationId = UUID.fromString("a28ea11a-aa2c-4ec8-b790-9b6c9b7f5639");
         final Conversation conversation = this.getConversation(conversationId);
@@ -193,8 +193,8 @@ class DirectConversationChatHandlerTest {
                 ChatAgentCommand.builder().message("hello").build(),
                 17L
         ))
-                .isInstanceOf(AgentNotFoundException.class)
-                .hasMessage("Agent not found");
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("DIRECT conversation must contain exactly one AGENT participant");
         verifyNoInteractions(
                 this.agentRepository,
                 this.conversationRepository,
