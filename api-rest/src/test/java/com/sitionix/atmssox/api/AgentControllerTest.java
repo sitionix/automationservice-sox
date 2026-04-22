@@ -1,6 +1,8 @@
 package com.sitionix.atmssox.api;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
@@ -10,6 +12,8 @@ import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
@@ -17,6 +21,8 @@ import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
+import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
+import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
@@ -53,6 +59,12 @@ class AgentControllerTest {
     private GetAgent getAgent;
 
     @Mock
+    private GetAgentConversations getAgentConversations;
+
+    @Mock
+    private GetAgentConversation getAgentConversation;
+
+    @Mock
     private PatchAgent patchAgent;
 
     @Mock
@@ -79,6 +91,8 @@ class AgentControllerTest {
                 this.createAgent,
                 this.getAgents,
                 this.getAgent,
+                this.getAgentConversations,
+                this.getAgentConversation,
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
@@ -95,6 +109,8 @@ class AgentControllerTest {
                 this.createAgent,
                 this.getAgents,
                 this.getAgent,
+                this.getAgentConversations,
+                this.getAgentConversation,
                 this.patchAgent,
                 this.activateAgent,
                 this.archiveAgent,
@@ -163,6 +179,45 @@ class AgentControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
         verify(this.getAgent).execute(given);
         verify(this.agentApiMapper).asAgentDto(agent);
+    }
+
+    @Test
+    void givenAgentId_whenGetAgentConversations_thenReturnAgentConversationsResponseDto() {
+        //given
+        final UUID given = UUID.fromString("11111111-1111-1111-1111-111111111112");
+        final List<Conversation> conversations = List.of(mock(Conversation.class));
+        final AgentConversationsResponseDTO expected = mock(AgentConversationsResponseDTO.class);
+
+        when(this.getAgentConversations.execute(given)).thenReturn(conversations);
+        when(this.agentApiMapper.asAgentConversationsResponseDto(conversations)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentConversationsResponseDTO> actual = this.agentController.getAgentConversations(given);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.getAgentConversations).execute(given);
+        verify(this.agentApiMapper).asAgentConversationsResponseDto(conversations);
+    }
+
+    @Test
+    void givenConversationId_whenGetAgentConversation_thenReturnAgentConversationDetailsDto() {
+        //given
+        final UUID givenConversationId = UUID.fromString("11111111-1111-1111-1111-111111111114");
+        final ConversationDetails details = mock(ConversationDetails.class);
+        final AgentConversationDetailsDTO expected = mock(AgentConversationDetailsDTO.class);
+
+        when(this.getAgentConversation.execute(givenConversationId)).thenReturn(details);
+        when(this.agentApiMapper.asAgentConversationDetailsDto(details)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentConversationDetailsDTO> actual =
+                this.agentController.getAgentConversation(givenConversationId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.getAgentConversation).execute(givenConversationId);
+        verify(this.agentApiMapper).asAgentConversationDetailsDto(details);
     }
 
     @Test

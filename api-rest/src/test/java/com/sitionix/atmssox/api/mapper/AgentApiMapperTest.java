@@ -1,11 +1,25 @@
 package com.sitionix.atmssox.api.mapper;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.ChatAgentCommand;
+import com.sitionix.atmssox.domain.model.ChatAgentResponse;
+import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
+import com.sitionix.atmssox.domain.model.ConversationDetails;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.ConversationStatus;
+import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +48,8 @@ class AgentApiMapperTest {
     @Test
     void givenCreateAgentRequestDto_whenAsCreateAgentCommand_thenReturnCreateAgentCommand() {
         //given
-        final CreateAgentRequestDTO given = this.getCreateAgentRequestDto();
-        final CreateAgentCommand expected = this.getCreateAgentCommand();
+        final CreateAgentRequestDTO given = this.getCreateAgentRequestDto("My description");
+        final CreateAgentCommand expected = this.getCreateAgentCommand("My description");
 
         //when
         final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
@@ -70,6 +84,20 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenChatAgentRequestDto_whenAsChatAgentCommand_thenReturnChatAgentCommand() {
+        //given
+        final UUID conversationId = UUID.fromString("21111111-1111-1111-1111-111111111111");
+        final ChatAgentRequestDTO given = this.getChatAgentRequestDto(conversationId, "Explain clean architecture");
+        final ChatAgentCommand expected = this.getChatAgentCommand(conversationId, "Explain clean architecture");
+
+        //when
+        final ChatAgentCommand actual = this.agentApiMapper.asChatAgentCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     void givenNullPatchAgentRequestDto_whenAsPatchAgentCommand_thenReturnNull() {
         //given
         final PatchAgentRequestDTO given = null;
@@ -84,14 +112,8 @@ class AgentApiMapperTest {
     @Test
     void givenCreateAgentRequestDtoWithNullDescription_whenAsCreateAgentCommand_thenReturnCommandWithNullDescription() {
         //given
-        final CreateAgentRequestDTO given = CreateAgentRequestDTO.builder()
-                .name("My agent")
-                .description(null)
-                .build();
-        final CreateAgentCommand expected = CreateAgentCommand.builder()
-                .name("My agent")
-                .description(null)
-                .build();
+        final CreateAgentRequestDTO given = this.getCreateAgentRequestDto(null);
+        final CreateAgentCommand expected = this.getCreateAgentCommand(null);
 
         //when
         final CreateAgentCommand actual = this.agentApiMapper.asCreateAgentCommand(given);
@@ -152,6 +174,58 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenConversations_whenAsAgentConversationsResponseDto_thenReturnAgentConversationsResponseDto() {
+        //given
+        final Conversation conversation = this.getConversation(
+                UUID.fromString("31111111-1111-1111-1111-111111111111"),
+                "Explain clean architecture",
+                Instant.parse("2026-04-21T10:00:00Z"),
+                Instant.parse("2026-04-21T10:01:00Z")
+        );
+        final AgentConversationsResponseDTO expected = this.getAgentConversationsResponseDto(
+                UUID.fromString("31111111-1111-1111-1111-111111111111"),
+                "Explain clean architecture",
+                OffsetDateTime.parse("2026-04-21T10:00:00Z"),
+                OffsetDateTime.parse("2026-04-21T10:01:00Z")
+        );
+
+        //when
+        final AgentConversationsResponseDTO actual =
+                this.agentApiMapper.asAgentConversationsResponseDto(List.of(conversation));
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenConversationDetails_whenAsAgentConversationDetailsDto_thenReturnAgentConversationDetailsDto() {
+        //given
+        final UUID conversationId = UUID.fromString("41111111-1111-1111-1111-111111111111");
+        final ConversationDetails details = this.getConversationDetails(conversationId);
+        final AgentConversationDetailsDTO expected = this.getAgentConversationDetailsDto(conversationId);
+
+        //when
+        final AgentConversationDetailsDTO actual = this.agentApiMapper.asAgentConversationDetailsDto(details);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenChatAgentResponse_whenAsChatAgentResponseDto_thenReturnChatAgentResponseDto() {
+        //given
+        final UUID conversationId = UUID.fromString("81111111-1111-1111-1111-111111111111");
+        final ChatAgentResponse given = this.getChatAgentResponse(conversationId);
+        final ChatAgentResponseDTO expected = this.getChatAgentResponseDto(conversationId);
+
+        //when
+        final ChatAgentResponseDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     void givenNullAgentList_whenAsAgentDtos_thenReturnNull() {
         //given
         final List<Agent> given = null;
@@ -187,17 +261,31 @@ class AgentApiMapperTest {
         assertThat(actual).isEqualTo(OffsetDateTime.parse("2026-01-15T12:13:14Z"));
     }
 
-    private CreateAgentRequestDTO getCreateAgentRequestDto() {
+    private CreateAgentRequestDTO getCreateAgentRequestDto(final String description) {
         return CreateAgentRequestDTO.builder()
                 .name("My agent")
-                .description("My description")
+                .description(description)
                 .build();
     }
 
-    private CreateAgentCommand getCreateAgentCommand() {
+    private CreateAgentCommand getCreateAgentCommand(final String description) {
         return CreateAgentCommand.builder()
                 .name("My agent")
-                .description("My description")
+                .description(description)
+                .build();
+    }
+
+    private ChatAgentRequestDTO getChatAgentRequestDto(final UUID conversationId, final String message) {
+        return ChatAgentRequestDTO.builder()
+                .conversationId(conversationId)
+                .message(message)
+                .build();
+    }
+
+    private ChatAgentCommand getChatAgentCommand(final UUID conversationId, final String message) {
+        return ChatAgentCommand.builder()
+                .conversationId(conversationId)
+                .message(message)
                 .build();
     }
 
@@ -274,6 +362,144 @@ class AgentApiMapperTest {
     private AgentsResponseDTO getAgentsResponseDto() {
         return AgentsResponseDTO.builder()
                 .items(List.of(this.getApiAgent()))
+                .build();
+    }
+
+    private Conversation getConversation(
+            final UUID id,
+            final String title,
+            final Instant createdAt,
+            final Instant updatedAt
+    ) {
+        return Conversation.builder()
+                .id(id)
+                .userId(7L)
+                .title(title)
+                .type(ConversationType.DIRECT)
+                .status(ConversationStatus.ACTIVE)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .lastMessageAt(updatedAt)
+                .build();
+    }
+
+    private AgentConversationsResponseDTO getAgentConversationsResponseDto(
+            final UUID id,
+            final String title,
+            final OffsetDateTime createdAt,
+            final OffsetDateTime updatedAt
+    ) {
+        return AgentConversationsResponseDTO.builder()
+                .items(List.of(AgentConversationDTO.builder()
+                        .id(id)
+                        .title(title)
+                        .type(AgentConversationDTO.TypeEnum.DIRECT)
+                        .createdAt(createdAt)
+                        .updatedAt(updatedAt)
+                        .lastMessageAt(updatedAt)
+                        .build()))
+                .build();
+    }
+
+    private ConversationDetails getConversationDetails(final UUID conversationId) {
+        final Conversation conversation = this.getConversation(
+                conversationId,
+                "Explain clean architecture",
+                Instant.parse("2026-04-21T10:00:00Z"),
+                Instant.parse("2026-04-21T10:01:00Z")
+        );
+        final ConversationMessage userMessage = this.getConversationMessage(
+                UUID.fromString("51111111-1111-1111-1111-111111111111"),
+                conversationId,
+                ConversationParticipantType.USER,
+                "7",
+                "Explain clean architecture",
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final ConversationMessage agentMessage = this.getConversationMessage(
+                UUID.fromString("61111111-1111-1111-1111-111111111111"),
+                conversationId,
+                ConversationParticipantType.AGENT,
+                "agent-1",
+                "Clean architecture separates domain from framework.",
+                Instant.parse("2026-04-21T10:01:00Z")
+        );
+        return ConversationDetails.builder()
+                .conversation(conversation)
+                .messages(List.of(userMessage, agentMessage))
+                .build();
+    }
+
+    private AgentConversationDetailsDTO getAgentConversationDetailsDto(final UUID conversationId) {
+        return AgentConversationDetailsDTO.builder()
+                .id(conversationId)
+                .title("Explain clean architecture")
+                .type(AgentConversationDetailsDTO.TypeEnum.DIRECT)
+                .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .lastMessageAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                .messages(List.of(
+                        AgentConversationMessageDTO.builder()
+                                .id(UUID.fromString("51111111-1111-1111-1111-111111111111"))
+                                .authorType(AgentConversationMessageDTO.AuthorTypeEnum.USER)
+                                .authorId("7")
+                                .content("Explain clean architecture")
+                                .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
+                                .build(),
+                        AgentConversationMessageDTO.builder()
+                                .id(UUID.fromString("61111111-1111-1111-1111-111111111111"))
+                                .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
+                                .authorId("agent-1")
+                                .content("Clean architecture separates domain from framework.")
+                                .createdAt(OffsetDateTime.parse("2026-04-21T10:01:00Z"))
+                                .build()
+                ))
+                .build();
+    }
+
+    private ChatAgentResponse getChatAgentResponse(final UUID conversationId) {
+        final ConversationMessage reply = this.getConversationMessage(
+                UUID.fromString("71111111-1111-1111-1111-111111111111"),
+                conversationId,
+                ConversationParticipantType.AGENT,
+                "agent-1",
+                "A simple example is...",
+                Instant.parse("2026-04-21T10:03:00Z")
+        );
+        return ChatAgentResponse.builder()
+                .conversationId(conversationId)
+                .reply(reply)
+                .build();
+    }
+
+    private ChatAgentResponseDTO getChatAgentResponseDto(final UUID conversationId) {
+        return ChatAgentResponseDTO.builder()
+                .conversationId(conversationId)
+                .reply(AgentConversationMessageDTO.builder()
+                        .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))
+                        .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
+                        .authorId("agent-1")
+                        .content("A simple example is...")
+                        .createdAt(OffsetDateTime.parse("2026-04-21T10:03:00Z"))
+                        .build())
+                .build();
+    }
+
+    private ConversationMessage getConversationMessage(
+            final UUID id,
+            final UUID conversationId,
+            final ConversationParticipantType authorType,
+            final String authorId,
+            final String content,
+            final Instant createdAt
+    ) {
+        return ConversationMessage.builder()
+                .id(id)
+                .conversationId(conversationId)
+                .authorType(authorType)
+                .authorId(authorId)
+                .content(content)
+                .createdAt(createdAt)
                 .build();
     }
 }

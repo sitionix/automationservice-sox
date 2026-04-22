@@ -2,6 +2,8 @@ package com.sitionix.atmssox.it.infra;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
@@ -80,6 +82,19 @@ public class ControllerEndpoint {
                 AgentDTO.class,
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<ChatAgentRequestDTO, ChatAgentResponseDTO> chatAgent() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/chat",
+                HttpMethod.POST,
+                ChatAgentRequestDTO.class,
+                ChatAgentResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("chatAgentRequest.json")
                         .expectStatus(200)
         );
     }
