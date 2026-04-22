@@ -53,15 +53,13 @@ public interface AgentApiMapper {
     }
 
     default AgentsResponseDTO asAgentsResponseDto(final List<Agent> agents) {
-        return AgentsResponseDTO.builder()
-                .items(this.asAgentDtos(agents))
-                .build();
+        return new AgentsResponseDTO()
+                .items(this.asAgentDtos(agents));
     }
 
     default AgentConversationsResponseDTO asAgentConversationsResponseDto(final List<Conversation> conversations) {
-        return AgentConversationsResponseDTO.builder()
-                .items(this.asAgentConversationDtos(conversations))
-                .build();
+        return new AgentConversationsResponseDTO()
+                .items(this.asAgentConversationDtos(conversations));
     }
 
     @Mapping(target = "id", source = "conversation.id")
