@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import org.mapstruct.Mapping;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -63,16 +64,12 @@ public interface AgentApiMapper {
                 .build();
     }
 
-    default AgentConversationDetailsDTO asAgentConversationDetailsDto(final ConversationDetails details) {
-        final Conversation conversation = details.getConversation();
-        return AgentConversationDetailsDTO.builder()
-                .id(conversation.getId())
-                .title(conversation.getTitle())
-                .type(AgentConversationDetailsDTO.TypeEnum.fromValue(conversation.getType().name()))
-                .createdAt(this.map(conversation.getCreatedAt()))
-                .updatedAt(this.map(conversation.getUpdatedAt()))
-                .lastMessageAt(this.map(conversation.getLastMessageAt()))
-                .messages(this.asAgentConversationMessageDtos(details.getMessages()))
-                .build();
-    }
+    @Mapping(target = "id", source = "conversation.id")
+    @Mapping(target = "title", source = "conversation.title")
+    @Mapping(target = "type", source = "conversation.type")
+    @Mapping(target = "createdAt", source = "conversation.createdAt")
+    @Mapping(target = "updatedAt", source = "conversation.updatedAt")
+    @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
+    @Mapping(target = "messages", source = "messages")
+    AgentConversationDetailsDTO asAgentConversationDetailsDto(ConversationDetails details);
 }
