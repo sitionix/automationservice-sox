@@ -5,7 +5,6 @@ import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationMessageJpaRepository;
-import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Repository;
 public class ConversationMessageRepositoryImpl implements ConversationMessageRepository {
 
     private final ConversationMessageJpaRepository conversationMessageJpaRepository;
-    private final EntityManager entityManager;
 
     @Override
     public ConversationMessage save(final ConversationMessage message) {
@@ -32,15 +30,14 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
     }
 
     private ConversationMessageEntity toEntity(final ConversationMessage message) {
-        final ConversationEntity conversationRef = this.entityManager.getReference(ConversationEntity.class, message.getConversationId());
-        return new ConversationMessageEntity(
-                message.getId(),
-                conversationRef,
-                message.getAuthorType(),
-                message.getAuthorId(),
-                message.getContent(),
-                message.getCreatedAt()
-        );
+        return ConversationMessageEntity.builder()
+                .messageId(message.getId())
+                .conversation(this.getConversationRef(message.getConversationId()))
+                .authorType(message.getAuthorType())
+                .authorId(message.getAuthorId())
+                .content(message.getContent())
+                .createdAt(message.getCreatedAt())
+                .build();
     }
 
     private ConversationMessage toDomain(final ConversationMessageEntity entity) {
@@ -51,6 +48,12 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
                 .authorId(entity.getAuthorId())
                 .content(entity.getContent())
                 .createdAt(entity.getCreatedAt())
+                .build();
+    }
+
+    private ConversationEntity getConversationRef(final UUID conversationId) {
+        return ConversationEntity.builder()
+                .conversationId(conversationId)
                 .build();
     }
 }

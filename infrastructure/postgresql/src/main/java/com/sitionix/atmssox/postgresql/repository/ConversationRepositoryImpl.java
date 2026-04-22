@@ -58,16 +58,16 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     private ConversationEntity toEntity(final Conversation conversation) {
-        return new ConversationEntity(
-                conversation.getId(),
-                conversation.getUserId(),
-                conversation.getTitle(),
-                conversation.getType(),
-                conversation.getStatus(),
-                conversation.getCreatedAt(),
-                conversation.getUpdatedAt(),
-                conversation.getLastMessageAt()
-        );
+        return ConversationEntity.builder()
+                .conversationId(conversation.getId())
+                .userId(conversation.getUserId())
+                .title(conversation.getTitle())
+                .type(conversation.getType())
+                .status(conversation.getStatus())
+                .createdAt(conversation.getCreatedAt())
+                .updatedAt(conversation.getUpdatedAt())
+                .lastMessageAt(conversation.getLastMessageAt())
+                .build();
     }
 
     private Conversation toDomain(final ConversationEntity entity) {

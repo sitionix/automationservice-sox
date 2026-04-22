@@ -11,7 +11,6 @@ import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationMessageJpaRepository;
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,17 +30,14 @@ class ConversationMessageRepositoryImplTest {
     @Mock
     private ConversationMessageJpaRepository conversationMessageJpaRepository;
 
-    @Mock
-    private EntityManager entityManager;
-
     @BeforeEach
     void setUp() {
-        this.conversationMessageRepository = new ConversationMessageRepositoryImpl(this.conversationMessageJpaRepository, this.entityManager);
+        this.conversationMessageRepository = new ConversationMessageRepositoryImpl(this.conversationMessageJpaRepository);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.conversationMessageJpaRepository, this.entityManager);
+        verifyNoMoreInteractions(this.conversationMessageJpaRepository);
     }
 
     @Test
@@ -54,7 +50,6 @@ class ConversationMessageRepositoryImplTest {
         final ConversationMessageEntity persistedEntity = this.getConversationMessageEntity(messageId, conversationRef);
         final ConversationMessage expected = this.getConversationMessage(messageId, conversationId);
 
-        when(this.entityManager.getReference(ConversationEntity.class, conversationId)).thenReturn(conversationRef);
         when(this.conversationMessageJpaRepository.save(any(ConversationMessageEntity.class))).thenReturn(persistedEntity);
 
         //when
@@ -63,10 +58,9 @@ class ConversationMessageRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         final ArgumentCaptor<ConversationMessageEntity> captor = ArgumentCaptor.forClass(ConversationMessageEntity.class);
-        verify(this.entityManager).getReference(ConversationEntity.class, conversationId);
         verify(this.conversationMessageJpaRepository).save(captor.capture());
         assertThat(captor.getValue().getMessageId()).isEqualTo(messageId);
-        assertThat(captor.getValue().getConversation()).isEqualTo(conversationRef);
+        assertThat(captor.getValue().getConversation().getConversationId()).isEqualTo(conversationRef.getConversationId());
         assertThat(captor.getValue().getAuthorType()).isEqualTo(ConversationParticipantType.AGENT);
         assertThat(captor.getValue().getAuthorId()).isEqualTo("agent-1");
         assertThat(captor.getValue().getContent()).isEqualTo("Clean architecture separates concerns.");

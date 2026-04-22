@@ -5,7 +5,6 @@ import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationParticipantJpaRepository;
-import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Repository;
 public class ConversationParticipantRepositoryImpl implements ConversationParticipantRepository {
 
     private final ConversationParticipantJpaRepository conversationParticipantJpaRepository;
-    private final EntityManager entityManager;
 
     @Override
     public void saveAll(final List<ConversationParticipant> participants) {
@@ -33,14 +31,13 @@ public class ConversationParticipantRepositoryImpl implements ConversationPartic
     }
 
     private ConversationParticipantEntity toEntity(final ConversationParticipant participant) {
-        final ConversationEntity conversationRef = this.entityManager.getReference(ConversationEntity.class, participant.getConversationId());
-        return new ConversationParticipantEntity(
-                participant.getId(),
-                conversationRef,
-                participant.getParticipantType(),
-                participant.getParticipantId(),
-                participant.getJoinedAt()
-        );
+        return ConversationParticipantEntity.builder()
+                .participantId(participant.getId())
+                .conversation(this.getConversationRef(participant.getConversationId()))
+                .participantType(participant.getParticipantType())
+                .participantRef(participant.getParticipantId())
+                .joinedAt(participant.getJoinedAt())
+                .build();
     }
 
     private ConversationParticipant toDomain(final ConversationParticipantEntity entity) {
@@ -50,6 +47,12 @@ public class ConversationParticipantRepositoryImpl implements ConversationPartic
                 .participantType(entity.getParticipantType())
                 .participantId(entity.getParticipantRef())
                 .joinedAt(entity.getJoinedAt())
+                .build();
+    }
+
+    private ConversationEntity getConversationRef(final UUID conversationId) {
+        return ConversationEntity.builder()
+                .conversationId(conversationId)
                 .build();
     }
 }

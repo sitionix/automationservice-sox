@@ -1,7 +1,6 @@
 package com.sitionix.atmssox.postgresql.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -11,7 +10,6 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationParticipantJpaRepository;
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,17 +29,14 @@ class ConversationParticipantRepositoryImplTest {
     @Mock
     private ConversationParticipantJpaRepository conversationParticipantJpaRepository;
 
-    @Mock
-    private EntityManager entityManager;
-
     @BeforeEach
     void setUp() {
-        this.conversationParticipantRepository = new ConversationParticipantRepositoryImpl(this.conversationParticipantJpaRepository, this.entityManager);
+        this.conversationParticipantRepository = new ConversationParticipantRepositoryImpl(this.conversationParticipantJpaRepository);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.conversationParticipantJpaRepository, this.entityManager);
+        verifyNoMoreInteractions(this.conversationParticipantJpaRepository);
     }
 
     @Test
@@ -62,23 +57,20 @@ class ConversationParticipantRepositoryImplTest {
         );
         final ConversationEntity conversationRef = this.getConversationEntity(conversationId);
 
-        when(this.entityManager.getReference(ConversationEntity.class, conversationId)).thenReturn(conversationRef);
-
         //when
         this.conversationParticipantRepository.saveAll(List.of(userParticipant, agentParticipant));
 
         //then
-        verify(this.entityManager, times(2)).getReference(ConversationEntity.class, conversationId);
         final ArgumentCaptor<List<ConversationParticipantEntity>> captor = ArgumentCaptor.forClass(List.class);
         verify(this.conversationParticipantJpaRepository).saveAll(captor.capture());
         final List<ConversationParticipantEntity> actual = captor.getValue();
         assertThat(actual).hasSize(2);
         assertThat(actual.get(0).getParticipantId()).isEqualTo(UUID.fromString("11111111-1111-1111-1111-111111111111"));
-        assertThat(actual.get(0).getConversation()).isEqualTo(conversationRef);
+        assertThat(actual.get(0).getConversation().getConversationId()).isEqualTo(conversationRef.getConversationId());
         assertThat(actual.get(0).getParticipantType()).isEqualTo(ConversationParticipantType.USER);
         assertThat(actual.get(0).getParticipantRef()).isEqualTo("17");
         assertThat(actual.get(1).getParticipantId()).isEqualTo(UUID.fromString("22222222-2222-2222-2222-222222222222"));
-        assertThat(actual.get(1).getConversation()).isEqualTo(conversationRef);
+        assertThat(actual.get(1).getConversation().getConversationId()).isEqualTo(conversationRef.getConversationId());
         assertThat(actual.get(1).getParticipantType()).isEqualTo(ConversationParticipantType.AGENT);
         assertThat(actual.get(1).getParticipantRef()).isEqualTo("agent-1");
     }
