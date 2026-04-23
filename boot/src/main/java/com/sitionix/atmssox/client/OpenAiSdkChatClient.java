@@ -9,7 +9,6 @@ import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -27,25 +26,7 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         this.validateConfiguration();
 
         try {
-            final ResponseCreateParams params = ResponseCreateParams.builder()
-                    .model(this.openAiChatProperties.getModel())
-                    .instructions(instruction)
-                    .input(message)
-                    .build();
-            final Response response = this.openAIClient.responses().create(params);
-            final String output = response.output().stream()
-                    .flatMap(item -> item.message().stream())
-                    .flatMap(outputMessage -> outputMessage.content().stream())
-                    .flatMap(content -> content.outputText().stream())
-                    .map(outputText -> outputText.text().trim())
-                    .filter(StringUtils::hasText)
-                    .findFirst()
-                    .orElse(null);
-
-            if (!StringUtils.hasText(output)) {
-                throw new OpenAiExecutionException("OpenAI returned empty reply");
-            }
-            return output.trim();
+            return this.executeRequest(instruction, message);
         } catch (OpenAiExecutionException exception) {
             throw exception;
         } catch (OpenAIServiceException exception) {
@@ -65,63 +46,80 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
     }
 
     private OpenAiExecutionException mapServiceException(final OpenAIServiceException exception) {
-        final String upstreamMessage = this.resolveUpstreamMessage(exception);
-        final String upstreamType = this.resolveUpstreamType(exception);
-        final String upstreamCode = this.resolveUpstreamCode(exception);
+        final UpstreamBodyFields upstreamBodyFields = this.extractUpstreamBodyFields(exception.body());
         return new OpenAiExecutionException(
                 exception.statusCode(),
-                upstreamType,
-                upstreamCode,
-                upstreamMessage,
+                this.firstNonBlank(exception.type().orElse(null), upstreamBodyFields.type()),
+                this.firstNonBlank(exception.code().orElse(null), upstreamBodyFields.code()),
+                this.firstNonBlank(upstreamBodyFields.message(), exception.getMessage()),
                 exception
         );
     }
 
-    private String resolveUpstreamMessage(final OpenAIServiceException exception) {
-        final String parsedMessage = this.resolveBodyField(exception.body(), "message");
-        if (StringUtils.hasText(parsedMessage)) {
-            return parsedMessage;
+    private String executeRequest(final String instruction, final String message) {
+        final ResponseCreateParams params = ResponseCreateParams.builder()
+                .model(this.openAiChatProperties.getModel())
+                .instructions(instruction)
+                .input(message)
+                .build();
+        final Response response = this.openAIClient.responses().create(params);
+        final String output = response.output().stream()
+                .flatMap(item -> item.message().stream())
+                .flatMap(outputMessage -> outputMessage.content().stream())
+                .flatMap(content -> content.outputText().stream())
+                .map(outputText -> outputText.text().trim())
+                .filter(StringUtils::hasText)
+                .findFirst()
+                .orElse(null);
+
+        if (!StringUtils.hasText(output)) {
+            throw new OpenAiExecutionException("OpenAI returned empty reply");
         }
-        if (StringUtils.hasText(exception.getMessage())) {
-            return exception.getMessage();
+        return output.trim();
+    }
+
+    private UpstreamBodyFields extractUpstreamBodyFields(final JsonValue body) {
+        try {
+            final Map<String, Object> bodyMap = body.convert(Map.class);
+            return new UpstreamBodyFields(
+                    this.resolveBodyField(bodyMap, "message"),
+                    this.resolveBodyField(bodyMap, "type"),
+                    this.resolveBodyField(bodyMap, "code")
+            );
+        } catch (Exception exception) {
+            return UpstreamBodyFields.empty();
+        }
+    }
+
+    private String resolveBodyField(final Map<String, Object> bodyMap, final String fieldName) {
+        final Object errorNode = bodyMap.get("error");
+        if (errorNode instanceof Map<?, ?> errorMap) {
+            final Object nestedFieldValue = errorMap.get(fieldName);
+            if (nestedFieldValue instanceof String nestedFieldAsString && StringUtils.hasText(nestedFieldAsString)) {
+                return nestedFieldAsString;
+            }
+        }
+        final Object fieldValue = bodyMap.get(fieldName);
+        if (fieldValue instanceof String fieldAsString && StringUtils.hasText(fieldAsString)) {
+            return fieldAsString;
         }
         return null;
     }
 
-    private String resolveUpstreamType(final OpenAIServiceException exception) {
-        final Optional<String> upstreamType = exception.type();
-        if (upstreamType.isPresent() && StringUtils.hasText(upstreamType.get())) {
-            return upstreamType.get();
+    private String firstNonBlank(final String first, final String second) {
+        if (StringUtils.hasText(first)) {
+            return first;
         }
-        return this.resolveBodyField(exception.body(), "type");
+        if (StringUtils.hasText(second)) {
+            return second;
+        }
+        return null;
     }
 
-    private String resolveUpstreamCode(final OpenAIServiceException exception) {
-        final Optional<String> upstreamCode = exception.code();
-        if (upstreamCode.isPresent() && StringUtils.hasText(upstreamCode.get())) {
-            return upstreamCode.get();
-        }
-        return this.resolveBodyField(exception.body(), "code");
-    }
+    private record UpstreamBodyFields(String message, String type, String code) {
 
-    private String resolveBodyField(final JsonValue body, final String fieldName) {
-        try {
-            final Map<String, Object> bodyMap = body.convert(Map.class);
-            final Object errorNode = bodyMap.get("error");
-            if (errorNode instanceof Map<?, ?> errorMap) {
-                final Object nestedFieldValue = errorMap.get(fieldName);
-                if (nestedFieldValue instanceof String nestedFieldAsString
-                        && StringUtils.hasText(nestedFieldAsString)) {
-                    return nestedFieldAsString;
-                }
-            }
-            final Object fieldValue = bodyMap.get(fieldName);
-            if (fieldValue instanceof String fieldAsString && StringUtils.hasText(fieldAsString)) {
-                return fieldAsString;
-            }
-            return null;
-        } catch (Exception ignored) {
-            return null;
+        private static UpstreamBodyFields empty() {
+            return new UpstreamBodyFields(null, null, null);
         }
     }
 }
