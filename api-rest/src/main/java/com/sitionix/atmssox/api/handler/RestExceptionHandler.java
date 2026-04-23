@@ -20,6 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.util.StringUtils;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -51,7 +52,14 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(OpenAiExecutionException.class)
     public ResponseEntity<ErrorDTO> handleOpenAiExecutionException(final OpenAiExecutionException exception) {
-        return buildError(HttpStatus.BAD_GATEWAY, exception.getMessage());
+        final HttpStatus status = HttpStatus.resolve(exception.getHttpStatus()) == null
+                ? HttpStatus.BAD_GATEWAY
+                : HttpStatus.valueOf(exception.getHttpStatus());
+        final String title = this.resolveOpenAiTitle(exception, status);
+        final String details = StringUtils.hasText(exception.getUpstreamMessage())
+                ? exception.getUpstreamMessage()
+                : "OpenAI request failed";
+        return buildError(status, title, details);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -88,11 +96,25 @@ public class RestExceptionHandler {
     }
 
     private static ResponseEntity<ErrorDTO> buildError(final HttpStatus status, final String details) {
+        return buildError(status, status.getReasonPhrase(), details);
+    }
+
+    private static ResponseEntity<ErrorDTO> buildError(final HttpStatus status, final String title, final String details) {
         return ResponseEntity.status(status)
                 .body(ErrorDTO.builder()
                         .code(status.value())
-                        .title(status.getReasonPhrase())
+                        .title(title)
                         .details(details)
                         .build());
+    }
+
+    private String resolveOpenAiTitle(final OpenAiExecutionException exception, final HttpStatus status) {
+        if (StringUtils.hasText(exception.getUpstreamType())) {
+            return exception.getUpstreamType();
+        }
+        if (StringUtils.hasText(exception.getUpstreamCode())) {
+            return exception.getUpstreamCode();
+        }
+        return status.getReasonPhrase();
     }
 }
