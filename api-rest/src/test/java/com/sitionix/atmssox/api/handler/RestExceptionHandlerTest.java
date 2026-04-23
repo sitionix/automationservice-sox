@@ -9,15 +9,19 @@ import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.method.ParameterValidationResult;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,7 +106,45 @@ class RestExceptionHandlerTest {
         final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
 
         //then
-        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "OpenAI request failed"));
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY.value(), null, "OpenAI request failed"));
+    }
+
+    @Test
+    void givenStructuredOpenAiExecutionExceptionWithType_whenHandleOpenAiExecutionException_thenReturnUpstreamStatusAndType() {
+        //given
+        final OpenAiExecutionException given =
+                new OpenAiExecutionException(429, "insufficient_quota", "quota_exceeded", "You exceeded your current quota.");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.TOO_MANY_REQUESTS.value(), "insufficient_quota", "You exceeded your current quota."));
+    }
+
+    @Test
+    void givenStructuredOpenAiExecutionExceptionWithCodeOnly_whenHandleOpenAiExecutionException_thenReturnUpstreamStatusAndCode() {
+        //given
+        final OpenAiExecutionException given =
+                new OpenAiExecutionException(401, null, "invalid_api_key", "Incorrect API key provided.");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.UNAUTHORIZED.value(), "invalid_api_key", "Incorrect API key provided."));
+    }
+
+    @Test
+    void givenStructuredOpenAiExecutionExceptionWithInvalidStatus_whenHandleOpenAiExecutionException_thenReturnSameStatusWithoutFallback() {
+        //given
+        final OpenAiExecutionException given = new OpenAiExecutionException(999, null, null, null);
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(999, null, null));
     }
 
     @Test
@@ -135,6 +177,23 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void givenHandlerMethodValidationExceptionWithDetails_whenHandleMethodValidation_thenReturnFirstValidationMessage() {
+        //given
+        final HandlerMethodValidationException given = mock(HandlerMethodValidationException.class);
+        final ParameterValidationResult parameterValidationResult = mock(ParameterValidationResult.class);
+        final MessageSourceResolvable messageSourceResolvable = mock(MessageSourceResolvable.class);
+        when(given.getAllValidationResults()).thenReturn(List.of(parameterValidationResult));
+        when(parameterValidationResult.getResolvableErrors()).thenReturn(List.of(messageSourceResolvable));
+        when(messageSourceResolvable.getDefaultMessage()).thenReturn("payload validation failed");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleMethodValidation(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, "payload validation failed"));
+    }
+
+    @Test
     void givenUnknownValidationException_whenHandleMethodValidation_thenReturnFallbackMessage() {
         //given
         final Exception given = new RuntimeException("Unexpected");
@@ -159,10 +218,18 @@ class RestExceptionHandlerTest {
     }
 
     private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String details) {
-        return ResponseEntity.status(status)
+        return this.expectedError(status.value(), status.getReasonPhrase(), details);
+    }
+
+    private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String title, final String details) {
+        return this.expectedError(status.value(), title, details);
+    }
+
+    private ResponseEntity<ErrorDTO> expectedError(final int statusCode, final String title, final String details) {
+        return ResponseEntity.status(statusCode)
                 .body(ErrorDTO.builder()
-                        .code(status.value())
-                        .title(status.getReasonPhrase())
+                        .code(statusCode)
+                        .title(title)
                         .details(details)
                         .build());
     }

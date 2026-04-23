@@ -2,6 +2,11 @@ package com.sitionix.atmssox.client;
 
 import com.openai.client.OpenAIClient;
 import com.openai.core.JsonValue;
+import com.openai.core.http.Headers;
+import com.openai.errors.OpenAIServiceException;
+import com.openai.errors.RateLimitException;
+import com.openai.errors.UnauthorizedException;
+import com.openai.models.ErrorObject;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
 import com.openai.models.responses.ResponseOutputMessage;
@@ -108,6 +113,135 @@ class OpenAiSdkChatClientTest {
         assertThatThrownBy(() -> client.execute("instruction", "message"))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI request failed");
+    }
+
+    @Test
+    void givenRateLimitErrorFromOpenAi_whenExecute_thenMapStructuredOpenAiExecutionException() {
+        //given
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(
+                RateLimitException.builder()
+                        .headers(Headers.builder().build())
+                        .error(ErrorObject.builder()
+                                .type("insufficient_quota")
+                                .code("insufficient_quota")
+                                .param("messages")
+                                .message("You exceeded your current quota.")
+                                .build())
+                        .build()
+        );
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.execute("instruction", "message"))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .satisfies(throwable -> {
+                    final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
+                    assertThat(actual.getHttpStatus()).isEqualTo(429);
+                    assertThat(actual.getUpstreamType()).isEqualTo("insufficient_quota");
+                    assertThat(actual.getUpstreamCode()).isEqualTo("insufficient_quota");
+                    assertThat(actual.getUpstreamMessage()).isEqualTo("429: You exceeded your current quota.");
+                });
+    }
+
+    @Test
+    void givenUnauthorizedErrorFromOpenAi_whenExecute_thenMapStructuredOpenAiExecutionException() {
+        //given
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(
+                UnauthorizedException.builder()
+                        .headers(Headers.builder().build())
+                        .error(ErrorObject.builder()
+                                .type("invalid_request_error")
+                                .code("invalid_api_key")
+                                .param("api_key")
+                                .message("Incorrect API key provided.")
+                                .build())
+                        .build()
+        );
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.execute("instruction", "message"))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .satisfies(throwable -> {
+                    final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
+                    assertThat(actual.getHttpStatus()).isEqualTo(401);
+                    assertThat(actual.getUpstreamType()).isEqualTo("invalid_request_error");
+                    assertThat(actual.getUpstreamCode()).isEqualTo("invalid_api_key");
+                    assertThat(actual.getUpstreamMessage()).isEqualTo("401: Incorrect API key provided.");
+                });
+    }
+
+    @Test
+    void givenOpenAiServiceExceptionWithoutTypeAndCode_whenExecute_thenMapOnlyRawExceptionFields() {
+        //given
+        final OpenAIServiceException serviceException = Mockito.mock(OpenAIServiceException.class);
+        when(serviceException.statusCode()).thenReturn(429);
+        when(serviceException.type()).thenReturn(Optional.empty());
+        when(serviceException.code()).thenReturn(Optional.empty());
+        when(serviceException.getMessage()).thenReturn("raw service message");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.execute("instruction", "message"))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .satisfies(throwable -> {
+                    final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
+                    assertThat(actual.getHttpStatus()).isEqualTo(429);
+                    assertThat(actual.getUpstreamType()).isNull();
+                    assertThat(actual.getUpstreamCode()).isNull();
+                    assertThat(actual.getUpstreamMessage()).isEqualTo("raw service message");
+                });
+    }
+
+    @Test
+    void givenOpenAiServiceExceptionWithInvalidBodyAndMessage_whenExecute_thenUseExceptionMessage() {
+        //given
+        final OpenAIServiceException serviceException = Mockito.mock(OpenAIServiceException.class);
+        when(serviceException.statusCode()).thenReturn(500);
+        when(serviceException.type()).thenReturn(Optional.empty());
+        when(serviceException.code()).thenReturn(Optional.empty());
+        when(serviceException.body()).thenReturn(JsonValue.from("not-a-json-object"));
+        when(serviceException.getMessage()).thenReturn("provider transport failure");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.execute("instruction", "message"))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .satisfies(throwable -> {
+                    final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
+                    assertThat(actual.getHttpStatus()).isEqualTo(500);
+                    assertThat(actual.getUpstreamType()).isNull();
+                    assertThat(actual.getUpstreamCode()).isNull();
+                    assertThat(actual.getUpstreamMessage()).isEqualTo("provider transport failure");
+                });
+    }
+
+    @Test
+    void givenOpenAiServiceExceptionWithBlankMessage_whenExecute_thenKeepBlankMessageAsIs() {
+        //given
+        final OpenAIServiceException serviceException = Mockito.mock(OpenAIServiceException.class);
+        when(serviceException.statusCode()).thenReturn(503);
+        when(serviceException.type()).thenReturn(Optional.empty());
+        when(serviceException.code()).thenReturn(Optional.empty());
+        when(serviceException.getMessage()).thenReturn(" ");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
+        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.execute("instruction", "message"))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .satisfies(throwable -> {
+                    final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
+                    assertThat(actual.getHttpStatus()).isEqualTo(503);
+                    assertThat(actual.getUpstreamMessage()).isEqualTo(" ");
+                });
     }
 
     private Response getResponseWithText(final String text) {

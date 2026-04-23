@@ -5,6 +5,9 @@ import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.time.Instant;
@@ -17,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
@@ -321,7 +325,131 @@ class ChatAgentFlowIT {
     }
 
     @Test
-    @DisplayName("Should return bad gateway and keep agent unchanged when provider fails")
+    @DisplayName("Should return upstream quota error details and keep only user-side conversation records")
+    void givenOpenAiQuotaError_whenChatAgent_thenReturnUpstreamErrorAndKeepOnlyUserSideConversationRecords() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .singleElement()
+                .assertEntity()
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        final AgentEntity activeAgent = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .singleElement()
+                .assertEntity();
+
+        when(this.openAiChatClient.execute(
+                eq(""),
+                argThat(context -> Objects.nonNull(context) && context.contains("Explain clean architecture in simple words."))))
+                .thenThrow(new OpenAiExecutionException(
+                        429,
+                        "insufficient_quota",
+                        "insufficient_quota",
+                        "You exceeded your current quota."
+                ));
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .expectStatus(HttpStatus.TOO_MANY_REQUESTS)
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.code").value(429))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value("insufficient_quota"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.details").value("You exceeded your current quota."))
+                .assertDefault();
+
+        //then
+        verify(this.openAiChatClient).execute(
+                eq(""),
+                argThat(context -> Objects.nonNull(context) && context.contains("Explain clean architecture in simple words."))
+        );
+        this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
+                .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
+                .assertEntity();
+        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
+        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
+        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Should return upstream auth error details and keep only user-side conversation records")
+    void givenOpenAiInvalidApiKeyError_whenChatAgent_thenReturnUpstreamErrorAndKeepOnlyUserSideConversationRecords() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .singleElement()
+                .assertEntity()
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        final AgentEntity activeAgent = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .singleElement()
+                .assertEntity();
+
+        when(this.openAiChatClient.execute(
+                eq(""),
+                argThat(context -> Objects.nonNull(context) && context.contains("Explain clean architecture in simple words."))))
+                .thenThrow(new OpenAiExecutionException(
+                        401,
+                        null,
+                        "invalid_api_key",
+                        "Incorrect API key provided."
+                ));
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.code").value(401))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value("invalid_api_key"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.details").value("Incorrect API key provided."))
+                .assertDefault();
+
+        //then
+        verify(this.openAiChatClient).execute(
+                eq(""),
+                argThat(context -> Objects.nonNull(context) && context.contains("Explain clean architecture in simple words."))
+        );
+        this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
+                .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
+                .assertEntity();
+        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
+        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
+        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Should return bad gateway and keep only user-side conversation records when provider fails")
     void givenProviderFailure_whenChatAgent_thenReturnBadGatewayAndKeepDbState() {
         //given
         this.testManager.mockMvc()
@@ -354,6 +482,9 @@ class ChatAgentFlowIT {
                 .ping(ControllerEndpoint.chatAgent())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .expectStatus(HttpStatus.BAD_GATEWAY)
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.code").value(502))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value(nullValue()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.details").value("OpenAI request failed"))
                 .assertDefault();
 
         //then
@@ -369,5 +500,8 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
                 .assertEntity();
+        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
+        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
+        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
     }
 }
