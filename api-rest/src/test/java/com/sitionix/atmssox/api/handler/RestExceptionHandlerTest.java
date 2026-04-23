@@ -9,15 +9,19 @@ import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.method.ParameterValidationResult;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,6 +136,18 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void givenStructuredOpenAiExecutionExceptionWithInvalidStatus_whenHandleOpenAiExecutionException_thenReturnBadGatewayFallback() {
+        //given
+        final OpenAiExecutionException given = new OpenAiExecutionException(999, null, null, null);
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "Bad Gateway", "OpenAI request failed"));
+    }
+
+    @Test
     void givenConstraintViolationException_whenHandleConstraintViolation_thenReturnFirstViolationMessage() {
         //given
         final ConstraintViolation<?> constraintViolation = mock(ConstraintViolation.class);
@@ -158,6 +174,23 @@ class RestExceptionHandlerTest {
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, "Validation error message"));
+    }
+
+    @Test
+    void givenHandlerMethodValidationExceptionWithDetails_whenHandleMethodValidation_thenReturnFirstValidationMessage() {
+        //given
+        final HandlerMethodValidationException given = mock(HandlerMethodValidationException.class);
+        final ParameterValidationResult parameterValidationResult = mock(ParameterValidationResult.class);
+        final MessageSourceResolvable messageSourceResolvable = mock(MessageSourceResolvable.class);
+        when(given.getAllValidationResults()).thenReturn(List.of(parameterValidationResult));
+        when(parameterValidationResult.getResolvableErrors()).thenReturn(List.of(messageSourceResolvable));
+        when(messageSourceResolvable.getDefaultMessage()).thenReturn("payload validation failed");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleMethodValidation(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, "payload validation failed"));
     }
 
     @Test
