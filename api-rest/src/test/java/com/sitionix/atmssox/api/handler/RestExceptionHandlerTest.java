@@ -106,7 +106,7 @@ class RestExceptionHandlerTest {
         final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
 
         //then
-        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "OpenAI request failed"));
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY.value(), null, "OpenAI request failed"));
     }
 
     @Test
@@ -119,7 +119,7 @@ class RestExceptionHandlerTest {
         final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
 
         //then
-        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.TOO_MANY_REQUESTS, "insufficient_quota", "You exceeded your current quota."));
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.TOO_MANY_REQUESTS.value(), "insufficient_quota", "You exceeded your current quota."));
     }
 
     @Test
@@ -132,11 +132,11 @@ class RestExceptionHandlerTest {
         final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
 
         //then
-        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.UNAUTHORIZED, "invalid_api_key", "Incorrect API key provided."));
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.UNAUTHORIZED.value(), "invalid_api_key", "Incorrect API key provided."));
     }
 
     @Test
-    void givenStructuredOpenAiExecutionExceptionWithInvalidStatus_whenHandleOpenAiExecutionException_thenReturnBadGatewayFallback() {
+    void givenStructuredOpenAiExecutionExceptionWithInvalidStatus_whenHandleOpenAiExecutionException_thenReturnSameStatusWithoutFallback() {
         //given
         final OpenAiExecutionException given = new OpenAiExecutionException(999, null, null, null);
 
@@ -144,7 +144,7 @@ class RestExceptionHandlerTest {
         final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
 
         //then
-        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "Bad Gateway", "OpenAI request failed"));
+        assertThat(actual).isEqualTo(this.expectedError(999, null, null));
     }
 
     @Test
@@ -218,13 +218,17 @@ class RestExceptionHandlerTest {
     }
 
     private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String details) {
-        return this.expectedError(status, status.getReasonPhrase(), details);
+        return this.expectedError(status.value(), status.getReasonPhrase(), details);
     }
 
     private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String title, final String details) {
-        return ResponseEntity.status(status)
+        return this.expectedError(status.value(), title, details);
+    }
+
+    private ResponseEntity<ErrorDTO> expectedError(final int statusCode, final String title, final String details) {
+        return ResponseEntity.status(statusCode)
                 .body(ErrorDTO.builder()
-                        .code(status.value())
+                        .code(statusCode)
                         .title(title)
                         .details(details)
                         .build());

@@ -249,7 +249,7 @@ class OpenAiSdkChatClientTest {
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
                     assertThat(actual.getHttpStatus()).isEqualTo(503);
-                    assertThat(actual.getUpstreamMessage()).isEqualTo("OpenAI request failed");
+                    assertThat(actual.getUpstreamMessage()).isNull();
                 });
     }
 

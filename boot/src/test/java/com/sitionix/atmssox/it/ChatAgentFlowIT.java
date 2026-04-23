@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
@@ -482,7 +483,7 @@ class ChatAgentFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .expectStatus(HttpStatus.BAD_GATEWAY)
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.code").value(502))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value("Bad Gateway"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value(nullValue()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.details").value("OpenAI request failed"))
                 .assertDefault();
 

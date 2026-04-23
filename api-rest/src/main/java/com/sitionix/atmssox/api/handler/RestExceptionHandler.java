@@ -52,14 +52,14 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(OpenAiExecutionException.class)
     public ResponseEntity<ErrorDTO> handleOpenAiExecutionException(final OpenAiExecutionException exception) {
-        final HttpStatus status = HttpStatus.resolve(exception.getHttpStatus()) == null
-                ? HttpStatus.BAD_GATEWAY
-                : HttpStatus.valueOf(exception.getHttpStatus());
-        final String title = this.resolveOpenAiTitle(exception, status);
-        final String details = StringUtils.hasText(exception.getUpstreamMessage())
-                ? exception.getUpstreamMessage()
-                : "OpenAI request failed";
-        return buildError(status, title, details);
+        final int statusCode = exception.getHttpStatus();
+        final String title = this.resolveOpenAiTitle(exception);
+        return ResponseEntity.status(statusCode)
+                .body(ErrorDTO.builder()
+                        .code(statusCode)
+                        .title(title)
+                        .details(exception.getUpstreamMessage())
+                        .build());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -108,13 +108,13 @@ public class RestExceptionHandler {
                         .build());
     }
 
-    private String resolveOpenAiTitle(final OpenAiExecutionException exception, final HttpStatus status) {
+    private String resolveOpenAiTitle(final OpenAiExecutionException exception) {
         if (StringUtils.hasText(exception.getUpstreamType())) {
             return exception.getUpstreamType();
         }
         if (StringUtils.hasText(exception.getUpstreamCode())) {
             return exception.getUpstreamCode();
         }
-        return status.getReasonPhrase();
+        return null;
     }
 }

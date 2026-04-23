@@ -85,7 +85,7 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         if (StringUtils.hasText(exception.getMessage())) {
             return exception.getMessage();
         }
-        return "OpenAI request failed";
+        return null;
     }
 
     private String resolveUpstreamType(final OpenAIServiceException exception) {
