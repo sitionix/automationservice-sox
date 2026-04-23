@@ -19,11 +19,15 @@ import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
+import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
+import com.sitionix.atmssox.domain.usecase.GetAgentRules;
+import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +81,18 @@ class AgentControllerTest {
     private ChatAgent chatAgent;
 
     @Mock
+    private CreateAgentRule createAgentRule;
+
+    @Mock
+    private GetAgentRules getAgentRules;
+
+    @Mock
+    private PatchAgentRule patchAgentRule;
+
+    @Mock
+    private DeleteAgentRule deleteAgentRule;
+
+    @Mock
     private RestoreAgent restoreAgent;
 
     @Mock
@@ -97,6 +113,10 @@ class AgentControllerTest {
                 this.activateAgent,
                 this.archiveAgent,
                 this.chatAgent,
+                this.createAgentRule,
+                this.getAgentRules,
+                this.patchAgentRule,
+                this.deleteAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper
@@ -115,6 +135,10 @@ class AgentControllerTest {
                 this.activateAgent,
                 this.archiveAgent,
                 this.chatAgent,
+                this.createAgentRule,
+                this.getAgentRules,
+                this.patchAgentRule,
+                this.deleteAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper

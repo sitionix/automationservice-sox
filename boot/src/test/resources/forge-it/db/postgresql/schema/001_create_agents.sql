@@ -20,6 +20,15 @@ CREATE TABLE agents (
     updated_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE agent_rules (
+    rule_id UUID PRIMARY KEY,
+    agent_id UUID NOT NULL REFERENCES agents(agent_id),
+    text TEXT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE conversations (
     conversation_id UUID PRIMARY KEY,
     user_id BIGINT NOT NULL,

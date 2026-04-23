@@ -1,6 +1,12 @@
 CREATE INDEX idx_agents_user_id_updated_at
     ON agents (user_id, updated_at DESC);
 
+CREATE INDEX idx_agent_rules_agent_status
+    ON agent_rules (agent_id, status);
+
+CREATE INDEX idx_agent_rules_agent_created_at
+    ON agent_rules (agent_id, created_at ASC);
+
 CREATE INDEX idx_conversations_user_last_message
     ON conversations (user_id, last_message_at DESC);
 

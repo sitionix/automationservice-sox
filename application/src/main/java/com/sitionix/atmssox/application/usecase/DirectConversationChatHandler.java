@@ -5,6 +5,8 @@ import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
@@ -12,9 +14,9 @@ import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
-import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
+import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import com.sitionix.atmssox.domain.usecase.ConversationChatHandler;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Component;
 public class DirectConversationChatHandler implements ConversationChatHandler {
 
     private final AgentRepository agentRepository;
+    private final AgentRuleRepository agentRuleRepository;
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
@@ -57,9 +60,14 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 message
         ));
         final List<ConversationMessage> history = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                AgentRuleStatus.ACTIVE
+        );
 
         final String instruction = this.normalizeInstruction(agent);
-        final String contextPrompt = this.conversationContextBuilder.build(history);
+        final String contextPrompt = this.conversationContextBuilder.build(activeRules, history);
         final String replyContent = this.openAiChatClient.execute(instruction, contextPrompt);
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
