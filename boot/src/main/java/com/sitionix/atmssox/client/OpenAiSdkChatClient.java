@@ -1,14 +1,12 @@
 package com.sitionix.atmssox.client;
 
 import com.openai.client.OpenAIClient;
-import com.openai.core.JsonValue;
 import com.openai.errors.OpenAIServiceException;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
 import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,45 +63,10 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
     private OpenAiExecutionException mapServiceException(final OpenAIServiceException exception) {
         return new OpenAiExecutionException(
                 exception.statusCode(),
-                this.firstNonBlank(exception.type().orElse(null), this.resolveBodyField(exception, "type")),
-                this.firstNonBlank(exception.code().orElse(null), this.resolveBodyField(exception, "code")),
-                this.firstNonBlank(this.resolveBodyField(exception, "message"), exception.getMessage()),
+                exception.type().orElse(null),
+                exception.code().orElse(null),
+                exception.getMessage(),
                 exception
         );
-    }
-
-    private String resolveBodyField(final OpenAIServiceException exception, final String fieldName) {
-        try {
-            final JsonValue body = exception.body();
-            final Map<String, Object> bodyMap = body.convert(Map.class);
-            return this.resolveBodyField(bodyMap, fieldName);
-        } catch (Exception parsingException) {
-            return null;
-        }
-    }
-
-    private String resolveBodyField(final Map<String, Object> bodyMap, final String fieldName) {
-        final Object errorNode = bodyMap.get("error");
-        if (errorNode instanceof Map<?, ?> errorMap) {
-            final Object nestedFieldValue = errorMap.get(fieldName);
-            if (nestedFieldValue instanceof String nestedFieldAsString && StringUtils.hasText(nestedFieldAsString)) {
-                return nestedFieldAsString;
-            }
-        }
-        final Object fieldValue = bodyMap.get(fieldName);
-        if (fieldValue instanceof String fieldAsString && StringUtils.hasText(fieldAsString)) {
-            return fieldAsString;
-        }
-        return null;
-    }
-
-    private String firstNonBlank(final String first, final String second) {
-        if (StringUtils.hasText(first)) {
-            return first;
-        }
-        if (StringUtils.hasText(second)) {
-            return second;
-        }
-        return null;
     }
 }
