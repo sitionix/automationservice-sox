@@ -26,7 +26,24 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
         this.validateConfiguration();
 
         try {
-            return this.executeRequest(instruction, message);
+            final ResponseCreateParams params = ResponseCreateParams.builder()
+                    .model(this.openAiChatProperties.getModel())
+                    .instructions(instruction)
+                    .input(message)
+                    .build();
+            final Response response = this.openAIClient.responses().create(params);
+            final String output = response.output().stream()
+                    .flatMap(item -> item.message().stream())
+                    .flatMap(outputMessage -> outputMessage.content().stream())
+                    .flatMap(content -> content.outputText().stream())
+                    .map(outputText -> outputText.text().trim())
+                    .filter(StringUtils::hasText)
+                    .findFirst()
+                    .orElse(null);
+            if (!StringUtils.hasText(output)) {
+                throw new OpenAiExecutionException("OpenAI returned empty reply");
+            }
+            return output.trim();
         } catch (OpenAiExecutionException exception) {
             throw exception;
         } catch (OpenAIServiceException exception) {
@@ -46,48 +63,22 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
     }
 
     private OpenAiExecutionException mapServiceException(final OpenAIServiceException exception) {
-        final UpstreamBodyFields upstreamBodyFields = this.extractUpstreamBodyFields(exception.body());
         return new OpenAiExecutionException(
                 exception.statusCode(),
-                this.firstNonBlank(exception.type().orElse(null), upstreamBodyFields.type()),
-                this.firstNonBlank(exception.code().orElse(null), upstreamBodyFields.code()),
-                this.firstNonBlank(upstreamBodyFields.message(), exception.getMessage()),
+                this.firstNonBlank(exception.type().orElse(null), this.resolveBodyField(exception, "type")),
+                this.firstNonBlank(exception.code().orElse(null), this.resolveBodyField(exception, "code")),
+                this.firstNonBlank(this.resolveBodyField(exception, "message"), exception.getMessage()),
                 exception
         );
     }
 
-    private String executeRequest(final String instruction, final String message) {
-        final ResponseCreateParams params = ResponseCreateParams.builder()
-                .model(this.openAiChatProperties.getModel())
-                .instructions(instruction)
-                .input(message)
-                .build();
-        final Response response = this.openAIClient.responses().create(params);
-        final String output = response.output().stream()
-                .flatMap(item -> item.message().stream())
-                .flatMap(outputMessage -> outputMessage.content().stream())
-                .flatMap(content -> content.outputText().stream())
-                .map(outputText -> outputText.text().trim())
-                .filter(StringUtils::hasText)
-                .findFirst()
-                .orElse(null);
-
-        if (!StringUtils.hasText(output)) {
-            throw new OpenAiExecutionException("OpenAI returned empty reply");
-        }
-        return output.trim();
-    }
-
-    private UpstreamBodyFields extractUpstreamBodyFields(final JsonValue body) {
+    private String resolveBodyField(final OpenAIServiceException exception, final String fieldName) {
         try {
+            final JsonValue body = exception.body();
             final Map<String, Object> bodyMap = body.convert(Map.class);
-            return new UpstreamBodyFields(
-                    this.resolveBodyField(bodyMap, "message"),
-                    this.resolveBodyField(bodyMap, "type"),
-                    this.resolveBodyField(bodyMap, "code")
-            );
-        } catch (Exception exception) {
-            return UpstreamBodyFields.empty();
+            return this.resolveBodyField(bodyMap, fieldName);
+        } catch (Exception parsingException) {
+            return null;
         }
     }
 
@@ -114,12 +105,5 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
             return second;
         }
         return null;
-    }
-
-    private record UpstreamBodyFields(String message, String type, String code) {
-
-        private static UpstreamBodyFields empty() {
-            return new UpstreamBodyFields(null, null, null);
-        }
     }
 }
