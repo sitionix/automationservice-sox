@@ -9,6 +9,7 @@ import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -88,15 +89,17 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
     }
 
     private String resolveUpstreamType(final OpenAIServiceException exception) {
-        if (exception.type().isPresent() && StringUtils.hasText(exception.type().get())) {
-            return exception.type().get();
+        final Optional<String> upstreamType = exception.type();
+        if (upstreamType.isPresent() && StringUtils.hasText(upstreamType.get())) {
+            return upstreamType.get();
         }
         return this.resolveBodyField(exception.body(), "type");
     }
 
     private String resolveUpstreamCode(final OpenAIServiceException exception) {
-        if (exception.code().isPresent() && StringUtils.hasText(exception.code().get())) {
-            return exception.code().get();
+        final Optional<String> upstreamCode = exception.code();
+        if (upstreamCode.isPresent() && StringUtils.hasText(upstreamCode.get())) {
+            return upstreamCode.get();
         }
         return this.resolveBodyField(exception.body(), "code");
     }

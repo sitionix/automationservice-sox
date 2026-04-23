@@ -106,6 +106,32 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void givenStructuredOpenAiExecutionExceptionWithType_whenHandleOpenAiExecutionException_thenReturnUpstreamStatusAndType() {
+        //given
+        final OpenAiExecutionException given =
+                new OpenAiExecutionException(429, "insufficient_quota", "quota_exceeded", "You exceeded your current quota.");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.TOO_MANY_REQUESTS, "insufficient_quota", "You exceeded your current quota."));
+    }
+
+    @Test
+    void givenStructuredOpenAiExecutionExceptionWithCodeOnly_whenHandleOpenAiExecutionException_thenReturnUpstreamStatusAndCode() {
+        //given
+        final OpenAiExecutionException given =
+                new OpenAiExecutionException(401, null, "invalid_api_key", "Incorrect API key provided.");
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleOpenAiExecutionException(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.UNAUTHORIZED, "invalid_api_key", "Incorrect API key provided."));
+    }
+
+    @Test
     void givenConstraintViolationException_whenHandleConstraintViolation_thenReturnFirstViolationMessage() {
         //given
         final ConstraintViolation<?> constraintViolation = mock(ConstraintViolation.class);
@@ -159,10 +185,14 @@ class RestExceptionHandlerTest {
     }
 
     private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String details) {
+        return this.expectedError(status, status.getReasonPhrase(), details);
+    }
+
+    private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String title, final String details) {
         return ResponseEntity.status(status)
                 .body(ErrorDTO.builder()
                         .code(status.value())
-                        .title(status.getReasonPhrase())
+                        .title(title)
                         .details(details)
                         .build());
     }
