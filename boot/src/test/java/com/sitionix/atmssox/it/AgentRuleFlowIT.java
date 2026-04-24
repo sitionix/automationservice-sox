@@ -44,7 +44,8 @@ class AgentRuleFlowIT {
                 .ping(ControllerEndpoint.createAgentRule())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").isNotEmpty())
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.text").value("Always produce deterministic output"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value("Deterministic output"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.content").value("Always produce deterministic output"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault();
@@ -59,7 +60,8 @@ class AgentRuleFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(1))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].id").value(createdRule.getRuleId().toString()))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].text").value("Always produce deterministic output"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].title").value("Deterministic output"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].content").value("Always produce deterministic output"))
                 .assertDefault();
 
         this.testManager.mockMvc()
@@ -69,7 +71,8 @@ class AgentRuleFlowIT {
                         .add("ruleId", createdRule.getRuleId()))
                 .withRequest("patchAgentRuleRequest.json")
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(createdRule.getRuleId().toString()))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.text").value("Keep responses concise and technical"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.title").value("Response style"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.content").value("Keep responses concise and technical"))
                 .assertDefault();
 
         final Instant beforeDeleteUpdatedAt = this.testManager.postgresql()
@@ -98,7 +101,8 @@ class AgentRuleFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId(), createdRule.getRuleId()))
-                .andExpected(entity -> Objects.equals(entity.getText(), "Keep responses concise and technical"))
+                .andExpected(entity -> Objects.equals(entity.getTitle(), "Response style"))
+                .andExpected(entity -> Objects.equals(entity.getContent(), "Keep responses concise and technical"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentRuleStatus.DELETED.getId()))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeDeleteUpdatedAt))
                 .assertEntity();
@@ -165,13 +169,16 @@ class AgentRuleFlowIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentRule())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setText("Second rule for ordering")));
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setTitle("Second rule");
+                    request.setContent("Second rule for ordering");
+                }));
 
         final List<AgentRuleEntity> allRules = this.testManager.postgresql()
                 .get(AgentRuleEntity.class)
                 .getAll();
         final UUID secondRuleId = allRules.stream()
-                .filter(entity -> Objects.equals(entity.getText(), "Second rule for ordering"))
+                .filter(entity -> Objects.equals(entity.getContent(), "Second rule for ordering"))
                 .map(AgentRuleEntity::getRuleId)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Second rule not found"));
@@ -182,9 +189,9 @@ class AgentRuleFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].id").value(firstRuleId.toString()))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].text").value("Always produce deterministic output"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].content").value("Always produce deterministic output"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[1].id").value(secondRuleId.toString()))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[1].text").value("Second rule for ordering"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[1].content").value("Second rule for ordering"))
                 .assertDefault();
 
         this.testManager.mockMvc()
@@ -202,7 +209,7 @@ class AgentRuleFlowIT {
     }
 
     @Test
-    @DisplayName("Should return bad request and persist nothing for blank create text")
+    @DisplayName("Should return bad request and persist nothing for blank create title")
     void givenBlankRuleText_whenCreateRule_thenReturnBadRequestAndPersistNothing() {
         //given
         this.testManager.mockMvc()
@@ -230,7 +237,7 @@ class AgentRuleFlowIT {
     }
 
     @Test
-    @DisplayName("Should return bad request and keep row unchanged when patch text is null")
+    @DisplayName("Should return conflict and keep row unchanged when patch has no fields")
     void givenNullPatchBodyText_whenPatchRule_thenReturnBadRequestAndKeepRuleUnchanged() {
         //given
         this.testManager.mockMvc()
@@ -260,7 +267,7 @@ class AgentRuleFlowIT {
                         .add("agentId", agentId)
                         .add("ruleId", beforePatch.getRuleId()))
                 .withRequest("patchAgentRuleNullTextRequest.json")
-                .expectStatus(HttpStatus.BAD_REQUEST)
+                .expectStatus(HttpStatus.CONFLICT)
                 .assertDefault();
 
         //then
@@ -269,7 +276,8 @@ class AgentRuleFlowIT {
                 .hasSize(1)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId(), beforePatch.getRuleId()))
-                .andExpected(entity -> Objects.equals(entity.getText(), beforePatch.getText()))
+                .andExpected(entity -> Objects.equals(entity.getTitle(), beforePatch.getTitle()))
+                .andExpected(entity -> Objects.equals(entity.getContent(), beforePatch.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforePatch.getStatus().getId()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforePatch.getUpdatedAt()))
                 .assertEntity();
@@ -331,7 +339,7 @@ class AgentRuleFlowIT {
     }
 
     @Test
-    @DisplayName("Should keep deleted row unchanged on repeated delete")
+    @DisplayName("Should return conflict and keep deleted row unchanged on repeated delete")
     void givenAlreadyDeletedRule_whenDeleteRuleTwice_thenReturnDeletedAndKeepSingleDeletedRow() {
         //given
         this.testManager.mockMvc()
@@ -358,7 +366,7 @@ class AgentRuleFlowIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.deleteAgentRule())
                 .withPathParameters(PathParams.create().add("agentId", agentId).add("ruleId", ruleId))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("DELETED"))
+                .expectStatus(HttpStatus.CONFLICT)
                 .assertDefault();
 
         final AgentRuleEntity afterFirstDelete = this.testManager.postgresql()
@@ -381,6 +389,7 @@ class AgentRuleFlowIT {
         //then
         assertThat(afterSecondDelete.getStatus().getId()).isEqualTo(AgentRuleStatus.DELETED.getId());
         assertThat(afterSecondDelete.getUpdatedAt()).isEqualTo(afterFirstDelete.getUpdatedAt());
-        assertThat(afterSecondDelete.getText()).isEqualTo(afterFirstDelete.getText());
+        assertThat(afterSecondDelete.getTitle()).isEqualTo(afterFirstDelete.getTitle());
+        assertThat(afterSecondDelete.getContent()).isEqualTo(afterFirstDelete.getContent());
     }
 }

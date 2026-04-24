@@ -4,6 +4,7 @@ import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.PatchAgentRuleCommand;
@@ -57,9 +58,9 @@ class PatchAgentRuleImplTest {
         //given
         final UUID agentId = UUID.fromString("09bd93f6-3a23-4870-9ce0-aa0b8daa903f");
         final UUID ruleId = UUID.fromString("35773995-c66d-44f9-87f3-7b2bf34264f6");
-        final PatchAgentRuleCommand command = new PatchAgentRuleCommand("  Updated rule text  ");
-        final AgentRule current = this.getRule(ruleId, agentId, "Old text", AgentRuleStatus.ACTIVE);
-        final AgentRule updated = this.getRule(ruleId, agentId, "Updated rule text", AgentRuleStatus.ACTIVE);
+        final PatchAgentRuleCommand command = new PatchAgentRuleCommand(null, "  Updated rule text  ");
+        final AgentRule current = this.getRule(ruleId, agentId, "Rule title", "Old text", AgentRuleStatus.ACTIVE);
+        final AgentRule updated = this.getRule(ruleId, agentId, "Rule title", "Updated rule text", AgentRuleStatus.ACTIVE);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.of(current));
@@ -80,8 +81,8 @@ class PatchAgentRuleImplTest {
         //given
         final UUID agentId = UUID.fromString("7514f48a-bb35-4d8e-b9eb-e9a5f41e119a");
         final UUID ruleId = UUID.fromString("ef7f7b46-b174-45ce-b95f-9d01afb1d539");
-        final PatchAgentRuleCommand command = new PatchAgentRuleCommand("updated");
-        final AgentRule current = this.getRule(ruleId, agentId, "Old text", AgentRuleStatus.DELETED);
+        final PatchAgentRuleCommand command = new PatchAgentRuleCommand(null, "updated");
+        final AgentRule current = this.getRule(ruleId, agentId, "Rule title", "Old text", AgentRuleStatus.DELETED);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.of(current));
@@ -90,7 +91,7 @@ class PatchAgentRuleImplTest {
         //then
         assertThatThrownBy(() -> this.patchAgentRule.execute(agentId, ruleId, command))
                 .isInstanceOf(AgentLifecycleTransitionException.class)
-                .hasMessage("Only ACTIVE rule can be updated");
+                .hasMessage("DELETED rule cannot be updated");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
     }
@@ -100,8 +101,8 @@ class PatchAgentRuleImplTest {
         //given
         final UUID agentId = UUID.fromString("21757f2c-c883-49ef-96f5-c62916dff557");
         final UUID ruleId = UUID.fromString("e8f65c75-1f10-48a8-84ab-95af4a1a258b");
-        final PatchAgentRuleCommand command = new PatchAgentRuleCommand("   ");
-        final AgentRule current = this.getRule(ruleId, agentId, "Old text", AgentRuleStatus.ACTIVE);
+        final PatchAgentRuleCommand command = new PatchAgentRuleCommand(null, "   ");
+        final AgentRule current = this.getRule(ruleId, agentId, "Rule title", "Old text", AgentRuleStatus.ACTIVE);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.of(current));
@@ -110,7 +111,7 @@ class PatchAgentRuleImplTest {
         //then
         assertThatThrownBy(() -> this.patchAgentRule.execute(agentId, ruleId, command))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("Rule text is required");
+                .hasMessage("Rule content is required");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
     }
@@ -120,7 +121,7 @@ class PatchAgentRuleImplTest {
         //given
         final UUID agentId = UUID.fromString("9d46d570-69e5-4f5e-a520-fba542f67c7a");
         final UUID ruleId = UUID.fromString("a6db84b4-af5d-4f18-8c40-826c58b2f286");
-        final PatchAgentRuleCommand command = new PatchAgentRuleCommand("updated");
+        final PatchAgentRuleCommand command = new PatchAgentRuleCommand("updated", null);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.empty());
@@ -134,12 +135,18 @@ class PatchAgentRuleImplTest {
         verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
     }
 
-    private AgentRule getRule(final UUID ruleId, final UUID agentId, final String text, final AgentRuleStatus status) {
+    private AgentRule getRule(final UUID ruleId,
+                              final UUID agentId,
+                              final String title,
+                              final String content,
+                              final AgentRuleStatus status) {
         return AgentRule.builder()
                 .id(ruleId)
                 .agentId(agentId)
-                .text(text)
+                .title(title)
+                .content(content)
                 .status(status)
+                .authorType(AgentRuleAuthorType.USER)
                 .build();
     }
 }

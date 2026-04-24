@@ -4,6 +4,7 @@ import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
@@ -63,9 +64,15 @@ class CreateAgentRuleImplTest {
     void givenValidInput_whenExecute_thenCreateActiveRuleWithTrimmedText() {
         //given
         final UUID agentId = UUID.fromString("a8e649b0-f56b-4f7f-84cb-33e0d90d6d3a");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("  Always be explicit.  ");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("  Output style  ", "  Always be explicit.  ");
         final Agent agent = mock(Agent.class);
-        final AgentRule saved = this.getRule(agentId, "Always be explicit.", AgentRuleStatus.ACTIVE);
+        final AgentRule saved = this.getRule(
+                agentId,
+                "Output style",
+                "Always be explicit.",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER
+        );
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
@@ -85,7 +92,7 @@ class CreateAgentRuleImplTest {
     void givenBlankText_whenExecute_thenThrowValidationException() {
         //given
         final UUID agentId = UUID.fromString("13c953ec-8da6-46f3-9390-2ab25a3ddfbe");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("   ");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("   ", "valid content");
         final Agent agent = mock(Agent.class);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -95,7 +102,7 @@ class CreateAgentRuleImplTest {
         //then
         assertThatThrownBy(() -> this.createAgentRule.execute(agentId, command))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("Rule text is required");
+                .hasMessage("Rule title is required");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
     }
@@ -104,7 +111,7 @@ class CreateAgentRuleImplTest {
     void givenUnknownAgent_whenExecute_thenThrowNotFoundException() {
         //given
         final UUID agentId = UUID.fromString("27ec00b4-6cb9-4720-9949-11cd1d3f18d0");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("rule");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("title", "rule");
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.empty());
@@ -118,12 +125,18 @@ class CreateAgentRuleImplTest {
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
     }
 
-    private AgentRule getRule(final UUID agentId, final String text, final AgentRuleStatus status) {
+    private AgentRule getRule(final UUID agentId,
+                              final String title,
+                              final String content,
+                              final AgentRuleStatus status,
+                              final AgentRuleAuthorType authorType) {
         return AgentRule.builder()
                 .id(UUID.fromString("b23f62f7-e3d8-4f9c-bd28-a911ad4d5007"))
                 .agentId(agentId)
-                .text(text)
+                .title(title)
+                .content(content)
                 .status(status)
+                .authorType(authorType)
                 .build();
     }
 }

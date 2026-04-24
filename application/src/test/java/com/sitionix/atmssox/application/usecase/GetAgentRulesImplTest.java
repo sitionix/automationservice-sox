@@ -3,8 +3,10 @@ package com.sitionix.atmssox.application.usecase;
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
+import com.sitionix.atmssox.domain.model.GetAgentRulesQuery;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -62,34 +64,36 @@ class GetAgentRulesImplTest {
         //given
         final UUID agentId = UUID.fromString("88d40603-c67f-4f33-b1d1-a5f66b4f9f57");
         final Agent agent = mock(Agent.class);
+        final GetAgentRulesQuery query = new GetAgentRulesQuery(AgentRuleStatus.ACTIVE, null);
         final List<AgentRule> expected = List.of(this.getRule(agentId, "Rule 1"), this.getRule(agentId, "Rule 2"));
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
-        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE))
+        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(expected);
 
         //when
-        final List<AgentRule> actual = this.getAgentRules.execute(agentId);
+        final List<AgentRule> actual = this.getAgentRules.execute(agentId, query);
 
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE);
+        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
     }
 
     @Test
     void givenAgentNotFound_whenExecute_thenThrowNotFoundException() {
         //given
         final UUID agentId = UUID.fromString("8b3399eb-4f0c-465e-be9d-5d0350dae364");
+        final GetAgentRulesQuery query = new GetAgentRulesQuery(AgentRuleStatus.ACTIVE, null);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.empty());
 
         //when
         //then
-        assertThatThrownBy(() -> this.getAgentRules.execute(agentId))
+        assertThatThrownBy(() -> this.getAgentRules.execute(agentId, query))
                 .isInstanceOf(AgentNotFoundException.class)
                 .hasMessage("Agent not found");
         verify(this.authenticatedUserProvider).getUserId();
@@ -100,8 +104,10 @@ class GetAgentRulesImplTest {
         return AgentRule.builder()
                 .id(UUID.randomUUID())
                 .agentId(agentId)
-                .text(text)
+                .title(text)
+                .content(text + " content")
                 .status(AgentRuleStatus.ACTIVE)
+                .authorType(AgentRuleAuthorType.USER)
                 .build();
     }
 }

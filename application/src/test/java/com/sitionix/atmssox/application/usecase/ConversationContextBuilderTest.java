@@ -2,6 +2,7 @@ package com.sitionix.atmssox.application.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
@@ -38,10 +39,10 @@ class ConversationContextBuilderTest {
                 "It separates core business logic from frameworks.",
                 Instant.parse("2026-04-21T10:01:00Z")
         );
-        final AgentRule rule = this.getAgentRule("Always keep answers explicit.");
+        final AgentRule rule = this.getAgentRule("Tone", "Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
         final String expected = "Active rules:\n"
-                + "- Always keep answers explicit.\n"
+                + "- Tone: Always keep answers explicit.\n"
                 + "\n"
                 + "Conversation history:\n"
                 + "USER: Explain clean architecture\n"
@@ -86,12 +87,14 @@ class ConversationContextBuilderTest {
                 .build();
     }
 
-    private AgentRule getAgentRule(final String text) {
+    private AgentRule getAgentRule(final String title, final String content) {
         return AgentRule.builder()
                 .id(UUID.fromString("3be0c922-c53e-4a0d-b17f-f6b6b9f63195"))
                 .agentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-                .text(text)
+                .title(title)
+                .content(content)
                 .status(AgentRuleStatus.ACTIVE)
+                .authorType(AgentRuleAuthorType.USER)
                 .createdAt(Instant.parse("2026-04-21T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-21T10:00:00Z"))
                 .build();
