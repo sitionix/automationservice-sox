@@ -202,6 +202,157 @@ class AgentRuleRepositoryImplTest {
         verify(this.agentRuleJpaRepository).findByRuleIdAndAgentAgentIdAndAgentUserId(ruleId, agentId, userId);
     }
 
+    @Test
+    void givenStatusAndAuthorType_whenFindAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc_thenUseCombinedFilter() {
+        //given
+        final UUID agentId = UUID.fromString("20419c8c-b179-4c95-ae17-74cfa63dbbfd");
+        final Long userId = 17L;
+        final AgentRuleStatus status = AgentRuleStatus.PENDING;
+        final AgentRuleAuthorType authorType = AgentRuleAuthorType.AI;
+        final AgentRuleEntity entity = this.getAgentRuleEntity(
+                UUID.fromString("49fd1f5d-c55e-43ec-a179-18b98d5e34e7"),
+                agentId,
+                "Rule title",
+                "Rule content",
+                status,
+                authorType,
+                Instant.parse("2026-04-21T10:00:00Z"),
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final List<AgentRule> expected = List.of(
+                this.getAgentRule(
+                        entity.getRuleId(),
+                        agentId,
+                        "Rule title",
+                        "Rule content",
+                        status,
+                        authorType,
+                        entity.getCreatedAt(),
+                        entity.getUpdatedAt()
+                )
+        );
+
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                status.getId(),
+                authorType
+        )).thenReturn(List.of(entity));
+
+        //when
+        final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                status,
+                authorType
+        );
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                status.getId(),
+                authorType
+        );
+    }
+
+    @Test
+    void givenAuthorTypeOnly_whenFindAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc_thenUseAuthorTypeFilter() {
+        //given
+        final UUID agentId = UUID.fromString("9f0cd9cf-f8c0-45ce-8a72-7441f43fd940");
+        final Long userId = 17L;
+        final AgentRuleAuthorType authorType = AgentRuleAuthorType.AI;
+        final AgentRuleEntity entity = this.getAgentRuleEntity(
+                UUID.fromString("eeb4bc06-236d-4f90-a478-e13643c91f1e"),
+                agentId,
+                "Rule title",
+                "Rule content",
+                AgentRuleStatus.PENDING,
+                authorType,
+                Instant.parse("2026-04-21T10:00:00Z"),
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final List<AgentRule> expected = List.of(
+                this.getAgentRule(
+                        entity.getRuleId(),
+                        agentId,
+                        "Rule title",
+                        "Rule content",
+                        AgentRuleStatus.PENDING,
+                        authorType,
+                        entity.getCreatedAt(),
+                        entity.getUpdatedAt()
+                )
+        );
+
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                authorType
+        )).thenReturn(List.of(entity));
+
+        //when
+        final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                null,
+                authorType
+        );
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                authorType
+        );
+    }
+
+    @Test
+    void givenNoFilters_whenFindAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc_thenUseBaseFilter() {
+        //given
+        final UUID agentId = UUID.fromString("07c2d911-0bc4-463b-b4e4-37f2ab8c9ff5");
+        final Long userId = 17L;
+        final AgentRuleEntity entity = this.getAgentRuleEntity(
+                UUID.fromString("e79fc8f8-b415-4fdb-b8e8-876fcfd00f0d"),
+                agentId,
+                "Rule title",
+                "Rule content",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER,
+                Instant.parse("2026-04-21T10:00:00Z"),
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final List<AgentRule> expected = List.of(
+                this.getAgentRule(
+                        entity.getRuleId(),
+                        agentId,
+                        "Rule title",
+                        "Rule content",
+                        AgentRuleStatus.ACTIVE,
+                        AgentRuleAuthorType.USER,
+                        entity.getCreatedAt(),
+                        entity.getUpdatedAt()
+                )
+        );
+
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId))
+                .thenReturn(List.of(entity));
+
+        //when
+        final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                agentId,
+                userId,
+                null,
+                null
+        );
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
+    }
+
     private AgentRule getAgentRule(final UUID id,
                                    final UUID agentId,
                                    final String title,

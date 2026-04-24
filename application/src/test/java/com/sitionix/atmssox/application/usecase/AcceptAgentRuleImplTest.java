@@ -100,6 +100,28 @@ class AcceptAgentRuleImplTest {
         verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
     }
 
+    @Test
+    void givenDeletedRuleAndNullCommand_whenExecute_thenActivateRuleKeepingCurrentText() {
+        //given
+        final UUID agentId = UUID.fromString("9a67b89f-a2cd-4ad7-a6d6-2ef83afcda6e");
+        final UUID ruleId = UUID.fromString("50447e5a-4d42-4973-b806-f5ddc0f68467");
+        final AgentRule current = this.getRule(ruleId, agentId, AgentRuleStatus.DELETED, AgentRuleAuthorType.AI);
+        final AgentRule updated = this.getRule(ruleId, agentId, AgentRuleStatus.ACTIVE, AgentRuleAuthorType.AI);
+
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.of(current));
+        when(this.agentRuleRepository.save(any(AgentRule.class))).thenReturn(updated);
+
+        //when
+        final AgentRule actual = this.acceptAgentRule.execute(agentId, ruleId, null);
+
+        //then
+        assertThat(actual).isEqualTo(updated);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
+        verify(this.agentRuleRepository).save(any(AgentRule.class));
+    }
+
     private AgentRule getRule(final UUID ruleId,
                               final UUID agentId,
                               final AgentRuleStatus status,

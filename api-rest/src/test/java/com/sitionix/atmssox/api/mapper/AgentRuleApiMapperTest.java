@@ -173,6 +173,24 @@ class AgentRuleApiMapperTest {
         assertThat(actual).isEqualTo(expected);
     }
 
+    @Test
+    void givenStatusAndAuthorType_whenAsGetAgentRulesQuery_thenReturnMappedValues() {
+        //given
+        final GetAgentRulesQuery expected = new GetAgentRulesQuery(
+                AgentRuleStatus.PENDING,
+                AgentRuleAuthorType.AI
+        );
+
+        //when
+        final GetAgentRulesQuery actual = this.agentRuleApiMapper.asGetAgentRulesQuery(
+                AgentRuleStatusDTO.PENDING,
+                AgentRuleAuthorTypeDTO.AI
+        );
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
     private AgentRule getAgentRule(final String title, final String content) {
         return AgentRule.builder()
                 .id(UUID.randomUUID())
