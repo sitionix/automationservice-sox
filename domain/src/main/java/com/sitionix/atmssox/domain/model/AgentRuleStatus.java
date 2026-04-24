@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 public enum AgentRuleStatus {
 
     ACTIVE(1L),
-    DELETED(2L);
+    DELETED(2L),
+    PENDING(3L),
+    REJECTED(4L);
 
     private final Long id;
 
@@ -25,6 +27,9 @@ public enum AgentRuleStatus {
     }
 
     public AgentRuleStatus delete() {
+        if (this == DELETED) {
+            throw new IllegalStateException("Rule is already deleted");
+        }
         return DELETED;
     }
 }

@@ -13,9 +13,13 @@ public class AgentRule {
 
     UUID agentId;
 
-    String text;
+    String title;
+
+    String content;
 
     AgentRuleStatus status;
+
+    AgentRuleAuthorType authorType;
 
     Instant createdAt;
 

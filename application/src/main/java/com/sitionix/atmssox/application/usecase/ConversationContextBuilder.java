@@ -15,8 +15,7 @@ public class ConversationContextBuilder {
         if (!activeRules.isEmpty()) {
             builder.append("Active rules:\n");
             builder.append(activeRules.stream()
-                    .map(AgentRule::getText)
-                    .map(ruleText -> "- " + ruleText)
+                    .map(rule -> "- " + rule.getTitle() + ": " + rule.getContent())
                     .collect(Collectors.joining("\n")));
             builder.append("\n");
             builder.append("\n");

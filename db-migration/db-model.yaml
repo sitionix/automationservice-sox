@@ -33,8 +33,10 @@ tables:
     columns:
       rule_id: uuid
       agent_id: uuid
-      text: text
+      title: varchar(255)
+      content: text
       status_id: bigint
+      author_type: varchar(32)
       created_at: timestamptz
       updated_at: timestamptz
   conversations:

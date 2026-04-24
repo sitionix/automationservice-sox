@@ -4,9 +4,12 @@ import com.app_afesox.atmssox.api_first.api.AgentApi;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
@@ -18,12 +21,14 @@ import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AcceptAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.ChatAgent;
+import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
@@ -33,6 +38,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
+import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
@@ -72,6 +78,10 @@ public class AgentController implements AgentApi {
     private final PatchAgentRule patchAgentRule;
 
     private final DeleteAgentRule deleteAgentRule;
+
+    private final AcceptAgentRule acceptAgentRule;
+
+    private final RejectAgentRule rejectAgentRule;
 
     private final RestoreAgent restoreAgent;
 
@@ -135,8 +145,12 @@ public class AgentController implements AgentApi {
     }
 
     @Override
-    public ResponseEntity<AgentRulesResponseDTO> getAgentRules(final UUID agentId) {
-        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRulesResponseDto(this.getAgentRules.execute(agentId)));
+    public ResponseEntity<AgentRulesResponseDTO> getAgentRules(final UUID agentId,
+                                                               final AgentRuleStatusDTO status,
+                                                               final AgentRuleAuthorTypeDTO authorType) {
+        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRulesResponseDto(
+                this.getAgentRules.execute(agentId, this.agentRuleApiMapper.asGetAgentRulesQuery(status, authorType))
+        ));
     }
 
     @Override
@@ -158,6 +172,21 @@ public class AgentController implements AgentApi {
     @Override
     public ResponseEntity<DeleteAgentRuleResponseDTO> deleteAgentRule(final UUID agentId, final UUID ruleId) {
         return ResponseEntity.ok(this.agentRuleApiMapper.asDeleteAgentRuleResponseDto(this.deleteAgentRule.execute(agentId, ruleId)));
+    }
+
+    @Override
+    public ResponseEntity<AgentRuleDTO> acceptAgentRule(final UUID agentId,
+                                                        final UUID ruleId,
+                                                        @Valid final AcceptAgentRuleRequestDTO acceptAgentRuleRequestDTO) {
+        final AcceptAgentRuleCommand command = this.agentRuleApiMapper.asAcceptAgentRuleCommand(acceptAgentRuleRequestDTO);
+        final AgentRule response = this.acceptAgentRule.execute(agentId, ruleId, command);
+        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRuleDto(response));
+    }
+
+    @Override
+    public ResponseEntity<AgentRuleDTO> rejectAgentRule(final UUID agentId, final UUID ruleId) {
+        final AgentRule response = this.rejectAgentRule.execute(agentId, ruleId);
+        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRuleDto(response));
     }
 
     @Override

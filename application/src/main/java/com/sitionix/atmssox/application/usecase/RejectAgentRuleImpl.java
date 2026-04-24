@@ -4,10 +4,10 @@ import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.AgentRule;
-import com.sitionix.atmssox.domain.model.DeleteAgentRuleResponse;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
-import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
+import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,31 +16,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class DeleteAgentRuleImpl implements DeleteAgentRule {
+public class RejectAgentRuleImpl implements RejectAgentRule {
 
     private final AgentRuleRepository agentRuleRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Override
     @Transactional
-    public DeleteAgentRuleResponse execute(final UUID agentId, final UUID ruleId) {
+    public AgentRule execute(final UUID agentId, final UUID ruleId) {
         final AgentRule current = this.agentRuleRepository.findByIdAndAgentIdAndUserId(
                 ruleId,
                 agentId,
                 this.authenticatedUserProvider.getUserId()
         ).orElseThrow(() -> new AgentNotFoundException("Agent rule not found"));
 
-        if (current.getStatus() == AgentRuleStatus.DELETED) {
-            throw new AgentLifecycleTransitionException("Rule is already DELETED");
+        if (current.getAuthorType() != AgentRuleAuthorType.AI) {
+            throw new AgentLifecycleTransitionException("Only AI rule can be rejected");
+        }
+        if (current.getStatus() != AgentRuleStatus.PENDING) {
+            throw new AgentLifecycleTransitionException("Only PENDING AI rule can be rejected");
         }
 
-        this.agentRuleRepository.save(current.toBuilder()
-                .status(current.getStatus().delete())
+        return this.agentRuleRepository.save(current.toBuilder()
+                .status(AgentRuleStatus.REJECTED)
                 .updatedAt(Instant.now())
                 .build());
-
-        return DeleteAgentRuleResponse.builder()
-                .status(AgentRuleStatus.DELETED)
-                .build();
     }
 }
