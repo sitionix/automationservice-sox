@@ -4,6 +4,7 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,9 +14,11 @@ public class ConversationContextBuilder {
         final StringBuilder builder = new StringBuilder();
         if (!activeRules.isEmpty()) {
             builder.append("Active rules:\n");
-            for (AgentRule rule : activeRules) {
-                builder.append("- ").append(rule.getText()).append("\n");
-            }
+            builder.append(activeRules.stream()
+                    .map(AgentRule::getText)
+                    .map(ruleText -> "- " + ruleText)
+                    .collect(Collectors.joining("\n")));
+            builder.append("\n");
             builder.append("\n");
         }
         builder.append("Conversation history:\n");

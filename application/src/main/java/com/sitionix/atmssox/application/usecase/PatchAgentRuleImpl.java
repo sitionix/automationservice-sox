@@ -3,9 +3,9 @@ package com.sitionix.atmssox.application.usecase;
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
-import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
+import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.model.PatchAgentRuleCommand;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
@@ -35,21 +35,9 @@ public class PatchAgentRuleImpl implements PatchAgentRule {
             throw new AgentLifecycleTransitionException("Only ACTIVE rule can be updated");
         }
 
-        if (command.text() == null) {
-            throw new AgentValidationException("Rule text is required");
-        }
-
         return this.agentRuleRepository.save(current.toBuilder()
-                .text(this.normalizeText(command.text()))
+                .text(AgentRuleTextNormalizer.normalizeRequired(command.text()))
                 .updatedAt(Instant.now())
                 .build());
-    }
-
-    private String normalizeText(final String value) {
-        final String normalized = value == null ? null : value.trim();
-        if (normalized == null || normalized.isEmpty()) {
-            throw new AgentValidationException("Rule text is required");
-        }
-        return normalized;
     }
 }
