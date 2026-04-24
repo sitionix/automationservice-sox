@@ -24,10 +24,22 @@ CREATE TABLE agent_rules (
     rule_id UUID PRIMARY KEY,
     agent_id UUID NOT NULL REFERENCES agents(agent_id),
     text TEXT NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    status_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE agent_rule_statuses (
+    id BIGINT PRIMARY KEY,
+    description VARCHAR(64) NOT NULL
+);
+
+INSERT INTO agent_rule_statuses (id, description)
+VALUES (1, 'ACTIVE'),
+       (2, 'DELETED');
+
+ALTER TABLE agent_rules
+    ADD CONSTRAINT fk_agent_rules_status_id FOREIGN KEY (status_id) REFERENCES agent_rule_statuses(id);
 
 CREATE TABLE conversations (
     conversation_id UUID PRIMARY KEY,

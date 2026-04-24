@@ -1,11 +1,8 @@
 package com.sitionix.atmssox.postgresql.entity.rule;
 
-import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -24,7 +21,7 @@ import lombok.Setter;
 @Table(
         name = "agent_rules",
         indexes = {
-                @Index(name = "idx_agent_rules_agent_status", columnList = "agent_id, status"),
+                @Index(name = "idx_agent_rules_agent_status", columnList = "agent_id, status_id"),
                 @Index(name = "idx_agent_rules_agent_created_at", columnList = "agent_id, created_at")
         }
 )
@@ -46,9 +43,9 @@ public class AgentRuleEntity {
     @Column(name = "text", nullable = false, columnDefinition = "TEXT")
     private String text;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 32)
-    private AgentRuleStatus status;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
+    private AgentRuleStatusEntity status;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

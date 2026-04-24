@@ -98,7 +98,7 @@ class AgentRuleFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId(), createdRule.getRuleId()))
                 .andExpected(entity -> Objects.equals(entity.getText(), "Keep responses concise and technical"))
-                .andExpected(entity -> Objects.equals(entity.getStatus().name(), "DELETED"))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getDescription(), "DELETED"))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeDeleteUpdatedAt))
                 .assertEntity();
     }
@@ -378,7 +378,7 @@ class AgentRuleFlowIT {
                 .assertEntity();
 
         //then
-        assertThat(afterSecondDelete.getStatus().name()).isEqualTo("DELETED");
+        assertThat(afterSecondDelete.getStatus().getDescription()).isEqualTo("DELETED");
         assertThat(afterSecondDelete.getUpdatedAt()).isEqualTo(afterFirstDelete.getUpdatedAt());
         assertThat(afterSecondDelete.getText()).isEqualTo(afterFirstDelete.getText());
     }

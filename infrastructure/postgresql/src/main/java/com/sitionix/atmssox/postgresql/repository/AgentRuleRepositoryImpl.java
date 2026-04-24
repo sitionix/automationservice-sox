@@ -5,6 +5,7 @@ import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                                                                                   final Long userId,
                                                                                   final AgentRuleStatus status) {
         return this.agentRuleJpaRepository
-                .findAllByAgentAgentIdAndAgentUserIdAndStatusOrderByCreatedAtAsc(agentId, userId, status)
+                .findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId())
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -43,12 +44,16 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
     private AgentRuleEntity toEntity(final AgentRule rule) {
         final AgentEntity agent = new AgentEntity();
         agent.setAgentId(rule.getAgentId());
+        final AgentRuleStatusEntity status = AgentRuleStatusEntity.builder()
+                .id(rule.getStatus().getId())
+                .description(rule.getStatus().name())
+                .build();
 
         return AgentRuleEntity.builder()
                 .ruleId(rule.getId())
                 .agent(agent)
                 .text(rule.getText())
-                .status(rule.getStatus())
+                .status(status)
                 .createdAt(rule.getCreatedAt())
                 .updatedAt(rule.getUpdatedAt())
                 .build();
@@ -59,7 +64,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .id(entity.getRuleId())
                 .agentId(entity.getAgent().getAgentId())
                 .text(entity.getText())
-                .status(entity.getStatus())
+                .status(AgentRuleStatus.fromId(entity.getStatus().getId()))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

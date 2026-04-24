@@ -2,7 +2,7 @@ CREATE INDEX idx_agents_user_id_updated_at
     ON agents (user_id, updated_at DESC);
 
 CREATE INDEX idx_agent_rules_agent_status
-    ON agent_rules (agent_id, status);
+    ON agent_rules (agent_id, status_id);
 
 CREATE INDEX idx_agent_rules_agent_created_at
     ON agent_rules (agent_id, created_at ASC);

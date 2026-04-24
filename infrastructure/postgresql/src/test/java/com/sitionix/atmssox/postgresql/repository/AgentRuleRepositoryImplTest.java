@@ -10,6 +10,7 @@ import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
 import java.time.Instant;
 import java.util.List;
@@ -100,7 +101,7 @@ class AgentRuleRepositoryImplTest {
                 this.getAgentRule(second.getRuleId(), agentId, "Second", AgentRuleStatus.ACTIVE, second.getCreatedAt(), second.getUpdatedAt())
         );
 
-        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusOrderByCreatedAtAsc(agentId, userId, status))
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId()))
                 .thenReturn(List.of(first, second));
 
         //when
@@ -108,7 +109,7 @@ class AgentRuleRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusOrderByCreatedAtAsc(agentId, userId, status);
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId());
     }
 
     @Test
@@ -182,12 +183,16 @@ class AgentRuleRepositoryImplTest {
                                                final Instant updatedAt) {
         final AgentEntity agentEntity = new AgentEntity();
         agentEntity.setAgentId(agentId);
+        final AgentRuleStatusEntity statusEntity = AgentRuleStatusEntity.builder()
+                .id(status.getId())
+                .description(status.name())
+                .build();
 
         return AgentRuleEntity.builder()
                 .ruleId(id)
                 .agent(agentEntity)
                 .text(text)
-                .status(status)
+                .status(statusEntity)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();
