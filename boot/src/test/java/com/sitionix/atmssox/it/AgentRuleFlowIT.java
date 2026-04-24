@@ -378,7 +378,7 @@ class AgentRuleFlowIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.deleteAgentRule())
                 .withPathParameters(PathParams.create().add("agentId", agentId).add("ruleId", ruleId))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("DELETED"))
+                .expectStatus(HttpStatus.CONFLICT)
                 .assertDefault();
 
         final AgentRuleEntity afterSecondDelete = this.testManager.postgresql()
