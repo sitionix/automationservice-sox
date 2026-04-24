@@ -23,7 +23,9 @@ CREATE TABLE agents (
 CREATE TABLE agent_rules (
     rule_id UUID PRIMARY KEY,
     agent_id UUID NOT NULL REFERENCES agents(agent_id),
-    text TEXT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    author_type VARCHAR(32) NOT NULL,
     status_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
@@ -36,10 +38,15 @@ CREATE TABLE agent_rule_statuses (
 
 INSERT INTO agent_rule_statuses (id, description)
 VALUES (1, 'ACTIVE'),
-       (2, 'DELETED');
+       (2, 'DELETED'),
+       (3, 'PENDING'),
+       (4, 'REJECTED');
 
 ALTER TABLE agent_rules
     ADD CONSTRAINT fk_agent_rules_status_id FOREIGN KEY (status_id) REFERENCES agent_rule_statuses(id);
+
+ALTER TABLE agent_rules
+    ADD CONSTRAINT chk_agent_rules_author_type CHECK (author_type IN ('USER', 'AI'));
 
 CREATE TABLE conversations (
     conversation_id UUID PRIMARY KEY,
