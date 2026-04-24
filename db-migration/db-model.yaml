@@ -15,6 +15,10 @@ tables:
     columns:
       id: bigint
       description: varchar(64)
+  agent_rule_statuses:
+    columns:
+      id: bigint
+      description: varchar(64)
   agents:
     columns:
       agent_id: uuid
@@ -22,6 +26,14 @@ tables:
       name: varchar(60)
       description: varchar(160)
       instruction: text
+      status_id: bigint
+      created_at: timestamptz
+      updated_at: timestamptz
+  agent_rules:
+    columns:
+      rule_id: uuid
+      agent_id: uuid
+      text: text
       status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz

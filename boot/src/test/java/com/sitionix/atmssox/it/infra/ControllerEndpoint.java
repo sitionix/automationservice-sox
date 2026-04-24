@@ -1,10 +1,15 @@
 package com.sitionix.atmssox.it.infra;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
@@ -58,6 +63,56 @@ public class ControllerEndpoint {
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .withRequest("patchAgentRequest.json")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, AgentRulesResponseDTO> getAgentRules() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules",
+                HttpMethod.GET,
+                Void.class,
+                AgentRulesResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<CreateAgentRuleRequestDTO, AgentRuleDTO> createAgentRule() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules",
+                HttpMethod.POST,
+                CreateAgentRuleRequestDTO.class,
+                AgentRuleDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("createAgentRuleRequest.json")
+                        .expectStatus(201)
+        );
+    }
+
+    public static Endpoint<PatchAgentRuleRequestDTO, AgentRuleDTO> patchAgentRule() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules/{ruleId}",
+                HttpMethod.PATCH,
+                PatchAgentRuleRequestDTO.class,
+                AgentRuleDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("patchAgentRuleRequest.json")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, DeleteAgentRuleResponseDTO> deleteAgentRule() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules/{ruleId}",
+                HttpMethod.DELETE,
+                Void.class,
+                DeleteAgentRuleResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
                         .expectStatus(200)
         );
     }

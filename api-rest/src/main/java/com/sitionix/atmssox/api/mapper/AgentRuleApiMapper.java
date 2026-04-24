@@ -1,0 +1,42 @@
+package com.sitionix.atmssox.api.mapper;
+
+import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
+import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
+import com.sitionix.atmssox.domain.model.DeleteAgentRuleResponse;
+import com.sitionix.atmssox.domain.model.PatchAgentRuleCommand;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface AgentRuleApiMapper {
+
+    CreateAgentRuleCommand asCreateAgentRuleCommand(CreateAgentRuleRequestDTO src);
+
+    PatchAgentRuleCommand asPatchAgentRuleCommand(PatchAgentRuleRequestDTO src);
+
+    AgentRuleDTO asAgentRuleDto(AgentRule src);
+
+    List<AgentRuleDTO> asAgentRuleDtos(List<AgentRule> src);
+
+    default OffsetDateTime map(final Instant value) {
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
+    }
+
+    default AgentRulesResponseDTO asAgentRulesResponseDto(final List<AgentRule> rules) {
+        return new AgentRulesResponseDTO()
+                .items(this.asAgentRuleDtos(rules));
+    }
+
+    default DeleteAgentRuleResponseDTO asDeleteAgentRuleResponseDto(final DeleteAgentRuleResponse src) {
+        return new DeleteAgentRuleResponseDTO()
+                .status(DeleteAgentRuleResponseDTO.StatusEnum.DELETED);
+    }
+}

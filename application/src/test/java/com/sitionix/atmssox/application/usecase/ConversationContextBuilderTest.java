@@ -2,6 +2,8 @@ package com.sitionix.atmssox.application.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.time.Instant;
@@ -36,14 +38,18 @@ class ConversationContextBuilderTest {
                 "It separates core business logic from frameworks.",
                 Instant.parse("2026-04-21T10:01:00Z")
         );
+        final AgentRule rule = this.getAgentRule("Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
-        final String expected = "Conversation history:\n"
+        final String expected = "Active rules:\n"
+                + "- Always keep answers explicit.\n"
+                + "\n"
+                + "Conversation history:\n"
                 + "USER: Explain clean architecture\n"
                 + "AGENT: It separates core business logic from frameworks.\n"
                 + "Respond as AGENT to the latest USER message.";
 
         //when
-        final String actual = this.conversationContextBuilder.build(given);
+        final String actual = this.conversationContextBuilder.build(List.of(rule), given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -57,7 +63,7 @@ class ConversationContextBuilderTest {
                 + "Respond as AGENT to the latest USER message.";
 
         //when
-        final String actual = this.conversationContextBuilder.build(given);
+        final String actual = this.conversationContextBuilder.build(List.of(), given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -77,6 +83,17 @@ class ConversationContextBuilderTest {
                 .authorId(authorId)
                 .content(content)
                 .createdAt(createdAt)
+                .build();
+    }
+
+    private AgentRule getAgentRule(final String text) {
+        return AgentRule.builder()
+                .id(UUID.fromString("3be0c922-c53e-4a0d-b17f-f6b6b9f63195"))
+                .agentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+                .text(text)
+                .status(AgentRuleStatus.ACTIVE)
+                .createdAt(Instant.parse("2026-04-21T10:00:00Z"))
+                .updatedAt(Instant.parse("2026-04-21T10:00:00Z"))
                 .build();
     }
 }
