@@ -4,6 +4,7 @@ import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
+import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.time.Instant;
@@ -98,7 +99,7 @@ class AgentRuleFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId(), createdRule.getRuleId()))
                 .andExpected(entity -> Objects.equals(entity.getText(), "Keep responses concise and technical"))
-                .andExpected(entity -> Objects.equals(entity.getStatus().getDescription(), "DELETED"))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentRuleStatus.DELETED.getId()))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeDeleteUpdatedAt))
                 .assertEntity();
     }
@@ -269,7 +270,7 @@ class AgentRuleFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId(), beforePatch.getRuleId()))
                 .andExpected(entity -> Objects.equals(entity.getText(), beforePatch.getText()))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), beforePatch.getStatus()))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforePatch.getStatus().getId()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforePatch.getUpdatedAt()))
                 .assertEntity();
     }
@@ -378,7 +379,7 @@ class AgentRuleFlowIT {
                 .assertEntity();
 
         //then
-        assertThat(afterSecondDelete.getStatus().getDescription()).isEqualTo("DELETED");
+        assertThat(afterSecondDelete.getStatus().getId()).isEqualTo(AgentRuleStatus.DELETED.getId());
         assertThat(afterSecondDelete.getUpdatedAt()).isEqualTo(afterFirstDelete.getUpdatedAt());
         assertThat(afterSecondDelete.getText()).isEqualTo(afterFirstDelete.getText());
     }
