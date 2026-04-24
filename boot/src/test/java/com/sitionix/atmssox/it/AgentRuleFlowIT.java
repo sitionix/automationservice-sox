@@ -339,7 +339,7 @@ class AgentRuleFlowIT {
     }
 
     @Test
-    @DisplayName("Should return conflict and keep deleted row unchanged on repeated delete")
+    @DisplayName("Should keep deleted row unchanged on repeated delete")
     void givenAlreadyDeletedRule_whenDeleteRuleTwice_thenReturnDeletedAndKeepSingleDeletedRow() {
         //given
         this.testManager.mockMvc()
@@ -366,7 +366,7 @@ class AgentRuleFlowIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.deleteAgentRule())
                 .withPathParameters(PathParams.create().add("agentId", agentId).add("ruleId", ruleId))
-                .expectStatus(HttpStatus.CONFLICT)
+                .expectStatus(HttpStatus.OK)
                 .assertDefault();
 
         final AgentRuleEntity afterFirstDelete = this.testManager.postgresql()
