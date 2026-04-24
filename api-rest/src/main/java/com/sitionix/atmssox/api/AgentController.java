@@ -15,6 +15,7 @@ import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
+import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
@@ -78,6 +79,8 @@ public class AgentController implements AgentApi {
 
     private final AgentApiMapper agentApiMapper;
 
+    private final AgentRuleApiMapper agentRuleApiMapper;
+
     @Override
     public ResponseEntity<AgentDTO> createAgent(@Valid final CreateAgentRequestDTO createAgentRequestDTO) {
         final CreateAgentCommand command = this.agentApiMapper.asCreateAgentCommand(createAgentRequestDTO);
@@ -133,28 +136,28 @@ public class AgentController implements AgentApi {
 
     @Override
     public ResponseEntity<AgentRulesResponseDTO> getAgentRules(final UUID agentId) {
-        return ResponseEntity.ok(this.agentApiMapper.asAgentRulesResponseDto(this.getAgentRules.execute(agentId)));
+        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRulesResponseDto(this.getAgentRules.execute(agentId)));
     }
 
     @Override
     public ResponseEntity<AgentRuleDTO> createAgentRule(final UUID agentId, @Valid final CreateAgentRuleRequestDTO createAgentRuleRequestDTO) {
-        final CreateAgentRuleCommand command = this.agentApiMapper.asCreateAgentRuleCommand(createAgentRuleRequestDTO);
+        final CreateAgentRuleCommand command = this.agentRuleApiMapper.asCreateAgentRuleCommand(createAgentRuleRequestDTO);
         final AgentRule response = this.createAgentRule.execute(agentId, command);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(this.agentApiMapper.asAgentRuleDto(response));
+                .body(this.agentRuleApiMapper.asAgentRuleDto(response));
     }
 
     @Override
     public ResponseEntity<AgentRuleDTO> patchAgentRule(final UUID agentId,
                                                        final UUID ruleId,
                                                        @Valid final PatchAgentRuleRequestDTO patchAgentRuleRequestDTO) {
-        final AgentRule response = this.patchAgentRule.execute(agentId, ruleId, this.agentApiMapper.asPatchAgentRuleCommand(patchAgentRuleRequestDTO));
-        return ResponseEntity.ok(this.agentApiMapper.asAgentRuleDto(response));
+        final AgentRule response = this.patchAgentRule.execute(agentId, ruleId, this.agentRuleApiMapper.asPatchAgentRuleCommand(patchAgentRuleRequestDTO));
+        return ResponseEntity.ok(this.agentRuleApiMapper.asAgentRuleDto(response));
     }
 
     @Override
     public ResponseEntity<DeleteAgentRuleResponseDTO> deleteAgentRule(final UUID agentId, final UUID ruleId) {
-        return ResponseEntity.ok(this.agentApiMapper.asDeleteAgentRuleResponseDto(this.deleteAgentRule.execute(agentId, ruleId)));
+        return ResponseEntity.ok(this.agentRuleApiMapper.asDeleteAgentRuleResponseDto(this.deleteAgentRule.execute(agentId, ruleId)));
     }
 
     @Override
