@@ -17,10 +17,6 @@ public class RuleSuggestionAnalyzerProperties {
 
     private int messageCountThreshold = 10;
 
-    private int conversationCooldownMinutes = 30;
-
-    private int maxAgentAnalysesPerDay = 3;
-
     private int maxPendingSuggestionsPerAgent = 5;
 
     private int maxSuggestionsPerRun = 3;

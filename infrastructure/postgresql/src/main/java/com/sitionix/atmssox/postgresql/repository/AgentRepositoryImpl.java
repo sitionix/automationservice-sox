@@ -2,7 +2,6 @@ package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentJpaRepository;
@@ -29,9 +28,8 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public List<Agent> findAllVisibleByUserId(final Long userId) {
-        return this.agentJpaRepository.findAllByUserIdAndTypeAndStatusIdNotOrderByUpdatedAtDesc(
+        return this.agentJpaRepository.findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(
                         userId,
-                        AgentType.USER,
                         AgentStatus.DELETED.getId()
                 ).stream()
                 .map(this.agentInfraMapper::asAgent)
@@ -40,10 +38,9 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findVisibleByIdAndUserId(final UUID agentId, final Long userId) {
-        return this.agentJpaRepository.findByAgentIdAndUserIdAndTypeAndStatusIdNot(
+        return this.agentJpaRepository.findVisibleUserAgentByAgentIdAndUserId(
                         agentId,
                         userId,
-                        AgentType.USER,
                         AgentStatus.DELETED.getId()
                 )
                 .map(this.agentInfraMapper::asAgent);
@@ -51,7 +48,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findByIdAndUserId(final UUID agentId, final Long userId) {
-        return this.agentJpaRepository.findByAgentIdAndUserIdAndType(agentId, userId, AgentType.USER)
+        return this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)
                 .map(this.agentInfraMapper::asAgent);
     }
 
@@ -63,7 +60,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findSystemRuleAnalyzer() {
-        return this.agentJpaRepository.findFirstByType(AgentType.SYSTEM_RULE_ANALYZER)
+        return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(2L)
                 .map(this.agentInfraMapper::asAgent);
     }
 }

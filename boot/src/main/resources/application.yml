@@ -55,8 +55,6 @@ automation:
     enabled: true
     last-messages-limit: 20
     message-count-threshold: 10
-    conversation-cooldown-minutes: 30
-    max-agent-analyses-per-day: 3
     max-pending-suggestions-per-agent: 5
     max-suggestions-per-run: 3
     max-suggestion-content-length: 1000

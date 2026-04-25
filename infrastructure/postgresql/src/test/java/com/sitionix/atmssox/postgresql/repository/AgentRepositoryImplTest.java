@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.AgentInfraMapper;
@@ -75,7 +74,7 @@ class AgentRepositoryImplTest {
         final Agent secondAgent = mock(Agent.class);
         final List<Agent> expected = List.of(firstAgent, secondAgent);
 
-        when(this.agentJpaRepository.findAllByUserIdAndTypeAndStatusIdNotOrderByUpdatedAtDesc(given, AgentType.USER, AgentStatus.DELETED.getId()))
+        when(this.agentJpaRepository.findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId()))
                 .thenReturn(List.of(firstEntity, secondEntity));
         when(this.agentInfraMapper.asAgent(firstEntity)).thenReturn(firstAgent);
         when(this.agentInfraMapper.asAgent(secondEntity)).thenReturn(secondAgent);
@@ -85,9 +84,8 @@ class AgentRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findAllByUserIdAndTypeAndStatusIdNotOrderByUpdatedAtDesc(
+        verify(this.agentJpaRepository).findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(
                 given,
-                AgentType.USER,
                 AgentStatus.DELETED.getId()
         );
         verify(this.agentInfraMapper).asAgent(firstEntity);
@@ -103,7 +101,7 @@ class AgentRepositoryImplTest {
         final Agent agent = mock(Agent.class);
         final Optional<Agent> expected = Optional.of(agent);
 
-        when(this.agentJpaRepository.findByAgentIdAndUserIdAndType(agentId, userId, AgentType.USER)).thenReturn(Optional.of(entity));
+        when(this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.of(entity));
         when(this.agentInfraMapper.asAgent(entity)).thenReturn(agent);
 
         //when
@@ -111,7 +109,7 @@ class AgentRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findByAgentIdAndUserIdAndType(agentId, userId, AgentType.USER);
+        verify(this.agentJpaRepository).findUserAgentByAgentIdAndUserId(agentId, userId);
         verify(this.agentInfraMapper).asAgent(entity);
     }
 
@@ -122,13 +120,13 @@ class AgentRepositoryImplTest {
         final Long userId = 17L;
         final Optional<Agent> expected = Optional.empty();
 
-        when(this.agentJpaRepository.findByAgentIdAndUserIdAndType(agentId, userId, AgentType.USER)).thenReturn(Optional.empty());
+        when(this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.empty());
 
         //when
         final Optional<Agent> actual = this.agentRepository.findByIdAndUserId(agentId, userId);
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findByAgentIdAndUserIdAndType(agentId, userId, AgentType.USER);
+        verify(this.agentJpaRepository).findUserAgentByAgentIdAndUserId(agentId, userId);
     }
 }

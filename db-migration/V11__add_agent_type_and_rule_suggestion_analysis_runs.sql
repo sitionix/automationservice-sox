@@ -1,11 +1,23 @@
+CREATE TABLE agent_types (
+    id BIGINT PRIMARY KEY,
+    description VARCHAR(64) NOT NULL
+);
+
+INSERT INTO agent_types (id, description)
+VALUES (1, 'USER'),
+       (2, 'SYSTEM_RULE_ANALYZER');
+
 ALTER TABLE agents
-    ADD COLUMN type VARCHAR(64) NOT NULL DEFAULT 'USER';
+    ADD COLUMN type_id BIGINT NOT NULL DEFAULT 1;
+
+ALTER TABLE agents
+    ADD CONSTRAINT fk_agents_type_id FOREIGN KEY (type_id) REFERENCES agent_types (id);
 
 CREATE UNIQUE INDEX uq_agent_single_rule_analyzer
-    ON agents (type)
-    WHERE type = 'SYSTEM_RULE_ANALYZER';
+    ON agents (type_id)
+    WHERE type_id = 2;
 
-INSERT INTO agents (agent_id, user_id, name, description, instruction, type, status_id, created_at, updated_at)
+INSERT INTO agents (agent_id, user_id, name, description, instruction, type_id, status_id, created_at, updated_at)
 VALUES (
            (
                substr(md5(random()::text || clock_timestamp()::text), 1, 8) || '-' ||
@@ -35,26 +47,8 @@ Return ONLY valid JSON in this format:
     }
   ]
 }',
-           'SYSTEM_RULE_ANALYZER',
+           2,
            2,
            NOW(),
            NOW()
        );
-
-CREATE TABLE agent_rule_analysis_runs (
-    analysis_id UUID PRIMARY KEY,
-    agent_id UUID NOT NULL,
-    conversation_id UUID NOT NULL,
-    user_message_count BIGINT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_agent_rule_analysis_runs_agent
-        FOREIGN KEY (agent_id) REFERENCES agents (agent_id),
-    CONSTRAINT fk_agent_rule_analysis_runs_conversation
-        FOREIGN KEY (conversation_id) REFERENCES conversations (conversation_id)
-);
-
-CREATE INDEX idx_agent_rule_analysis_runs_agent_conversation_created_at
-    ON agent_rule_analysis_runs (agent_id, conversation_id, created_at DESC);
-
-CREATE INDEX idx_agent_rule_analysis_runs_agent_created_at
-    ON agent_rule_analysis_runs (agent_id, created_at);

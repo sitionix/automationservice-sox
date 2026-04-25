@@ -4,7 +4,6 @@ import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
@@ -39,7 +38,6 @@ public class CreateAgentImpl implements CreateAgent {
                         "Agent description must be between 1 and 160 characters"
                 ))
                 .instruction(null)
-                .type(AgentType.USER)
                 .status(AgentStatus.DRAFT)
                 .createdAt(now)
                 .updatedAt(now)
