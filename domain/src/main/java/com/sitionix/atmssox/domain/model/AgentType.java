@@ -1,18 +1,15 @@
 package com.sitionix.atmssox.domain.model;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum AgentType {
     USER(1L),
     SYSTEM_RULE_ANALYZER(2L);
 
     private final Long id;
-
-    AgentType(final Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
 
     public static AgentType fromId(final Long id) {
         return java.util.Arrays.stream(values())

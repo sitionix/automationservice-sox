@@ -28,7 +28,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public List<Agent> findAllVisibleByUserId(final Long userId) {
-        return this.agentJpaRepository.findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(
+        return this.agentJpaRepository.findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(
                         userId,
                         AgentStatus.DELETED.getId()
                 ).stream()
@@ -38,7 +38,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findVisibleByIdAndUserId(final UUID agentId, final Long userId) {
-        return this.agentJpaRepository.findVisibleUserAgentByAgentIdAndUserId(
+        return this.agentJpaRepository.findByAgentIdAndUserIdAndStatusIdNot(
                         agentId,
                         userId,
                         AgentStatus.DELETED.getId()
@@ -48,7 +48,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findByIdAndUserId(final UUID agentId, final Long userId) {
-        return this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)
+        return this.agentJpaRepository.findByAgentIdAndUserId(agentId, userId)
                 .map(this.agentInfraMapper::asAgent);
     }
 

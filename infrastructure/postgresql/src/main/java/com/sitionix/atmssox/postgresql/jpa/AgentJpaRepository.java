@@ -6,37 +6,42 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AgentJpaRepository extends JpaRepository<AgentEntity, UUID> {
 
     @Query("""
             SELECT agent
             FROM AgentEntity agent
-            WHERE agent.userId = ?1
+            WHERE agent.userId = :userId
               AND agent.type.id = 1
-              AND agent.status.id <> ?2
+              AND agent.status.id <> :statusId
             ORDER BY agent.updatedAt DESC
             """)
-    List<AgentEntity> findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(Long userId, Long statusId);
+    List<AgentEntity> findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(@Param("userId") Long userId,
+                                                                         @Param("statusId") Long statusId);
 
     @Query("""
             SELECT agent
             FROM AgentEntity agent
-            WHERE agent.agentId = ?1
-              AND agent.userId = ?2
+            WHERE agent.agentId = :agentId
+              AND agent.userId = :userId
               AND agent.type.id = 1
-              AND agent.status.id <> ?3
+              AND agent.status.id <> :statusId
             """)
-    Optional<AgentEntity> findVisibleUserAgentByAgentIdAndUserId(UUID agentId, Long userId, Long statusId);
+    Optional<AgentEntity> findByAgentIdAndUserIdAndStatusIdNot(@Param("agentId") UUID agentId,
+                                                                @Param("userId") Long userId,
+                                                                @Param("statusId") Long statusId);
 
     @Query("""
             SELECT agent
             FROM AgentEntity agent
-            WHERE agent.agentId = ?1
-              AND agent.userId = ?2
+            WHERE agent.agentId = :agentId
+              AND agent.userId = :userId
               AND agent.type.id = 1
             """)
-    Optional<AgentEntity> findUserAgentByAgentIdAndUserId(UUID agentId, Long userId);
+    Optional<AgentEntity> findByAgentIdAndUserId(@Param("agentId") UUID agentId,
+                                                  @Param("userId") Long userId);
 
     Optional<AgentEntity> findByAgentId(UUID agentId);
 

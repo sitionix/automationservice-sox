@@ -74,7 +74,7 @@ class AgentRepositoryImplTest {
         final Agent secondAgent = mock(Agent.class);
         final List<Agent> expected = List.of(firstAgent, secondAgent);
 
-        when(this.agentJpaRepository.findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId()))
+        when(this.agentJpaRepository.findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId()))
                 .thenReturn(List.of(firstEntity, secondEntity));
         when(this.agentInfraMapper.asAgent(firstEntity)).thenReturn(firstAgent);
         when(this.agentInfraMapper.asAgent(secondEntity)).thenReturn(secondAgent);
@@ -84,7 +84,7 @@ class AgentRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findAllVisibleUserAgentsByUserIdOrderByUpdatedAtDesc(
+        verify(this.agentJpaRepository).findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(
                 given,
                 AgentStatus.DELETED.getId()
         );
@@ -101,7 +101,7 @@ class AgentRepositoryImplTest {
         final Agent agent = mock(Agent.class);
         final Optional<Agent> expected = Optional.of(agent);
 
-        when(this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.of(entity));
+        when(this.agentJpaRepository.findByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.of(entity));
         when(this.agentInfraMapper.asAgent(entity)).thenReturn(agent);
 
         //when
@@ -109,7 +109,7 @@ class AgentRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findUserAgentByAgentIdAndUserId(agentId, userId);
+        verify(this.agentJpaRepository).findByAgentIdAndUserId(agentId, userId);
         verify(this.agentInfraMapper).asAgent(entity);
     }
 
@@ -120,13 +120,13 @@ class AgentRepositoryImplTest {
         final Long userId = 17L;
         final Optional<Agent> expected = Optional.empty();
 
-        when(this.agentJpaRepository.findUserAgentByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.empty());
+        when(this.agentJpaRepository.findByAgentIdAndUserId(agentId, userId)).thenReturn(Optional.empty());
 
         //when
         final Optional<Agent> actual = this.agentRepository.findByIdAndUserId(agentId, userId);
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findUserAgentByAgentIdAndUserId(agentId, userId);
+        verify(this.agentJpaRepository).findByAgentIdAndUserId(agentId, userId);
     }
 }

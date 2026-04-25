@@ -1,9 +1,10 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
+import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
@@ -31,138 +32,87 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RuleSuggestionAnalyzerAsyncService {
 
-    private static final Set<String> GENERIC_RULES = Set.of("be helpful", "be clear");
-
     private final AgentRepository agentRepository;
     private final AgentRuleRepository agentRuleRepository;
     private final ConversationMessageRepository conversationMessageRepository;
-    private final OpenAiChatClient openAiChatClient;
+    private final SystemAgentExecutor systemAgentExecutor;
     private final RuleSuggestionAnalyzerProperties properties;
     private final ObjectMapper objectMapper;
 
     @Async("ruleSuggestionAnalyzerTaskExecutor")
     public void analyzeAsync(final UUID agentId, final UUID conversationId) {
-        try {
-            final Optional<Agent> analyzerOptional = this.agentRepository.findSystemRuleAnalyzer();
-            if (analyzerOptional.isEmpty() || analyzerOptional.get().getStatus() != AgentStatus.ACTIVE) {
-                return;
-            }
-            final String analyzerInstruction = this.normalize(analyzerOptional.get().getInstruction());
-            if (analyzerInstruction.isEmpty()) {
-                return;
-            }
-
-            final Optional<Agent> targetAgentOptional = this.agentRepository.findById(agentId);
-            if (targetAgentOptional.isEmpty()) {
-                return;
-            }
-            final Agent targetAgent = targetAgentOptional.get();
-            if (targetAgent.getType() != AgentType.USER || targetAgent.getStatus() != AgentStatus.ACTIVE) {
-                return;
-            }
-
-            final List<ConversationMessage> fullHistory =
-                    this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-            final String latestUserMessage = fullHistory.stream()
-                    .filter(message -> message.getAuthorType() == ConversationParticipantType.USER)
-                    .reduce((first, second) -> second)
-                    .map(ConversationMessage::getContent)
-                    .map(this::normalize)
-                    .orElse("");
-            if (latestUserMessage.isEmpty()) {
-                return;
-            }
-
-            final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
-                    agentId,
-                    targetAgent.getUserId(),
-                    AgentRuleStatus.ACTIVE,
-                    null
-            );
-            final List<AgentRule> pendingRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
-                    agentId,
-                    targetAgent.getUserId(),
-                    AgentRuleStatus.PENDING,
-                    null
-            );
-
-            final String prompt = this.buildPrompt(targetAgent, activeRules, pendingRules, this.takeLastMessages(fullHistory), latestUserMessage);
-            final String rawResponse = this.openAiChatClient.execute(analyzerInstruction, prompt);
-            final List<RuleSuggestionCandidate> suggestions = this.parseSuggestions(rawResponse);
-            final List<RuleSuggestionCandidate> validSuggestions = this.filterValidSuggestions(suggestions, activeRules, pendingRules);
-            if (validSuggestions.isEmpty()) {
-                return;
-            }
-
-            final Instant now = Instant.now();
-            validSuggestions.stream()
-                    .map(suggestion -> AgentRule.builder()
-                            .id(UUID.randomUUID())
-                            .agentId(agentId)
-                            .title(suggestion.title())
-                            .content(suggestion.content())
-                            .status(AgentRuleStatus.PENDING)
-                            .authorType(AgentRuleAuthorType.AI)
-                            .createdAt(now)
-                            .updatedAt(now)
-                            .build())
-                    .forEach(this.agentRuleRepository::save);
-        } catch (Exception exception) {
-            log.warn("Rule suggestion analyzer failed for agentId={}, conversationId={}", agentId, conversationId, exception);
+        final Optional<Agent> analyzerOptional = this.agentRepository.findSystemRuleAnalyzer();
+        if (analyzerOptional.isEmpty() || analyzerOptional.get().getStatus() != AgentStatus.ACTIVE) {
+            return;
         }
-    }
 
-    private String buildPrompt(final Agent targetAgent,
-                               final List<AgentRule> activeRules,
-                               final List<AgentRule> pendingRules,
-                               final List<ConversationMessage> messages,
-                               final String latestUserMessage) {
-        return """
-                Analyze conversation and propose agent rules.
-                Return only JSON:
-                {"suggestions":[{"title":"...","content":"...","reason":"..."}]}
+        final Optional<Agent> targetAgentOptional = this.agentRepository.findById(agentId);
+        if (targetAgentOptional.isEmpty()) {
+            return;
+        }
+        final Agent targetAgent = targetAgentOptional.get();
+        if (targetAgent.getType() != AgentType.USER || targetAgent.getStatus() != AgentStatus.ACTIVE) {
+            return;
+        }
 
-                Agent instruction:
-                %s
+        final List<ConversationMessage> fullHistory =
+                this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId);
+        final String latestUserMessage = fullHistory.stream()
+                .filter(message -> message.getAuthorType() == ConversationParticipantType.USER)
+                .reduce((first, second) -> second)
+                .map(ConversationMessage::getContent)
+                .map(this::normalize)
+                .orElse("");
+        if (latestUserMessage.isEmpty()) {
+            return;
+        }
 
-                Active rules:
-                %s
-
-                Pending rules:
-                %s
-
-                Conversation:
-                %s
-
-                Latest user message:
-                %s
-                """.formatted(
-                this.normalize(targetAgent.getInstruction()),
-                this.formatRules(activeRules),
-                this.formatRules(pendingRules),
-                this.formatMessages(messages),
+        final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                agentId,
+                targetAgent.getUserId(),
+                AgentRuleStatus.ACTIVE,
+                null
+        );
+        final List<AgentRule> pendingRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                agentId,
+                targetAgent.getUserId(),
+                AgentRuleStatus.PENDING,
+                null
+        );
+        final RuleSuggestionAnalysisContext context = new RuleSuggestionAnalysisContext(
+                targetAgent,
+                activeRules,
+                pendingRules,
+                this.takeLastMessages(fullHistory),
                 latestUserMessage
         );
-    }
 
-    private String formatRules(final List<AgentRule> rules) {
-        if (rules.isEmpty()) {
-            return "(none)";
+        final String rawResponse;
+        try {
+            rawResponse = this.systemAgentExecutor.execute(analyzerOptional.get(), context);
+        } catch (OpenAiExecutionException exception) {
+            log.warn("Rule suggestion analyzer OpenAI execution failed for agentId={}, conversationId={}", agentId, conversationId, exception);
+            return;
         }
-        return rules.stream()
-                .map(rule -> "- " + this.normalize(rule.getTitle()) + ": " + this.normalize(rule.getContent()))
-                .reduce((first, second) -> first + "\n" + second)
-                .orElse("(none)");
-    }
+        final List<RuleSuggestionCandidate> suggestions = this.parseSuggestions(rawResponse, agentId, conversationId);
+        final List<RuleSuggestionCandidate> validSuggestions = this.filterValidSuggestions(suggestions, activeRules, pendingRules);
+        if (validSuggestions.isEmpty()) {
+            return;
+        }
 
-    private String formatMessages(final List<ConversationMessage> messages) {
-        if (messages.isEmpty()) {
-            return "(none)";
-        }
-        return messages.stream()
-                .map(message -> message.getAuthorType().name() + ": " + this.normalize(message.getContent()))
-                .reduce((first, second) -> first + "\n" + second)
-                .orElse("(none)");
+        final Instant now = Instant.now();
+        validSuggestions.stream()
+                .map(suggestion -> AgentRule.builder()
+                        .id(UUID.randomUUID())
+                        .agentId(agentId)
+                        .title(suggestion.title())
+                        .content(suggestion.content())
+                        .status(AgentRuleStatus.PENDING)
+                        .authorType(AgentRuleAuthorType.AI)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build())
+                .forEach(this.agentRuleRepository::save);
     }
 
     private List<ConversationMessage> takeLastMessages(final List<ConversationMessage> fullHistory) {
@@ -173,7 +123,9 @@ public class RuleSuggestionAnalyzerAsyncService {
         return fullHistory.subList(fromIndex, fullHistory.size());
     }
 
-    private List<RuleSuggestionCandidate> parseSuggestions(final String rawResponse) {
+    private List<RuleSuggestionCandidate> parseSuggestions(final String rawResponse,
+                                                           final UUID agentId,
+                                                           final UUID conversationId) {
         try {
             final JsonNode root = this.objectMapper.readTree(rawResponse);
             final JsonNode suggestions = root.path("suggestions");
@@ -188,7 +140,8 @@ public class RuleSuggestionAnalyzerAsyncService {
             return parsed.stream()
                     .map(item -> new RuleSuggestionCandidate(item.title(), item.content(), item.reason()))
                     .toList();
-        } catch (Exception exception) {
+        } catch (JsonProcessingException | IllegalArgumentException exception) {
+            log.warn("Rule suggestion analyzer returned invalid JSON for agentId={}, conversationId={}", agentId, conversationId, exception);
             return List.of();
         }
     }
@@ -206,7 +159,6 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(candidate -> !candidate.content().isEmpty())
                 .filter(candidate -> !candidate.reason().isEmpty())
                 .filter(candidate -> candidate.content().length() <= this.properties.getMaxSuggestionContentLength())
-                .filter(candidate -> !GENERIC_RULES.contains(candidate.content().toLowerCase()))
                 .filter(candidate -> !existingContents.contains(this.normalizeContent(candidate.content())))
                 .limit(this.properties.getMaxSuggestionsPerRun())
                 .toList();

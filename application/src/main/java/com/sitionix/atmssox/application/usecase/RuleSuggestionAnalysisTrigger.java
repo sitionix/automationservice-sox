@@ -4,6 +4,7 @@ import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -21,7 +22,7 @@ public class RuleSuggestionAnalysisTrigger {
             if (this.ruleSuggestionAnalysisPolicy.shouldAnalyze(agentId, conversationId, latestUserMessage)) {
                 this.ruleSuggestionAnalyzerAsyncService.analyzeAsync(agentId, conversationId);
             }
-        } catch (Exception exception) {
+        } catch (TaskRejectedException | IllegalStateException exception) {
             log.warn("Rule suggestion analyzer scheduling failed for agentId={}, conversationId={}", agentId, conversationId, exception);
         }
     }
