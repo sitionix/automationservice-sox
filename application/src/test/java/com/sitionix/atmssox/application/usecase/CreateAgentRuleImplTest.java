@@ -64,7 +64,12 @@ class CreateAgentRuleImplTest {
     void givenValidInput_whenExecute_thenCreateActiveRuleWithTrimmedText() {
         //given
         final UUID agentId = UUID.fromString("a8e649b0-f56b-4f7f-84cb-33e0d90d6d3a");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("  Output style  ", "  Always be explicit.  ");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand(
+                "  Output style  ",
+                "  Always be explicit.  ",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER
+        );
         final Agent agent = mock(Agent.class);
         final AgentRule saved = this.getRule(
                 agentId,
@@ -92,7 +97,12 @@ class CreateAgentRuleImplTest {
     void givenBlankText_whenExecute_thenThrowValidationException() {
         //given
         final UUID agentId = UUID.fromString("13c953ec-8da6-46f3-9390-2ab25a3ddfbe");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("   ", "valid content");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand(
+                "   ",
+                "valid content",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER
+        );
         final Agent agent = mock(Agent.class);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -111,7 +121,12 @@ class CreateAgentRuleImplTest {
     void givenUnknownAgent_whenExecute_thenThrowNotFoundException() {
         //given
         final UUID agentId = UUID.fromString("27ec00b4-6cb9-4720-9949-11cd1d3f18d0");
-        final CreateAgentRuleCommand command = new CreateAgentRuleCommand("title", "rule");
+        final CreateAgentRuleCommand command = new CreateAgentRuleCommand(
+                "title",
+                "rule",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER
+        );
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.empty());

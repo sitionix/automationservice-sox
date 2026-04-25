@@ -41,7 +41,12 @@ class AgentRuleApiMapperTest {
                 .title("Output style")
                 .content("Always keep output explicit.")
                 .build();
-        final CreateAgentRuleCommand expected = new CreateAgentRuleCommand("Output style", "Always keep output explicit.");
+        final CreateAgentRuleCommand expected = new CreateAgentRuleCommand(
+                "Output style",
+                "Always keep output explicit.",
+                AgentRuleStatus.ACTIVE,
+                AgentRuleAuthorType.USER
+        );
 
         //when
         final CreateAgentRuleCommand actual = this.agentRuleApiMapper.asCreateAgentRuleCommand(given);

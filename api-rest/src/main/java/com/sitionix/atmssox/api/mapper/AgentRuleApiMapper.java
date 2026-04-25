@@ -21,10 +21,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface AgentRuleApiMapper {
 
+    @Mapping(target = "status", constant = "ACTIVE")
+    @Mapping(target = "authorType", constant = "USER")
     CreateAgentRuleCommand asCreateAgentRuleCommand(CreateAgentRuleRequestDTO src);
 
     PatchAgentRuleCommand asPatchAgentRuleCommand(PatchAgentRuleRequestDTO src);
