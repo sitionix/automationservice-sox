@@ -3,6 +3,7 @@ package com.sitionix.atmssox.domain.repository;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,4 +53,11 @@ public interface AgentRuleRepository {
      * @return matching rules count.
      */
     long countByAgentIdAndStatusAndAuthorType(UUID agentId, AgentRuleStatus status, AgentRuleAuthorType authorType);
+
+    long countByAgentIdAndAuthorTypeAndCreatedAtBetween(UUID agentId,
+                                                        AgentRuleAuthorType authorType,
+                                                        Instant startInclusive,
+                                                        Instant endExclusive);
+
+    Optional<Instant> findLastCreatedAtByAgentIdAndAuthorType(UUID agentId, AgentRuleAuthorType authorType);
 }

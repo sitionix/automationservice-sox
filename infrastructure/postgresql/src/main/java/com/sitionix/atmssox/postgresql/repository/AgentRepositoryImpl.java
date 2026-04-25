@@ -2,6 +2,7 @@ package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentJpaRepository;
@@ -60,7 +61,7 @@ public class AgentRepositoryImpl implements AgentRepository {
 
     @Override
     public Optional<Agent> findSystemRuleAnalyzer() {
-        return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(2L)
+        return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(AgentType.SYSTEM_RULE_ANALYZER.getId())
                 .map(this.agentInfraMapper::asAgent);
     }
 }

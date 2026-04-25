@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
@@ -61,7 +60,7 @@ class DirectConversationChatHandlerTest {
     private ConversationContextBuilder conversationContextBuilder;
 
     @Mock
-    private OpenAiChatClient openAiChatClient;
+    private AgentExecutionService agentExecutionService;
 
     @Mock
     private RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
@@ -74,7 +73,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient,
+                this.agentExecutionService,
                 this.ruleSuggestionAnalysisTrigger
         );
     }
@@ -87,7 +86,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService
         );
     }
 
@@ -125,7 +124,7 @@ class DirectConversationChatHandlerTest {
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
-        when(this.openAiChatClient.execute("Keep answers concise.", "context-prompt"))
+        when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class)))
                 .thenReturn("It separates business rules from external frameworks.");
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
@@ -140,7 +139,7 @@ class DirectConversationChatHandlerTest {
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));
-        verify(this.openAiChatClient).execute("Keep answers concise.", "context-prompt");
+        verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
     }
 
@@ -168,7 +167,7 @@ class DirectConversationChatHandlerTest {
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
-        when(this.openAiChatClient.execute("", "context-prompt")).thenReturn("hi");
+        when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class))).thenReturn("hi");
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
         //when
@@ -182,7 +181,7 @@ class DirectConversationChatHandlerTest {
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));
-        verify(this.openAiChatClient).execute("", "context-prompt");
+        verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
     }
 
@@ -217,7 +216,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService
         );
     }
 
@@ -248,7 +247,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService
         );
     }
 
@@ -279,7 +278,7 @@ class DirectConversationChatHandlerTest {
                 this.agentRuleRepository,
                 this.conversationRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService
         );
     }
 

@@ -10,6 +10,9 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -41,13 +44,20 @@ public class RuleSuggestionAnalysisPolicy {
             return false;
         }
 
-        final long pendingSuggestions = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+        final long pendingSuggestions = this.agentRuleRepository.countByAgentIdAndStatusAndAuthorType(
                 agentId,
-                targetAgent.get().getUserId(),
                 AgentRuleStatus.PENDING,
                 AgentRuleAuthorType.AI
-        ).size();
+        );
         if (pendingSuggestions >= this.properties.getMaxPendingSuggestionsPerAgent()) {
+            return false;
+        }
+
+        final Instant now = Instant.now();
+        if (!this.isCooldownPassed(agentId, now)) {
+            return false;
+        }
+        if (!this.isDailyQuotaAvailable(agentId, now)) {
             return false;
         }
 
@@ -59,5 +69,33 @@ public class RuleSuggestionAnalysisPolicy {
             return false;
         }
         return true;
+    }
+
+    private boolean isCooldownPassed(final UUID agentId, final Instant now) {
+        final Optional<Instant> lastAiSuggestionCreatedAt =
+                this.agentRuleRepository.findLastCreatedAtByAgentIdAndAuthorType(agentId, AgentRuleAuthorType.AI);
+        if (lastAiSuggestionCreatedAt.isEmpty()) {
+            return true;
+        }
+        return lastAiSuggestionCreatedAt.get()
+                .plusSeconds((long) this.properties.getConversationCooldownMinutes() * 60L)
+                .isBefore(now);
+    }
+
+    private boolean isDailyQuotaAvailable(final UUID agentId, final Instant now) {
+        final LocalDate utcDate = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        final Instant dayStartUtc = utcDate
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+        final Instant nextDayStartUtc = utcDate.plusDays(1)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+        final long analysesToday = this.agentRuleRepository.countByAgentIdAndAuthorTypeAndCreatedAtBetween(
+                agentId,
+                AgentRuleAuthorType.AI,
+                dayStartUtc,
+                nextDayStartUtc
+        );
+        return analysesToday < this.properties.getMaxAgentAnalysesPerDay();
     }
 }

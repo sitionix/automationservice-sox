@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
@@ -36,7 +35,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
-    private final OpenAiChatClient openAiChatClient;
+    private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
     @Override
@@ -69,9 +68,11 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 null
         );
 
-        final String instruction = this.normalizeInstruction(agent);
         final String contextPrompt = this.conversationContextBuilder.build(activeRules, history);
-        final String replyContent = this.openAiChatClient.execute(instruction, contextPrompt);
+        final String replyContent = this.agentExecutionService.execute(
+                agent,
+                new UserAgentExecutionContext(contextPrompt)
+        );
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
         this.touchConversation(conversation, reply.getCreatedAt());
@@ -139,7 +140,4 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         return command.getMessage().trim();
     }
 
-    private String normalizeInstruction(final Agent agent) {
-        return agent.getInstruction() == null ? "" : agent.getInstruction().trim();
-    }
 }

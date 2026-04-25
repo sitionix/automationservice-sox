@@ -33,10 +33,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RuleSuggestionAnalyzerAsyncService {
 
+    private static final Set<String> GENERIC_RULE_CONTENTS = Set.of(
+            "be helpful",
+            "be clear"
+    );
+
     private final AgentRepository agentRepository;
     private final AgentRuleRepository agentRuleRepository;
     private final ConversationMessageRepository conversationMessageRepository;
-    private final SystemAgentExecutor systemAgentExecutor;
+    private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalyzerProperties properties;
     private final ObjectMapper objectMapper;
 
@@ -63,10 +68,12 @@ public class RuleSuggestionAnalyzerAsyncService {
 
         final List<AgentRule> activeRules = this.findRules(agentId, targetAgent.getUserId(), AgentRuleStatus.ACTIVE);
         final List<AgentRule> pendingRules = this.findRules(agentId, targetAgent.getUserId(), AgentRuleStatus.PENDING);
+        final List<AgentRule> rejectedRules = this.findRules(agentId, targetAgent.getUserId(), AgentRuleStatus.REJECTED);
         final RuleSuggestionAnalysisContext context = new RuleSuggestionAnalysisContext(
                 targetAgent,
                 activeRules,
                 pendingRules,
+                rejectedRules,
                 this.takeLastMessages(fullHistory),
                 latestUserMessage
         );
@@ -75,7 +82,7 @@ public class RuleSuggestionAnalyzerAsyncService {
             return;
         }
         final List<RuleSuggestionCandidate> suggestions = this.parseSuggestions(rawResponse.get(), agentId, conversationId);
-        final List<RuleSuggestionCandidate> validSuggestions = this.filterValidSuggestions(suggestions, activeRules, pendingRules);
+        final List<RuleSuggestionCandidate> validSuggestions = this.filterValidSuggestions(suggestions, activeRules, pendingRules, rejectedRules);
         if (validSuggestions.isEmpty()) {
             return;
         }
@@ -129,7 +136,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                                              final UUID agentId,
                                              final UUID conversationId) {
         try {
-            return Optional.of(this.systemAgentExecutor.execute(analyzer, context));
+            return Optional.of(this.agentExecutionService.execute(analyzer, context));
         } catch (OpenAiExecutionException exception) {
             log.warn("Rule suggestion analyzer OpenAI execution failed for agentId={}, conversationId={}", agentId, conversationId, exception);
             return Optional.empty();
@@ -169,11 +176,11 @@ public class RuleSuggestionAnalyzerAsyncService {
 
     private List<RuleSuggestionCandidate> filterValidSuggestions(final List<RuleSuggestionCandidate> suggestions,
                                                                  final List<AgentRule> activeRules,
-                                                                 final List<AgentRule> pendingRules) {
-        final Set<String> existingContents = Stream.concat(
-                        activeRules.stream().map(AgentRule::getContent),
-                        pendingRules.stream().map(AgentRule::getContent)
-                )
+                                                                 final List<AgentRule> pendingRules,
+                                                                 final List<AgentRule> rejectedRules) {
+        final Set<String> existingContents = Stream.of(activeRules, pendingRules, rejectedRules)
+                .flatMap(List::stream)
+                .map(AgentRule::getContent)
                 .map(this::normalizeContent)
                 .collect(Collectors.toSet());
 
@@ -183,6 +190,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(candidate -> !candidate.content().isEmpty())
                 .filter(candidate -> !candidate.reason().isEmpty())
                 .filter(candidate -> candidate.content().length() <= this.properties.getMaxSuggestionContentLength())
+                .filter(candidate -> !GENERIC_RULE_CONTENTS.contains(this.normalizeContent(candidate.content())))
                 .filter(candidate -> !existingContents.contains(this.normalizeContent(candidate.content())))
                 .limit(this.properties.getMaxSuggestionsPerRun())
                 .toList();

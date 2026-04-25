@@ -9,16 +9,16 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RuleSuggestionAnalyzerSystemAgentHandler implements SystemAgentHandler {
+public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecutionHandler {
 
     private final OpenAiChatClient openAiChatClient;
 
-    public RuleSuggestionAnalyzerSystemAgentHandler(final OpenAiChatClient openAiChatClient) {
+    public RuleSuggestionAnalyzerAgentExecutionHandler(final OpenAiChatClient openAiChatClient) {
         this.openAiChatClient = openAiChatClient;
     }
 
     @Override
-    public String execute(final Agent agent, final SystemAgentContext context) {
+    public String execute(final Agent agent, final AgentExecutionContext context) {
         if (!(context instanceof RuleSuggestionAnalysisContext analysisContext)) {
             throw new AgentValidationException("RuleSuggestionAnalysisContext is required");
         }
@@ -33,17 +33,16 @@ public class RuleSuggestionAnalyzerSystemAgentHandler implements SystemAgentHand
 
     private String buildPrompt(final RuleSuggestionAnalysisContext analysisContext) {
         return """
-                Analyze conversation and propose agent rules.
-                Return only JSON:
-                {"suggestions":[{"title":"...","content":"...","reason":"..."}]}
-
-                Agent instruction:
+                Target agent instruction:
                 %s
 
                 Active rules:
                 %s
 
                 Pending rules:
+                %s
+
+                Rejected rules:
                 %s
 
                 Conversation:
@@ -55,6 +54,7 @@ public class RuleSuggestionAnalyzerSystemAgentHandler implements SystemAgentHand
                 this.normalize(analysisContext.targetAgent().getInstruction()),
                 this.formatRules(analysisContext.activeRules()),
                 this.formatRules(analysisContext.pendingRules()),
+                this.formatRules(analysisContext.rejectedRules()),
                 this.formatMessages(analysisContext.messages()),
                 this.normalize(analysisContext.latestUserMessage())
         );

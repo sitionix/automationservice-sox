@@ -9,7 +9,8 @@ public record RuleSuggestionAnalysisContext(
         Agent targetAgent,
         List<AgentRule> activeRules,
         List<AgentRule> pendingRules,
+        List<AgentRule> rejectedRules,
         List<ConversationMessage> messages,
         String latestUserMessage
-) implements SystemAgentContext {
+) implements AgentExecutionContext {
 }
