@@ -6,10 +6,12 @@
   "title": "Active AI title",
   "content": "Active AI content",
   "status": {
-    "id": 1
+    "id": 1,
+    "description": "ACTIVE"
   },
   "authorType": {
-    "id": 2
+    "id": 2,
+    "description": "AI"
   },
   "createdAt": "2026-04-21T10:06:00Z",
   "updatedAt": "2026-04-21T10:06:00Z"

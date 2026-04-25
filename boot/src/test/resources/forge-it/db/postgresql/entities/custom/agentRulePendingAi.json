@@ -6,10 +6,12 @@
   "title": "Pending AI title",
   "content": "Pending AI content",
   "status": {
-    "id": 3
+    "id": 3,
+    "description": "PENDING"
   },
   "authorType": {
-    "id": 2
+    "id": 2,
+    "description": "AI"
   },
   "createdAt": "2026-04-21T10:02:00Z",
   "updatedAt": "2026-04-21T10:02:00Z"

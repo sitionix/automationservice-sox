@@ -6,10 +6,12 @@
   "title": "Deleted AI title",
   "content": "Deleted AI content",
   "status": {
-    "id": 2
+    "id": 2,
+    "description": "DELETED"
   },
   "authorType": {
-    "id": 2
+    "id": 2,
+    "description": "AI"
   },
   "createdAt": "2026-04-21T10:04:00Z",
   "updatedAt": "2026-04-21T10:04:00Z"
