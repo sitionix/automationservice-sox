@@ -3,7 +3,6 @@ package com.sitionix.atmssox.api.mapper;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
-import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO1;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
@@ -34,11 +33,7 @@ public interface AgentRuleApiMapper {
 
     AgentRuleDTO asAgentRuleDto(AgentRule src);
 
-    AgentRuleDTO1 asAgentRuleDto1(AgentRule src);
-
     List<AgentRuleDTO> asAgentRuleDtos(List<AgentRule> src);
-
-    List<AgentRuleDTO1> asAgentRuleDto1s(List<AgentRule> src);
 
     default OffsetDateTime map(final Instant value) {
         return value == null ? null : value.atOffset(ZoneOffset.UTC);
@@ -46,7 +41,7 @@ public interface AgentRuleApiMapper {
 
     default AgentRulesResponseDTO asAgentRulesResponseDto(final List<AgentRule> rules) {
         return new AgentRulesResponseDTO()
-                .items(this.asAgentRuleDto1s(rules));
+                .items(this.asAgentRuleDtos(rules));
     }
 
     default GetAgentRulesQuery asGetAgentRulesQuery(final AgentRuleStatusDTO status, final AgentRuleAuthorTypeDTO authorType) {

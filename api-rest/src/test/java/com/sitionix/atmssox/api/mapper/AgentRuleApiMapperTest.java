@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
-import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO1;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
@@ -117,7 +116,7 @@ class AgentRuleApiMapperTest {
         );
         final AgentRulesResponseDTO expected = AgentRulesResponseDTO.builder()
                 .items(List.of(
-                        AgentRuleDTO1.builder()
+                        AgentRuleDTO.builder()
                                 .id(given.get(0).getId())
                                 .agentId(given.get(0).getAgentId())
                                 .title("Rule A")
@@ -127,7 +126,7 @@ class AgentRuleApiMapperTest {
                                 .createdAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
                                 .updatedAt(OffsetDateTime.parse("2026-04-21T10:00:00Z"))
                                 .build(),
-                        AgentRuleDTO1.builder()
+                        AgentRuleDTO.builder()
                                 .id(given.get(1).getId())
                                 .agentId(given.get(1).getAgentId())
                                 .title("Rule B")
