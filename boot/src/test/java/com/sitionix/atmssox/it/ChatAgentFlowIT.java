@@ -3,8 +3,10 @@ package com.sitionix.atmssox.it;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
+import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
@@ -21,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
@@ -95,6 +98,132 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getInstruction(), "Follow security-first code review checklist"))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
                 .assertEntity();
+    }
+
+    @Test
+    @DisplayName("Should include only active rules in chat context prompt")
+    void givenMixedRuleStatuses_whenChatAgent_thenBuildPromptWithOnlyActiveRules() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .singleElement()
+                .assertEntity()
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .withRequest("patchAgentInstructionOnlyRequest.json", request ->
+                        request.setInstruction("  Follow only active rules  "))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentRule())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentRule())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setTitle("Deleted rule title");
+                    request.setContent("Deleted rule content");
+                }));
+
+        final UUID deletedRuleId = this.testManager.postgresql()
+                .get(AgentRuleEntity.class)
+                .getAll()
+                .stream()
+                .filter(rule -> Objects.equals(rule.getTitle(), "Deleted rule title"))
+                .map(AgentRuleEntity::getRuleId)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Deleted rule not found"));
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgentRule())
+                .withPathParameters(PathParams.create().add("agentId", agentId).add("ruleId", deletedRuleId))
+                .assertDefault();
+
+        when(this.openAiChatClient.execute(
+                eq("Follow only active rules"),
+                argThat(context -> Objects.nonNull(context)
+                        && context.contains("Active rules:")
+                        && context.contains("- Always produce deterministic output")
+                        && !context.contains("Deleted AI title")
+                        && !context.contains("Deleted rule title")
+                        && context.contains("USER: Explain clean architecture in simple words."))))
+                .thenReturn("Only active rules were applied.");
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Only active rules were applied."))
+                .assertDefault();
+
+        //then
+        verify(this.openAiChatClient).execute(
+                eq("Follow only active rules"),
+                argThat(context -> Objects.nonNull(context)
+                        && context.contains("Active rules:")
+                        && context.contains("- Always produce deterministic output")
+                        && !context.contains("Deleted rule title")
+                        && context.contains("USER: Explain clean architecture in simple words.")));
+    }
+
+    @Test
+    @DisplayName("Should exclude pending rejected and deleted rules from chat context prompt")
+    void givenPersistedMixedRuleStatuses_whenChatAgent_thenBuildPromptWithOnlyActiveRules() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("agentRuleOwnerActiveAgent.json"))
+                .to(DatabaseContract.AGENT_RULE_ENTITY_DB_CONTRACT.withJson("agentRuleActiveUser.json"))
+                .to(DatabaseContract.AGENT_RULE_ENTITY_DB_CONTRACT.withJson("agentRuleActiveAi.json"))
+                .to(DatabaseContract.AGENT_RULE_ENTITY_DB_CONTRACT.withJson("agentRulePendingAi.json"))
+                .to(DatabaseContract.AGENT_RULE_ENTITY_DB_CONTRACT.withJson("agentRuleRejectedAi.json"))
+                .to(DatabaseContract.AGENT_RULE_ENTITY_DB_CONTRACT.withJson("agentRuleDeletedAi.json"))
+                .build();
+
+        when(this.openAiChatClient.execute(
+                eq("Follow only active rules"),
+                argThat(context -> Objects.nonNull(context)
+                        && context.contains("Active rules:")
+                        && context.contains("- Active USER content")
+                        && context.contains("- Active AI content")
+                        && !context.contains("Pending AI title")
+                        && !context.contains("Rejected AI title")
+                        && !context.contains("Deleted AI title")
+                        && context.contains("USER: Explain clean architecture in simple words."))))
+                .thenReturn("Only active persisted rules were applied.");
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", "11111111-1111-1111-1111-111111111111"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Only active persisted rules were applied."))
+                .assertDefault();
+
+        //then
+        verify(this.openAiChatClient).execute(
+                eq("Follow only active rules"),
+                argThat(context -> Objects.nonNull(context)
+                        && context.contains("Active rules:")
+                        && context.contains("- Active USER content")
+                        && context.contains("- Active AI content")
+                        && !context.contains("Pending AI title")
+                        && !context.contains("Rejected AI title")
+                        && !context.contains("Deleted AI title")
+                        && context.contains("USER: Explain clean architecture in simple words.")));
     }
 
     @Test
@@ -347,6 +476,9 @@ class ChatAgentFlowIT {
                 .get(AgentEntity.class)
                 .singleElement()
                 .assertEntity();
+        final int beforeConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int beforeParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int beforeMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
 
         when(this.openAiChatClient.execute(
                 eq(""),
@@ -381,9 +513,12 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
                 .assertEntity();
-        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
-        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
-        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
+        final int afterConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int afterParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int afterMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+        assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
+        assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
+        assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
     }
 
     @Test
@@ -409,6 +544,9 @@ class ChatAgentFlowIT {
                 .get(AgentEntity.class)
                 .singleElement()
                 .assertEntity();
+        final int beforeConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int beforeParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int beforeMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
 
         when(this.openAiChatClient.execute(
                 eq(""),
@@ -443,9 +581,12 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
                 .assertEntity();
-        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
-        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
-        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
+        final int afterConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int afterParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int afterMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+        assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
+        assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
+        assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
     }
 
     @Test
@@ -471,6 +612,9 @@ class ChatAgentFlowIT {
                 .get(AgentEntity.class)
                 .singleElement()
                 .assertEntity();
+        final int beforeConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int beforeParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int beforeMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
 
         when(this.openAiChatClient.execute(
                 eq(""),
@@ -500,8 +644,11 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), activeAgent.getUpdatedAt()))
                 .assertEntity();
-        this.testManager.postgresql().get(ConversationEntity.class).hasSize(1);
-        this.testManager.postgresql().get(ConversationParticipantEntity.class).hasSize(2);
-        this.testManager.postgresql().get(ConversationMessageEntity.class).hasSize(2);
+        final int afterConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int afterParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int afterMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+        assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
+        assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
+        assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
     }
 }

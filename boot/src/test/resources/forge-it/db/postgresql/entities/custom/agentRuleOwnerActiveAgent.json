@@ -1,0 +1,12 @@
+{
+  "agentId": "11111111-1111-1111-1111-111111111111",
+  "userId": 1,
+  "name": "Rule lifecycle agent",
+  "description": "Agent for lifecycle IT",
+  "instruction": "Follow only active rules",
+  "status": {
+    "id": 2
+  },
+  "createdAt": "2026-04-21T10:00:00Z",
+  "updatedAt": "2026-04-21T10:00:00Z"
+}

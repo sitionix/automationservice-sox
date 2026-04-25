@@ -1,0 +1,14 @@
+{
+  "ruleId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Active USER title",
+  "content": "Active USER content",
+  "status": {
+    "id": 1
+  },
+  "authorType": "USER",
+  "createdAt": "2026-04-21T10:01:00Z",
+  "updatedAt": "2026-04-21T10:01:00Z"
+}

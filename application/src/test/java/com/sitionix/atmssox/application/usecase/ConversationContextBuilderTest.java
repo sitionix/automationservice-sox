@@ -42,7 +42,7 @@ class ConversationContextBuilderTest {
         final AgentRule rule = this.getAgentRule("Tone", "Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
         final String expected = "Active rules:\n"
-                + "- Tone: Always keep answers explicit.\n"
+                + "- Always keep answers explicit.\n"
                 + "\n"
                 + "Conversation history:\n"
                 + "USER: Explain clean architecture\n"
