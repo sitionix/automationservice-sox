@@ -6,9 +6,13 @@
   "title": "Rejected AI title",
   "content": "Rejected AI content",
   "status": {
-    "id": 4
+    "id": 4,
+    "description": "REJECTED"
   },
-  "authorType": "AI",
+  "authorType": {
+    "id": 2,
+    "description": "AI"
+  },
   "createdAt": "2026-04-21T10:03:00Z",
   "updatedAt": "2026-04-21T10:03:00Z"
 }

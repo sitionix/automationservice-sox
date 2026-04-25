@@ -1,7 +1,7 @@
 package com.sitionix.atmssox.postgresql.jpa;
 
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
-import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,11 +16,11 @@ public interface AgentRuleJpaRepository extends JpaRepository<AgentRuleEntity, U
     List<AgentRuleEntity> findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(UUID agentId,
                                                                                                             Long userId,
                                                                                                             Long statusId,
-                                                                                                            AgentRuleAuthorType authorType);
+                                                                                                            AgentRuleAuthorTypeEntity authorType);
 
     List<AgentRuleEntity> findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(UUID agentId,
                                                                                                 Long userId,
-                                                                                                AgentRuleAuthorType authorType);
+                                                                                                AgentRuleAuthorTypeEntity authorType);
 
     List<AgentRuleEntity> findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(UUID agentId, Long userId);
 

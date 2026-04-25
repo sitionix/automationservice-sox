@@ -1,11 +1,8 @@
 package com.sitionix.atmssox.postgresql.entity.rule;
 
-import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -53,9 +50,9 @@ public class AgentRuleEntity {
     @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
     private AgentRuleStatusEntity status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "author_type", nullable = false, length = 32)
-    private AgentRuleAuthorType authorType;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_type_id", nullable = false, referencedColumnName = "id")
+    private AgentRuleAuthorTypeEntity authorType;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

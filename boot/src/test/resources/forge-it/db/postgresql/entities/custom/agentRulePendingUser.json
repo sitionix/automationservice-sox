@@ -6,9 +6,13 @@
   "title": "Pending USER title",
   "content": "Pending USER content",
   "status": {
-    "id": 3
+    "id": 3,
+    "description": "PENDING"
   },
-  "authorType": "USER",
+  "authorType": {
+    "id": 1,
+    "description": "USER"
+  },
   "createdAt": "2026-04-21T10:05:00Z",
   "updatedAt": "2026-04-21T10:05:00Z"
 }

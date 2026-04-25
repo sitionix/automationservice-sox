@@ -2,6 +2,8 @@ package com.sitionix.atmssox.postgresql.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -10,6 +12,7 @@ import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
@@ -233,10 +236,12 @@ class AgentRuleRepositoryImplTest {
         );
 
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                status.getId(),
-                authorType
+                eq(agentId),
+                eq(userId),
+                eq(status.getId()),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         )).thenReturn(List.of(entity));
 
         //when
@@ -250,10 +255,12 @@ class AgentRuleRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                status.getId(),
-                authorType
+                eq(agentId),
+                eq(userId),
+                eq(status.getId()),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         );
     }
 
@@ -287,9 +294,11 @@ class AgentRuleRepositoryImplTest {
         );
 
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                authorType
+                eq(agentId),
+                eq(userId),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         )).thenReturn(List.of(entity));
 
         //when
@@ -303,9 +312,11 @@ class AgentRuleRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                authorType
+                eq(agentId),
+                eq(userId),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         );
     }
 
@@ -387,6 +398,10 @@ class AgentRuleRepositoryImplTest {
                 .id(status.getId())
                 .description(status.name())
                 .build();
+        final AgentRuleAuthorTypeEntity authorTypeEntity = AgentRuleAuthorTypeEntity.builder()
+                .id(authorType.getId())
+                .description(authorType.name())
+                .build();
 
         return AgentRuleEntity.builder()
                 .ruleId(id)
@@ -394,7 +409,7 @@ class AgentRuleRepositoryImplTest {
                 .title(title)
                 .content(content)
                 .status(statusEntity)
-                .authorType(authorType)
+                .authorType(authorTypeEntity)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();

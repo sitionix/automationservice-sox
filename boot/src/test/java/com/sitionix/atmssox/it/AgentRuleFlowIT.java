@@ -3,6 +3,7 @@ package com.sitionix.atmssox.it;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
@@ -108,7 +109,7 @@ class AgentRuleFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getTitle(), "Response style"))
                 .andExpected(entity -> Objects.equals(entity.getContent(), "Keep responses concise and technical"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentRuleStatus.DELETED.getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType().name(), "USER"))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), AgentRuleAuthorType.USER.getId()))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeDeleteUpdatedAt))
                 .assertEntity();
     }
@@ -197,7 +198,7 @@ class AgentRuleFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId().toString(), "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentRuleStatus.ACTIVE.getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType().name(), "AI"))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), AgentRuleAuthorType.AI.getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), "Accepted rule title"))
                 .andExpected(entity -> Objects.equals(entity.getContent(), "Accepted rule content"))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeAcceptUpdatedAt))
@@ -277,7 +278,7 @@ class AgentRuleFlowIT {
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getRuleId().toString(), "dddddddd-dddd-dddd-dddd-dddddddddddd"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentRuleStatus.ACTIVE.getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType().name(), "AI"))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), AgentRuleAuthorType.AI.getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), "Accepted rule title"))
                 .andExpected(entity -> Objects.equals(entity.getContent(), "Accepted rule content"))
                 .andExpected(entity -> entity.getUpdatedAt().isAfter(beforeAcceptUpdatedAt))
@@ -313,7 +314,7 @@ class AgentRuleFlowIT {
                 .get(AgentRuleEntity.class)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforeAccept.getStatus().getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType(), beforeAccept.getAuthorType()))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), beforeAccept.getAuthorType().getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), beforeAccept.getTitle()))
                 .andExpected(entity -> Objects.equals(entity.getContent(), beforeAccept.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeAccept.getUpdatedAt()))
@@ -384,7 +385,7 @@ class AgentRuleFlowIT {
                 .get(AgentRuleEntity.class)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforeReject.getStatus().getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType(), beforeReject.getAuthorType()))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), beforeReject.getAuthorType().getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), beforeReject.getTitle()))
                 .andExpected(entity -> Objects.equals(entity.getContent(), beforeReject.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeReject.getUpdatedAt()))
@@ -420,7 +421,7 @@ class AgentRuleFlowIT {
                 .get(AgentRuleEntity.class)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforeReject.getStatus().getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType(), beforeReject.getAuthorType()))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), beforeReject.getAuthorType().getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), beforeReject.getTitle()))
                 .andExpected(entity -> Objects.equals(entity.getContent(), beforeReject.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeReject.getUpdatedAt()))
@@ -456,7 +457,7 @@ class AgentRuleFlowIT {
                 .get(AgentRuleEntity.class)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforeReject.getStatus().getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType(), beforeReject.getAuthorType()))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), beforeReject.getAuthorType().getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), beforeReject.getTitle()))
                 .andExpected(entity -> Objects.equals(entity.getContent(), beforeReject.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeReject.getUpdatedAt()))
@@ -492,7 +493,7 @@ class AgentRuleFlowIT {
                 .get(AgentRuleEntity.class)
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), beforeReject.getStatus().getId()))
-                .andExpected(entity -> Objects.equals(entity.getAuthorType(), beforeReject.getAuthorType()))
+                .andExpected(entity -> Objects.equals(entity.getAuthorType().getId(), beforeReject.getAuthorType().getId()))
                 .andExpected(entity -> Objects.equals(entity.getTitle(), beforeReject.getTitle()))
                 .andExpected(entity -> Objects.equals(entity.getContent(), beforeReject.getContent()))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeReject.getUpdatedAt()))

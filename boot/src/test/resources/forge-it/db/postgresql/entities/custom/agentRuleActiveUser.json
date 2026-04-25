@@ -6,9 +6,13 @@
   "title": "Active USER title",
   "content": "Active USER content",
   "status": {
-    "id": 1
+    "id": 1,
+    "description": "ACTIVE"
   },
-  "authorType": "USER",
+  "authorType": {
+    "id": 1,
+    "description": "USER"
+  },
   "createdAt": "2026-04-21T10:01:00Z",
   "updatedAt": "2026-04-21T10:01:00Z"
 }
