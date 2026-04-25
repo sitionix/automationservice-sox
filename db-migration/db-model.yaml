@@ -19,6 +19,10 @@ tables:
     columns:
       id: bigint
       description: varchar(64)
+  agent_rule_author_types:
+    columns:
+      id: bigint
+      description: varchar(64)
   agents:
     columns:
       agent_id: uuid
@@ -36,7 +40,7 @@ tables:
       title: varchar(255)
       content: text
       status_id: bigint
-      author_type: varchar(32)
+      author_type_id: bigint
       created_at: timestamptz
       updated_at: timestamptz
   conversations:

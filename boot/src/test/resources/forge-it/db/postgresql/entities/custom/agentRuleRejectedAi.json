@@ -8,7 +8,9 @@
   "status": {
     "id": 4
   },
-  "authorType": "AI",
+  "authorType": {
+    "id": 2
+  },
   "createdAt": "2026-04-21T10:03:00Z",
   "updatedAt": "2026-04-21T10:03:00Z"
 }

@@ -5,6 +5,7 @@ import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
@@ -32,11 +33,11 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                                                                                    final AgentRuleAuthorType authorType) {
         final List<AgentRuleEntity> entities;
         if (status != null && authorType != null) {
-            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeIdOrderByCreatedAtAsc(
                     agentId,
                     userId,
                     status.getId(),
-                    authorType
+                    authorType.getId()
             );
         } else if (status != null) {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(
@@ -45,10 +46,10 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                     status.getId()
             );
         } else if (authorType != null) {
-            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeIdOrderByCreatedAtAsc(
                     agentId,
                     userId,
-                    authorType
+                    authorType.getId()
             );
         } else {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
@@ -69,6 +70,10 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .id(rule.getStatus().getId())
                 .description(rule.getStatus().name())
                 .build();
+        final AgentRuleAuthorTypeEntity authorType = AgentRuleAuthorTypeEntity.builder()
+                .id(rule.getAuthorType().getId())
+                .description(rule.getAuthorType().name())
+                .build();
 
         return AgentRuleEntity.builder()
                 .ruleId(rule.getId())
@@ -76,7 +81,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .title(rule.getTitle())
                 .content(rule.getContent())
                 .status(status)
-                .authorType(rule.getAuthorType())
+                .authorType(authorType)
                 .createdAt(rule.getCreatedAt())
                 .updatedAt(rule.getUpdatedAt())
                 .build();
@@ -89,7 +94,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .title(entity.getTitle())
                 .content(entity.getContent())
                 .status(AgentRuleStatus.fromId(entity.getStatus().getId()))
-                .authorType(entity.getAuthorType())
+                .authorType(AgentRuleAuthorType.fromId(entity.getAuthorType().getId()))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
