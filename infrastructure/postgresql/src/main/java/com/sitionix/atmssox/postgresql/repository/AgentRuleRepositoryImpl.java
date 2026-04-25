@@ -33,11 +33,11 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                                                                                    final AgentRuleAuthorType authorType) {
         final List<AgentRuleEntity> entities;
         if (status != null && authorType != null) {
-            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeIdOrderByCreatedAtAsc(
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
                     agentId,
                     userId,
                     status.getId(),
-                    authorType.getId()
+                    this.toAuthorTypeEntity(authorType)
             );
         } else if (status != null) {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(
@@ -46,10 +46,10 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                     status.getId()
             );
         } else if (authorType != null) {
-            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeIdOrderByCreatedAtAsc(
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
                     agentId,
                     userId,
-                    authorType.getId()
+                    this.toAuthorTypeEntity(authorType)
             );
         } else {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
@@ -70,10 +70,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .id(rule.getStatus().getId())
                 .description(rule.getStatus().name())
                 .build();
-        final AgentRuleAuthorTypeEntity authorType = AgentRuleAuthorTypeEntity.builder()
-                .id(rule.getAuthorType().getId())
-                .description(rule.getAuthorType().name())
-                .build();
+        final AgentRuleAuthorTypeEntity authorType = this.toAuthorTypeEntity(rule.getAuthorType());
 
         return AgentRuleEntity.builder()
                 .ruleId(rule.getId())
@@ -84,6 +81,13 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .authorType(authorType)
                 .createdAt(rule.getCreatedAt())
                 .updatedAt(rule.getUpdatedAt())
+                .build();
+    }
+
+    private AgentRuleAuthorTypeEntity toAuthorTypeEntity(final AgentRuleAuthorType authorType) {
+        return AgentRuleAuthorTypeEntity.builder()
+                .id(authorType.getId())
+                .description(authorType.name())
                 .build();
     }
 

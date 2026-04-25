@@ -2,6 +2,8 @@ package com.sitionix.atmssox.postgresql.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -233,11 +235,13 @@ class AgentRuleRepositoryImplTest {
                 )
         );
 
-        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeIdOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                status.getId(),
-                authorType.getId()
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+                eq(agentId),
+                eq(userId),
+                eq(status.getId()),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         )).thenReturn(List.of(entity));
 
         //when
@@ -250,11 +254,13 @@ class AgentRuleRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeIdOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                status.getId(),
-                authorType.getId()
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+                eq(agentId),
+                eq(userId),
+                eq(status.getId()),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         );
     }
 
@@ -287,10 +293,12 @@ class AgentRuleRepositoryImplTest {
                 )
         );
 
-        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeIdOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                authorType.getId()
+        when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+                eq(agentId),
+                eq(userId),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         )).thenReturn(List.of(entity));
 
         //when
@@ -303,10 +311,12 @@ class AgentRuleRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeIdOrderByCreatedAtAsc(
-                agentId,
-                userId,
-                authorType.getId()
+        verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+                eq(agentId),
+                eq(userId),
+                argThat(entityAuthorType -> entityAuthorType != null
+                        && entityAuthorType.getId().equals(authorType.getId())
+                        && entityAuthorType.getDescription().equals(authorType.name()))
         );
     }
 
