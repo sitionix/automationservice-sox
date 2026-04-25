@@ -240,7 +240,7 @@ class DirectConversationChatHandlerTest {
                 17L
         ))
                 .isInstanceOf(AgentChatNotAllowedException.class)
-                .hasMessage("Only ACTIVE agent can execute chat");
+                .hasMessage("Only ACTIVE chat-capable agent can execute chat");
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
         verifyNoInteractions(
                 this.agentRuleRepository,

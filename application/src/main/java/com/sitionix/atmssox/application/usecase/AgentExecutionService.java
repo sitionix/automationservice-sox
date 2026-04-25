@@ -13,6 +13,6 @@ public class AgentExecutionService {
     }
 
     public String execute(final Agent agent, final AgentExecutionContext context) {
-        return this.agentExecutionHandlerRegistry.getHandler(agent.getType()).execute(agent, context);
+        return this.agentExecutionHandlerRegistry.getHandler(agent.getType()).executeWithContext(agent, context);
     }
 }

@@ -7,7 +7,6 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
@@ -50,8 +49,8 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         final Agent agent = this.agentRepository.findVisibleByIdAndUserId(agentId, userId)
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
-        if (agent.getType() != AgentType.USER || agent.getStatus() != AgentStatus.ACTIVE) {
-            throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
+        if (!agent.getType().isChatCapable() || agent.getStatus() != AgentStatus.ACTIVE) {
+            throw new AgentChatNotAllowedException("Only ACTIVE chat-capable agent can execute chat");
         }
 
         final String message = this.normalizeMessage(command);

@@ -1,0 +1,18 @@
+{
+  "ruleId": "b2222222-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Pending AI title 3",
+  "content": "Pending AI content 3",
+  "status": {
+    "id": 3,
+    "description": "PENDING"
+  },
+  "authorType": {
+    "id": 2,
+    "description": "AI"
+  },
+  "createdAt": "2026-04-21T10:13:00Z",
+  "updatedAt": "2026-04-21T10:13:00Z"
+}

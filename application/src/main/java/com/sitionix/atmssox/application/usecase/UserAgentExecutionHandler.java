@@ -1,12 +1,14 @@
 package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
+import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentType;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserAgentExecutionHandler implements AgentExecutionHandler {
+public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgentExecutionContext> {
 
     private final OpenAiChatClient openAiChatClient;
 
@@ -15,18 +17,24 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler {
     }
 
     @Override
-    public String execute(final Agent agent, final AgentExecutionContext context) {
-        if (!(context instanceof UserAgentExecutionContext userContext)) {
-            throw new AgentValidationException("UserAgentExecutionContext is required");
-        }
+    public AgentType supportedAgentType() {
+        return AgentType.USER;
+    }
 
+    @Override
+    public Class<UserAgentExecutionContext> supportedContextType() {
+        return UserAgentExecutionContext.class;
+    }
+
+    @Override
+    public String execute(final Agent agent, final UserAgentExecutionContext context) {
         final String instruction = this.normalize(agent.getInstruction());
-        final String prompt = this.normalize(userContext.prompt());
+        final String prompt = this.normalize(context.prompt());
         if (prompt.isEmpty()) {
             throw new AgentValidationException("User prompt is empty");
         }
 
-        return this.openAiChatClient.execute(instruction, prompt);
+        return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, prompt));
     }
 
     private String normalize(final String value) {

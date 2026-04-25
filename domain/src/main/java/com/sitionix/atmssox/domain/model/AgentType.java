@@ -6,11 +6,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum AgentType {
-    USER(1L, "userAgentExecutionHandler"),
-    SYSTEM_RULE_ANALYZER(2L, "ruleSuggestionAnalyzerAgentExecutionHandler");
+    USER(1L, true),
+    SYSTEM_RULE_ANALYZER(2L, false);
 
     private final Long id;
-    private final String bindingKey;
+    private final boolean chatCapable;
 
     public static AgentType fromId(final Long id) {
         return java.util.Arrays.stream(values())
