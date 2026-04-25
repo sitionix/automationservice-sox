@@ -19,6 +19,8 @@ import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionContext;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionHandler;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -64,9 +66,6 @@ class DirectConversationChatHandlerTest {
     private AgentExecutionService agentExecutionService;
 
     @Mock
-    private AgentExecutionHandlerRegistry agentExecutionHandlerRegistry;
-
-    @Mock
     private AgentExecutionHandler agentExecutionHandler;
 
     @Mock
@@ -80,21 +79,23 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.agentExecutionHandlerRegistry,
                 this.agentExecutionService,
                 this.ruleSuggestionAnalysisTrigger
         );
+        AgentType.USER.setHandler(this.agentExecutionHandler);
+        AgentType.SYSTEM_RULE_ANALYZER.setHandler(this.agentExecutionHandler);
     }
 
     @AfterEach
     void tearDown() {
+        AgentType.USER.setHandler(null);
+        AgentType.SYSTEM_RULE_ANALYZER.setHandler(null);
         verifyNoMoreInteractions(
                 this.agentRepository,
                 this.agentRuleRepository,
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.agentExecutionHandlerRegistry,
                 this.agentExecutionHandler,
                 this.agentExecutionService
         );
@@ -126,7 +127,6 @@ class DirectConversationChatHandlerTest {
         );
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
-        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
         when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
@@ -147,7 +147,6 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
         verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
@@ -173,7 +172,6 @@ class DirectConversationChatHandlerTest {
         final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, agentId.toString(), "hi");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
-        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
         when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
@@ -193,7 +191,6 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
         verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
@@ -234,7 +231,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.agentExecutionHandlerRegistry,
                 this.agentExecutionHandler,
                 this.agentExecutionService
         );
@@ -267,7 +263,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.agentExecutionHandlerRegistry,
                 this.agentExecutionHandler,
                 this.agentExecutionService
         );
@@ -283,7 +278,6 @@ class DirectConversationChatHandlerTest {
         final Agent agent = this.getAgent(AgentStatus.ACTIVE, "Instruction");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
-        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
         when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
 
         //when
@@ -297,7 +291,6 @@ class DirectConversationChatHandlerTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Message must not be blank");
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
         verify(this.agentExecutionHandler).supportedContextType();
         verify(this.conversationMessageRepository, never()).save(any(ConversationMessage.class));
         verifyNoInteractions(

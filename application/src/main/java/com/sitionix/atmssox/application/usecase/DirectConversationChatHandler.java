@@ -34,7 +34,6 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
-    private final AgentExecutionHandlerRegistry agentExecutionHandlerRegistry;
     private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
@@ -53,8 +52,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         if (agent.getStatus() != AgentStatus.ACTIVE) {
             throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
         }
-        final AgentExecutionHandler<?> executionHandler = this.agentExecutionHandlerRegistry.getHandler(agent.getType());
-        if (!UserAgentExecutionContext.class.equals(executionHandler.supportedContextType())) {
+        if (!UserAgentExecutionContext.class.equals(agent.getType().supportedContextType())) {
             throw new AgentChatNotAllowedException("Only agent with USER chat context can execute chat");
         }
 

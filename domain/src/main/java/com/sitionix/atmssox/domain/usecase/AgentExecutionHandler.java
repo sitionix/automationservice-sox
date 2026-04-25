@@ -1,4 +1,4 @@
-package com.sitionix.atmssox.application.usecase;
+package com.sitionix.atmssox.domain.usecase;
 
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;

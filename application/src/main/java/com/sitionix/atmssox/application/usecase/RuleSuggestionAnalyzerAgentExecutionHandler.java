@@ -4,9 +4,10 @@ import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
-import com.sitionix.atmssox.domain.model.TextNormalizer;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionHandler;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,7 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
 
     @Override
     public String execute(final Agent agent, final RuleSuggestionAnalysisContext analysisContext) {
-        final String instruction = TextNormalizer.normalizeToEmpty(agent.getInstruction());
+        final String instruction = AgentRuleTextNormalizer.normalizeToEmpty(agent.getInstruction());
         if (instruction.isEmpty()) {
             throw new AgentValidationException("System agent instruction is empty");
         }
@@ -52,12 +53,12 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
                 Latest user message:
                 %s
                 """.formatted(
-                TextNormalizer.normalizeToEmpty(analysisContext.targetAgent().getInstruction()),
+                AgentRuleTextNormalizer.normalizeToEmpty(analysisContext.targetAgent().getInstruction()),
                 this.formatRules(analysisContext.activeRules()),
                 this.formatRules(analysisContext.pendingRules()),
                 this.formatRules(analysisContext.rejectedRules()),
                 this.formatMessages(analysisContext.messages()),
-                TextNormalizer.normalizeToEmpty(analysisContext.latestUserMessage())
+                AgentRuleTextNormalizer.normalizeToEmpty(analysisContext.latestUserMessage())
         );
     }
 
@@ -66,7 +67,8 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
             return "(none)";
         }
         return rules.stream()
-                .map(rule -> "- " + TextNormalizer.normalizeToEmpty(rule.getTitle()) + ": " + TextNormalizer.normalizeToEmpty(rule.getContent()))
+                .map(rule -> "- " + AgentRuleTextNormalizer.normalizeToEmpty(rule.getTitle()) + ": "
+                        + AgentRuleTextNormalizer.normalizeToEmpty(rule.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
                 .orElse("(none)");
     }
@@ -76,7 +78,7 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
             return "(none)";
         }
         return messages.stream()
-                .map(message -> message.getAuthorType().name() + ": " + TextNormalizer.normalizeToEmpty(message.getContent()))
+                .map(message -> message.getAuthorType().name() + ": " + AgentRuleTextNormalizer.normalizeToEmpty(message.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
                 .orElse("(none)");
     }

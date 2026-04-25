@@ -13,7 +13,7 @@ import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
-import com.sitionix.atmssox.domain.model.TextNormalizer;
+import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
@@ -114,7 +114,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(message -> message.getAuthorType() == ConversationParticipantType.USER)
                 .reduce((first, second) -> second)
                 .map(ConversationMessage::getContent)
-                .map(TextNormalizer::normalizeToEmpty)
+                .map(AgentRuleTextNormalizer::normalizeToEmpty)
                 .orElse("");
     }
 
@@ -193,14 +193,14 @@ public class RuleSuggestionAnalyzerAsyncService {
 
     private RuleSuggestionCandidate normalizeCandidate(final RuleSuggestionCandidate suggestion) {
         return new RuleSuggestionCandidate(
-                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.title()),
-                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.content()),
-                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.reason())
+                AgentRuleTextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.title()),
+                AgentRuleTextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.content()),
+                AgentRuleTextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.reason())
         );
     }
 
     private String normalizeContent(final String content) {
-        return TextNormalizer.normalizeToEmpty(content)
+        return AgentRuleTextNormalizer.normalizeToEmpty(content)
                 .toLowerCase()
                 .replaceAll("\\s+", " ");
     }

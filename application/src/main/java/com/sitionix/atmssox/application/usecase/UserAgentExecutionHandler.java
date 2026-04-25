@@ -4,7 +4,8 @@ import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
-import com.sitionix.atmssox.domain.model.TextNormalizer;
+import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +22,8 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgen
 
     @Override
     public String execute(final Agent agent, final UserAgentExecutionContext context) {
-        final String instruction = TextNormalizer.normalizeToEmpty(agent.getInstruction());
-        final String prompt = TextNormalizer.normalizeToEmpty(context.prompt());
+        final String instruction = AgentRuleTextNormalizer.normalizeToEmpty(agent.getInstruction());
+        final String prompt = AgentRuleTextNormalizer.normalizeToEmpty(context.prompt());
         if (prompt.isEmpty()) {
             throw new AgentValidationException("User prompt is empty");
         }
