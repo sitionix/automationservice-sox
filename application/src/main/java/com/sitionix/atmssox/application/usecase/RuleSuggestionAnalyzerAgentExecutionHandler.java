@@ -4,7 +4,6 @@ import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.util.List;
@@ -17,11 +16,6 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
 
     public RuleSuggestionAnalyzerAgentExecutionHandler(final OpenAiChatClient openAiChatClient) {
         this.openAiChatClient = openAiChatClient;
-    }
-
-    @Override
-    public AgentType supportedAgentType() {
-        return AgentType.SYSTEM_RULE_ANALYZER;
     }
 
     @Override

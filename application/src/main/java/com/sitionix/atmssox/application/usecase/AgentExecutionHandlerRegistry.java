@@ -4,7 +4,6 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.AgentType;
 import jakarta.annotation.PostConstruct;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,17 +12,14 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AgentExecutionHandlerRegistry {
 
-    private final List<AgentExecutionHandler<?>> handlers;
+    private final UserAgentExecutionHandler userAgentExecutionHandler;
+    private final RuleSuggestionAnalyzerAgentExecutionHandler ruleSuggestionAnalyzerAgentExecutionHandler;
     private final Map<AgentType, AgentExecutionHandler<?>> handlersByType = new EnumMap<>(AgentType.class);
 
     @PostConstruct
     public void injectHandlers() {
-        this.handlers.forEach(handler -> {
-            final AgentExecutionHandler<?> existing = this.handlersByType.put(handler.supportedAgentType(), handler);
-            if (existing != null) {
-                throw new IllegalStateException("Duplicate AgentExecutionHandler for type: " + handler.supportedAgentType());
-            }
-        });
+        this.handlersByType.put(AgentType.USER, this.userAgentExecutionHandler);
+        this.handlersByType.put(AgentType.SYSTEM_RULE_ANALYZER, this.ruleSuggestionAnalyzerAgentExecutionHandler);
         for (final AgentType type : AgentType.values()) {
             if (!this.handlersByType.containsKey(type)) {
                 throw new IllegalStateException("No AgentExecutionHandler bean for type: " + type.name());

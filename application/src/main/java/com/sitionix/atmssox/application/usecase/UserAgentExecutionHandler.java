@@ -4,7 +4,6 @@ import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
-import com.sitionix.atmssox.domain.model.AgentType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,11 +13,6 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgen
 
     public UserAgentExecutionHandler(final OpenAiChatClient openAiChatClient) {
         this.openAiChatClient = openAiChatClient;
-    }
-
-    @Override
-    public AgentType supportedAgentType() {
-        return AgentType.USER;
     }
 
     @Override

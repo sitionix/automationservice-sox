@@ -2,11 +2,8 @@ package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
-import com.sitionix.atmssox.domain.model.AgentType;
 
 public interface AgentExecutionHandler<T extends AgentExecutionContext> {
-
-    AgentType supportedAgentType();
 
     Class<T> supportedContextType();
 
