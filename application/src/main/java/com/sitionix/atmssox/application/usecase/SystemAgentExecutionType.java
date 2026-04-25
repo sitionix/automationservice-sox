@@ -11,7 +11,8 @@ import lombok.Setter;
 @Getter
 @RequiredArgsConstructor
 public enum SystemAgentExecutionType {
-    RULE_SUGGESTION_ANALYZER(AgentType.SYSTEM_RULE_ANALYZER, "ruleSuggestionAnalyzerPromptBuilder");
+    USER(AgentType.USER, "userSystemAgentHandler"),
+    RULE_SUGGESTION_ANALYZER(AgentType.SYSTEM_RULE_ANALYZER, "ruleSuggestionAnalyzerSystemAgentHandler");
 
     private final AgentType agentType;
     private final String bindingKey;
