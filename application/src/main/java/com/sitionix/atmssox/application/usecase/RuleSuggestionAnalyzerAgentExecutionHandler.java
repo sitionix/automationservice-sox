@@ -6,17 +6,16 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.TextNormalizer;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecutionHandler<RuleSuggestionAnalysisContext> {
 
     private final OpenAiChatClient openAiChatClient;
-
-    public RuleSuggestionAnalyzerAgentExecutionHandler(final OpenAiChatClient openAiChatClient) {
-        this.openAiChatClient = openAiChatClient;
-    }
 
     @Override
     public Class<RuleSuggestionAnalysisContext> supportedContextType() {
@@ -25,7 +24,7 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
 
     @Override
     public String execute(final Agent agent, final RuleSuggestionAnalysisContext analysisContext) {
-        final String instruction = this.normalize(agent.getInstruction());
+        final String instruction = TextNormalizer.normalizeToEmpty(agent.getInstruction());
         if (instruction.isEmpty()) {
             throw new AgentValidationException("System agent instruction is empty");
         }
@@ -53,12 +52,12 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
                 Latest user message:
                 %s
                 """.formatted(
-                this.normalize(analysisContext.targetAgent().getInstruction()),
+                TextNormalizer.normalizeToEmpty(analysisContext.targetAgent().getInstruction()),
                 this.formatRules(analysisContext.activeRules()),
                 this.formatRules(analysisContext.pendingRules()),
                 this.formatRules(analysisContext.rejectedRules()),
                 this.formatMessages(analysisContext.messages()),
-                this.normalize(analysisContext.latestUserMessage())
+                TextNormalizer.normalizeToEmpty(analysisContext.latestUserMessage())
         );
     }
 
@@ -67,7 +66,7 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
             return "(none)";
         }
         return rules.stream()
-                .map(rule -> "- " + this.normalize(rule.getTitle()) + ": " + this.normalize(rule.getContent()))
+                .map(rule -> "- " + TextNormalizer.normalizeToEmpty(rule.getTitle()) + ": " + TextNormalizer.normalizeToEmpty(rule.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
                 .orElse("(none)");
     }
@@ -77,12 +76,8 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
             return "(none)";
         }
         return messages.stream()
-                .map(message -> message.getAuthorType().name() + ": " + this.normalize(message.getContent()))
+                .map(message -> message.getAuthorType().name() + ": " + TextNormalizer.normalizeToEmpty(message.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
                 .orElse("(none)");
-    }
-
-    private String normalize(final String value) {
-        return value == null ? "" : value.trim();
     }
 }

@@ -13,6 +13,7 @@ import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
+import com.sitionix.atmssox.domain.model.TextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
@@ -113,7 +114,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(message -> message.getAuthorType() == ConversationParticipantType.USER)
                 .reduce((first, second) -> second)
                 .map(ConversationMessage::getContent)
-                .map(this::normalize)
+                .map(TextNormalizer::normalizeToEmpty)
                 .orElse("");
     }
 
@@ -192,20 +193,16 @@ public class RuleSuggestionAnalyzerAsyncService {
 
     private RuleSuggestionCandidate normalizeCandidate(final RuleSuggestionCandidate suggestion) {
         return new RuleSuggestionCandidate(
-                this.normalize(suggestion == null ? null : suggestion.title()),
-                this.normalize(suggestion == null ? null : suggestion.content()),
-                this.normalize(suggestion == null ? null : suggestion.reason())
+                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.title()),
+                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.content()),
+                TextNormalizer.normalizeToEmpty(suggestion == null ? null : suggestion.reason())
         );
     }
 
     private String normalizeContent(final String content) {
-        return this.normalize(content)
+        return TextNormalizer.normalizeToEmpty(content)
                 .toLowerCase()
                 .replaceAll("\\s+", " ");
-    }
-
-    private String normalize(final String value) {
-        return value == null ? "" : value.trim();
     }
 
     private record RuleSuggestionDto(String title, String content, String reason) {
