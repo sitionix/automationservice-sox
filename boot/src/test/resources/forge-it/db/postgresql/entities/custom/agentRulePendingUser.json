@@ -1,0 +1,14 @@
+{
+  "ruleId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Pending USER title",
+  "content": "Pending USER content",
+  "status": {
+    "id": 3
+  },
+  "authorType": "USER",
+  "createdAt": "2026-04-21T10:05:00Z",
+  "updatedAt": "2026-04-21T10:05:00Z"
+}

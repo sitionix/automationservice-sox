@@ -60,10 +60,11 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 message
         ));
         final List<ConversationMessage> history = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversation.getId());
-        final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(
+        final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
                 agentId,
                 userId,
-                AgentRuleStatus.ACTIVE
+                AgentRuleStatus.ACTIVE,
+                null
         );
 
         final String instruction = this.normalizeInstruction(agent);

@@ -1,7 +1,9 @@
 package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
+import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.DeleteAgentRuleResponse;
@@ -73,7 +75,7 @@ class DeleteAgentRuleImplTest {
     }
 
     @Test
-    void givenDeletedRule_whenExecute_thenReturnDeletedWithoutExtraSave() {
+    void givenDeletedRule_whenExecute_thenThrowLifecycleExceptionWithoutSave() {
         //given
         final UUID agentId = UUID.fromString("72336f45-c901-4adf-8ecf-c88d47115a1a");
         final UUID ruleId = UUID.fromString("f4b539f8-f769-4f94-a2cf-c35f57cad4f8");
@@ -83,10 +85,9 @@ class DeleteAgentRuleImplTest {
         when(this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, 17L)).thenReturn(Optional.of(deleted));
 
         //when
-        final DeleteAgentRuleResponse actual = this.deleteAgentRule.execute(agentId, ruleId);
-
-        //then
-        assertThat(actual.status()).isEqualTo(AgentRuleStatus.DELETED);
+        assertThatThrownBy(() -> this.deleteAgentRule.execute(agentId, ruleId))
+                .isInstanceOf(AgentLifecycleTransitionException.class)
+                .hasMessage("Rule is already DELETED");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentRuleRepository).findByIdAndAgentIdAndUserId(ruleId, agentId, 17L);
         verify(this.agentRuleRepository, never()).save(any(AgentRule.class));
@@ -114,8 +115,10 @@ class DeleteAgentRuleImplTest {
         return AgentRule.builder()
                 .id(ruleId)
                 .agentId(agentId)
-                .text("rule")
+                .title("rule")
+                .content("rule content")
                 .status(status)
+                .authorType(AgentRuleAuthorType.USER)
                 .build();
     }
 }

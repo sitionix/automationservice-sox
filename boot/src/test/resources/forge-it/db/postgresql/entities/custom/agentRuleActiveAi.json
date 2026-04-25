@@ -1,0 +1,14 @@
+{
+  "ruleId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Active AI title",
+  "content": "Active AI content",
+  "status": {
+    "id": 1
+  },
+  "authorType": "AI",
+  "createdAt": "2026-04-21T10:06:00Z",
+  "updatedAt": "2026-04-21T10:06:00Z"
+}

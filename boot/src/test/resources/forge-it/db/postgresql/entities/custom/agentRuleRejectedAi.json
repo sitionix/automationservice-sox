@@ -1,0 +1,14 @@
+{
+  "ruleId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Rejected AI title",
+  "content": "Rejected AI content",
+  "status": {
+    "id": 4
+  },
+  "authorType": "AI",
+  "createdAt": "2026-04-21T10:03:00Z",
+  "updatedAt": "2026-04-21T10:03:00Z"
+}

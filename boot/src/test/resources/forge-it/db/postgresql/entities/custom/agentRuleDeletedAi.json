@@ -1,0 +1,14 @@
+{
+  "ruleId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+  "agent": {
+    "agentId": "11111111-1111-1111-1111-111111111111"
+  },
+  "title": "Deleted AI title",
+  "content": "Deleted AI content",
+  "status": {
+    "id": 2
+  },
+  "authorType": "AI",
+  "createdAt": "2026-04-21T10:04:00Z",
+  "updatedAt": "2026-04-21T10:04:00Z"
+}

@@ -1,26 +1,38 @@
 package com.sitionix.atmssox.api.mapper;
 
+import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
+import com.sitionix.atmssox.domain.model.AcceptAgentRuleCommand;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.DeleteAgentRuleResponse;
+import com.sitionix.atmssox.domain.model.GetAgentRulesQuery;
 import com.sitionix.atmssox.domain.model.PatchAgentRuleCommand;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface AgentRuleApiMapper {
 
+    @Mapping(target = "status", constant = "ACTIVE")
+    @Mapping(target = "authorType", constant = "USER")
     CreateAgentRuleCommand asCreateAgentRuleCommand(CreateAgentRuleRequestDTO src);
 
     PatchAgentRuleCommand asPatchAgentRuleCommand(PatchAgentRuleRequestDTO src);
+
+    AcceptAgentRuleCommand asAcceptAgentRuleCommand(AcceptAgentRuleRequestDTO src);
 
     AgentRuleDTO asAgentRuleDto(AgentRule src);
 
@@ -33,6 +45,12 @@ public interface AgentRuleApiMapper {
     default AgentRulesResponseDTO asAgentRulesResponseDto(final List<AgentRule> rules) {
         return new AgentRulesResponseDTO()
                 .items(this.asAgentRuleDtos(rules));
+    }
+
+    default GetAgentRulesQuery asGetAgentRulesQuery(final AgentRuleStatusDTO status, final AgentRuleAuthorTypeDTO authorType) {
+        final AgentRuleStatus statusFilter = status == null ? AgentRuleStatus.ACTIVE : AgentRuleStatus.valueOf(status.getValue());
+        final AgentRuleAuthorType authorTypeFilter = authorType == null ? null : AgentRuleAuthorType.valueOf(authorType.getValue());
+        return new GetAgentRulesQuery(statusFilter, authorTypeFilter);
     }
 
     default DeleteAgentRuleResponseDTO asDeleteAgentRuleResponseDto(final DeleteAgentRuleResponse src) {

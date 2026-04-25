@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.model;
 
-public record CreateAgentRuleCommand(
-        String title,
-        String content,
+public record GetAgentRulesQuery(
         AgentRuleStatus status,
         AgentRuleAuthorType authorType
 ) {

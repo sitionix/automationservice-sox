@@ -3,8 +3,10 @@ package com.sitionix.atmssox.application.usecase;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRule;
+
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,8 +17,8 @@ public class ConversationContextBuilder {
         if (!activeRules.isEmpty()) {
             builder.append("Active rules:\n");
             builder.append(activeRules.stream()
-                    .map(AgentRule::getText)
-                    .map(ruleText -> "- " + ruleText)
+                    .map(AgentRule::getContent)
+                    .map(content -> "- " + content)
                     .collect(Collectors.joining("\n")));
             builder.append("\n");
             builder.append("\n");

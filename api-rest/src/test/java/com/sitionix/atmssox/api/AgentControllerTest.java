@@ -3,7 +3,10 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
@@ -18,15 +21,18 @@ import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
+import com.sitionix.atmssox.domain.model.AcceptAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.DeleteAgentRuleResponse;
+import com.sitionix.atmssox.domain.model.GetAgentRulesQuery;
 import com.sitionix.atmssox.domain.model.PatchAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
+import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
@@ -37,6 +43,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
+import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
@@ -103,6 +110,12 @@ class AgentControllerTest {
     private DeleteAgentRule deleteAgentRule;
 
     @Mock
+    private AcceptAgentRule acceptAgentRule;
+
+    @Mock
+    private RejectAgentRule rejectAgentRule;
+
+    @Mock
     private RestoreAgent restoreAgent;
 
     @Mock
@@ -130,6 +143,8 @@ class AgentControllerTest {
                 this.getAgentRules,
                 this.patchAgentRule,
                 this.deleteAgentRule,
+                this.acceptAgentRule,
+                this.rejectAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper,
@@ -153,6 +168,8 @@ class AgentControllerTest {
                 this.getAgentRules,
                 this.patchAgentRule,
                 this.deleteAgentRule,
+                this.acceptAgentRule,
+                this.rejectAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
                 this.agentApiMapper,
@@ -347,18 +364,23 @@ class AgentControllerTest {
     void givenAgentId_whenGetAgentRules_thenReturnAgentRulesResponseDto() {
         //given
         final UUID agentId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+        final AgentRuleStatusDTO status = AgentRuleStatusDTO.ACTIVE;
+        final AgentRuleAuthorTypeDTO authorType = AgentRuleAuthorTypeDTO.USER;
+        final GetAgentRulesQuery query = mock(GetAgentRulesQuery.class);
         final List<AgentRule> rules = List.of(mock(AgentRule.class));
         final AgentRulesResponseDTO expected = mock(AgentRulesResponseDTO.class);
 
-        when(this.getAgentRules.execute(agentId)).thenReturn(rules);
+        when(this.agentRuleApiMapper.asGetAgentRulesQuery(status, authorType)).thenReturn(query);
+        when(this.getAgentRules.execute(agentId, query)).thenReturn(rules);
         when(this.agentRuleApiMapper.asAgentRulesResponseDto(rules)).thenReturn(expected);
 
         //when
-        final ResponseEntity<AgentRulesResponseDTO> actual = this.agentController.getAgentRules(agentId);
+        final ResponseEntity<AgentRulesResponseDTO> actual = this.agentController.getAgentRules(agentId, status, authorType);
 
         //then
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
-        verify(this.getAgentRules).execute(agentId);
+        verify(this.agentRuleApiMapper).asGetAgentRulesQuery(status, authorType);
+        verify(this.getAgentRules).execute(agentId, query);
         verify(this.agentRuleApiMapper).asAgentRulesResponseDto(rules);
     }
 
@@ -427,5 +449,87 @@ class AgentControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
         verify(this.deleteAgentRule).execute(agentId, ruleId);
         verify(this.agentRuleApiMapper).asDeleteAgentRuleResponseDto(response);
+    }
+
+    @Test
+    void givenAgentId_whenRestoreAgent_thenReturnAgentDto() {
+        //given
+        final UUID givenAgentId = UUID.fromString("aaaaaaaa-1111-1111-1111-111111111111");
+        final com.sitionix.atmssox.domain.model.Agent agent = mock(com.sitionix.atmssox.domain.model.Agent.class);
+        final AgentDTO expected = mock(AgentDTO.class);
+
+        when(this.restoreAgent.execute(givenAgentId)).thenReturn(agent);
+        when(this.agentApiMapper.asAgentDto(agent)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentDTO> actual = this.agentController.restoreAgent(givenAgentId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.restoreAgent).execute(givenAgentId);
+        verify(this.agentApiMapper).asAgentDto(agent);
+    }
+
+    @Test
+    void givenAgentId_whenDeleteAgent_thenReturnAgentDto() {
+        //given
+        final UUID givenAgentId = UUID.fromString("bbbbbbbb-2222-2222-2222-222222222222");
+        final com.sitionix.atmssox.domain.model.Agent agent = mock(com.sitionix.atmssox.domain.model.Agent.class);
+        final AgentDTO expected = mock(AgentDTO.class);
+
+        when(this.deleteAgent.execute(givenAgentId)).thenReturn(agent);
+        when(this.agentApiMapper.asAgentDto(agent)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentDTO> actual = this.agentController.deleteAgent(givenAgentId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.deleteAgent).execute(givenAgentId);
+        verify(this.agentApiMapper).asAgentDto(agent);
+    }
+
+    @Test
+    void givenAcceptAgentRuleRequest_whenAcceptAgentRule_thenReturnUpdatedRuleDto() {
+        //given
+        final UUID agentId = UUID.fromString("cccccccc-3333-3333-3333-333333333333");
+        final UUID ruleId = UUID.fromString("dddddddd-4444-4444-4444-444444444444");
+        final AcceptAgentRuleRequestDTO request = mock(AcceptAgentRuleRequestDTO.class);
+        final AcceptAgentRuleCommand command = mock(AcceptAgentRuleCommand.class);
+        final AgentRule rule = mock(AgentRule.class);
+        final AgentRuleDTO expected = mock(AgentRuleDTO.class);
+
+        when(this.agentRuleApiMapper.asAcceptAgentRuleCommand(request)).thenReturn(command);
+        when(this.acceptAgentRule.execute(agentId, ruleId, command)).thenReturn(rule);
+        when(this.agentRuleApiMapper.asAgentRuleDto(rule)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentRuleDTO> actual = this.agentController.acceptAgentRule(agentId, ruleId, request);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.agentRuleApiMapper).asAcceptAgentRuleCommand(request);
+        verify(this.acceptAgentRule).execute(agentId, ruleId, command);
+        verify(this.agentRuleApiMapper).asAgentRuleDto(rule);
+    }
+
+    @Test
+    void givenAgentAndRuleIds_whenRejectAgentRule_thenReturnUpdatedRuleDto() {
+        //given
+        final UUID agentId = UUID.fromString("eeeeeeee-5555-5555-5555-555555555555");
+        final UUID ruleId = UUID.fromString("ffffffff-6666-6666-6666-666666666666");
+        final AgentRule rule = mock(AgentRule.class);
+        final AgentRuleDTO expected = mock(AgentRuleDTO.class);
+
+        when(this.rejectAgentRule.execute(agentId, ruleId)).thenReturn(rule);
+        when(this.agentRuleApiMapper.asAgentRuleDto(rule)).thenReturn(expected);
+
+        //when
+        final ResponseEntity<AgentRuleDTO> actual = this.agentController.rejectAgentRule(agentId, ruleId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(expected));
+        verify(this.rejectAgentRule).execute(agentId, ruleId);
+        verify(this.agentRuleApiMapper).asAgentRuleDto(rule);
     }
 }

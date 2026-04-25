@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
@@ -25,14 +26,34 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
     }
 
     @Override
-    public List<AgentRule> findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(final UUID agentId,
-                                                                                  final Long userId,
-                                                                                  final AgentRuleStatus status) {
-        return this.agentRuleJpaRepository
-                .findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId())
-                .stream()
-                .map(this::toDomain)
-                .toList();
+    public List<AgentRule> findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(final UUID agentId,
+                                                                                   final Long userId,
+                                                                                   final AgentRuleStatus status,
+                                                                                   final AgentRuleAuthorType authorType) {
+        final List<AgentRuleEntity> entities;
+        if (status != null && authorType != null) {
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
+                    agentId,
+                    userId,
+                    status.getId(),
+                    authorType
+            );
+        } else if (status != null) {
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(
+                    agentId,
+                    userId,
+                    status.getId()
+            );
+        } else if (authorType != null) {
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
+                    agentId,
+                    userId,
+                    authorType
+            );
+        } else {
+            entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
+        }
+        return entities.stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -52,8 +73,10 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
         return AgentRuleEntity.builder()
                 .ruleId(rule.getId())
                 .agent(agent)
-                .text(rule.getText())
+                .title(rule.getTitle())
+                .content(rule.getContent())
                 .status(status)
+                .authorType(rule.getAuthorType())
                 .createdAt(rule.getCreatedAt())
                 .updatedAt(rule.getUpdatedAt())
                 .build();
@@ -63,8 +86,10 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
         return AgentRule.builder()
                 .id(entity.getRuleId())
                 .agentId(entity.getAgent().getAgentId())
-                .text(entity.getText())
+                .title(entity.getTitle())
+                .content(entity.getContent())
                 .status(AgentRuleStatus.fromId(entity.getStatus().getId()))
+                .authorType(entity.getAuthorType())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

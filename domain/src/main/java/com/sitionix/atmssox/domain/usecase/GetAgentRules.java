@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.domain.usecase;
 
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.GetAgentRulesQuery;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,5 +16,5 @@ public interface GetAgentRules {
      * @param agentId agent identifier.
      * @return active rules ordered by createdAt ascending.
      */
-    List<AgentRule> execute(UUID agentId);
+    List<AgentRule> execute(UUID agentId, GetAgentRulesQuery query);
 }

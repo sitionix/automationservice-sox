@@ -118,7 +118,7 @@ class DirectConversationChatHandlerTest {
                 .thenReturn(replyMessage);
         when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
                 .thenReturn(List.of(userMessage));
-        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE))
+        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
         when(this.openAiChatClient.execute("Keep answers concise.", "context-prompt"))
@@ -132,7 +132,7 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE);
+        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));
@@ -161,7 +161,7 @@ class DirectConversationChatHandlerTest {
                 .thenReturn(replyMessage);
         when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
                 .thenReturn(List.of(userMessage));
-        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE))
+        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
         when(this.openAiChatClient.execute("", "context-prompt")).thenReturn("hi");
@@ -174,7 +174,7 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
-        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE);
+        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));

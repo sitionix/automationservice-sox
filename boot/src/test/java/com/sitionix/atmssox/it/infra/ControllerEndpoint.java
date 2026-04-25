@@ -4,6 +4,7 @@ import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
@@ -111,6 +112,31 @@ public class ControllerEndpoint {
                 HttpMethod.DELETE,
                 Void.class,
                 DeleteAgentRuleResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<AcceptAgentRuleRequestDTO, AgentRuleDTO> acceptAgentRule() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules/{ruleId}/accept",
+                HttpMethod.POST,
+                AcceptAgentRuleRequestDTO.class,
+                AgentRuleDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("acceptAgentRuleRequest.json")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, AgentRuleDTO> rejectAgentRule() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/rules/{ruleId}/reject",
+                HttpMethod.POST,
+                Void.class,
+                AgentRuleDTO.class,
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .expectStatus(200)

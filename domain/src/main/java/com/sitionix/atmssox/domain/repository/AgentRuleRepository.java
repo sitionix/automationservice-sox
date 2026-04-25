@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.domain.repository;
 
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +28,10 @@ public interface AgentRuleRepository {
      * @param status rule status filter.
      * @return persisted rules.
      */
-    List<AgentRule> findAllByAgentIdAndUserIdAndStatusOrderByCreatedAtAsc(UUID agentId, Long userId, AgentRuleStatus status);
+    List<AgentRule> findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(UUID agentId,
+                                                                            Long userId,
+                                                                            AgentRuleStatus status,
+                                                                            AgentRuleAuthorType authorType);
 
     /**
      * Finds one rule for one owned agent.
