@@ -34,6 +34,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
+    private final AgentExecutionHandlerRegistry agentExecutionHandlerRegistry;
     private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
@@ -49,8 +50,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         final Agent agent = this.agentRepository.findVisibleByIdAndUserId(agentId, userId)
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
-        if (!agent.getType().isChatCapable() || agent.getStatus() != AgentStatus.ACTIVE) {
-            throw new AgentChatNotAllowedException("Only ACTIVE chat-capable agent can execute chat");
+        if (agent.getStatus() != AgentStatus.ACTIVE) {
+            throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
+        }
+        final AgentExecutionHandler<?> executionHandler = this.agentExecutionHandlerRegistry.getHandler(agent.getType());
+        if (!UserAgentExecutionContext.class.equals(executionHandler.supportedContextType())) {
+            throw new AgentChatNotAllowedException("Only agent with USER chat context can execute chat");
         }
 
         final String message = this.normalizeMessage(command);

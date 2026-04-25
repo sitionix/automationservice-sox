@@ -6,6 +6,7 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
@@ -63,6 +64,12 @@ class DirectConversationChatHandlerTest {
     private AgentExecutionService agentExecutionService;
 
     @Mock
+    private AgentExecutionHandlerRegistry agentExecutionHandlerRegistry;
+
+    @Mock
+    private AgentExecutionHandler agentExecutionHandler;
+
+    @Mock
     private RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
     @BeforeEach
@@ -73,6 +80,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
+                this.agentExecutionHandlerRegistry,
                 this.agentExecutionService,
                 this.ruleSuggestionAnalysisTrigger
         );
@@ -86,6 +94,8 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
+                this.agentExecutionHandlerRegistry,
+                this.agentExecutionHandler,
                 this.agentExecutionService
         );
     }
@@ -116,6 +126,8 @@ class DirectConversationChatHandlerTest {
         );
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
@@ -135,6 +147,8 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
@@ -159,6 +173,8 @@ class DirectConversationChatHandlerTest {
         final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, agentId.toString(), "hi");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
@@ -177,6 +193,8 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
@@ -216,6 +234,8 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
+                this.agentExecutionHandlerRegistry,
+                this.agentExecutionHandler,
                 this.agentExecutionService
         );
     }
@@ -240,13 +260,15 @@ class DirectConversationChatHandlerTest {
                 17L
         ))
                 .isInstanceOf(AgentChatNotAllowedException.class)
-                .hasMessage("Only ACTIVE chat-capable agent can execute chat");
+                .hasMessage("Only ACTIVE agent can execute chat");
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
         verifyNoInteractions(
                 this.agentRuleRepository,
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
+                this.agentExecutionHandlerRegistry,
+                this.agentExecutionHandler,
                 this.agentExecutionService
         );
     }
@@ -261,6 +283,8 @@ class DirectConversationChatHandlerTest {
         final Agent agent = this.getAgent(AgentStatus.ACTIVE, "Instruction");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandlerRegistry.getHandler(AgentType.USER)).thenReturn(this.agentExecutionHandler);
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
 
         //when
         //then
@@ -273,6 +297,8 @@ class DirectConversationChatHandlerTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Message must not be blank");
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandlerRegistry).getHandler(AgentType.USER);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.conversationMessageRepository, never()).save(any(ConversationMessage.class));
         verifyNoInteractions(
                 this.agentRuleRepository,
