@@ -25,4 +25,6 @@ public interface AgentRuleJpaRepository extends JpaRepository<AgentRuleEntity, U
     List<AgentRuleEntity> findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(UUID agentId, Long userId);
 
     Optional<AgentRuleEntity> findByRuleIdAndAgentAgentIdAndAgentUserId(UUID ruleId, UUID agentId, Long userId);
+
+    long countByAgentAgentIdAndStatusIdAndAuthorType(UUID agentId, Long statusId, AgentRuleAuthorTypeEntity authorType);
 }

@@ -40,4 +40,19 @@ public interface AgentRepository {
      * @return agent when present.
      */
     Optional<Agent> findByIdAndUserId(UUID agentId, Long userId);
+
+    /**
+     * Finds one agent by identifier without user-scope restriction.
+     *
+     * @param agentId unique agent identifier.
+     * @return agent when present.
+     */
+    Optional<Agent> findById(UUID agentId);
+
+    /**
+     * Finds internal system agent used for rule analysis.
+     *
+     * @return analyzer agent when present.
+     */
+    Optional<Agent> findSystemRuleAnalyzer();
 }

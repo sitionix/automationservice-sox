@@ -7,24 +7,15 @@ import lombok.Value;
 
 @Value
 @Builder(toBuilder = true)
-public class Agent {
+public class RuleSuggestionAnalysisRun {
 
     UUID id;
 
-    Long userId;
+    UUID agentId;
 
-    String name;
+    UUID conversationId;
 
-    String description;
-
-    String instruction;
-
-    @Builder.Default
-    AgentType type = AgentType.USER;
-
-    AgentStatus status;
+    long userMessageCount;
 
     Instant createdAt;
-
-    Instant updatedAt;
 }

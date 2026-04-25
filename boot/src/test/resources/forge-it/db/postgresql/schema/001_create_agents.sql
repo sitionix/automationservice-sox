@@ -15,10 +15,15 @@ CREATE TABLE agents (
     name VARCHAR(60) NOT NULL,
     description VARCHAR(160),
     instruction TEXT,
+    type VARCHAR(64) NOT NULL DEFAULT 'USER',
     status_id BIGINT NOT NULL REFERENCES agent_statuses(id),
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE UNIQUE INDEX uq_agent_single_rule_analyzer
+    ON agents (type)
+    WHERE type = 'SYSTEM_RULE_ANALYZER';
 
 CREATE TABLE agent_rules (
     rule_id UUID PRIMARY KEY,
@@ -82,5 +87,13 @@ CREATE TABLE conversation_messages (
     author_type VARCHAR(32) NOT NULL,
     author_id VARCHAR(64) NOT NULL,
     content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE agent_rule_analysis_runs (
+    analysis_id UUID PRIMARY KEY,
+    agent_id UUID NOT NULL REFERENCES agents(agent_id),
+    conversation_id UUID NOT NULL REFERENCES conversations(conversation_id),
+    user_message_count BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL
 );

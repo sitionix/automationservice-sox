@@ -63,6 +63,9 @@ class DirectConversationChatHandlerTest {
     @Mock
     private OpenAiChatClient openAiChatClient;
 
+    @Mock
+    private RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
+
     @BeforeEach
     void setUp() {
         this.directConversationChatHandler = new DirectConversationChatHandler(
@@ -71,7 +74,8 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.openAiChatClient,
+                this.ruleSuggestionAnalysisTrigger
         );
     }
 

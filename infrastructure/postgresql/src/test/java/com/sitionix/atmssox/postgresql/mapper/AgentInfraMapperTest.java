@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentStatusEntity;
 import java.time.Instant;
@@ -102,6 +103,7 @@ class AgentInfraMapperTest {
                 "My agent",
                 "My description",
                 "My instruction",
+                AgentType.USER,
                 AgentStatusEntity.builder()
                         .id(1L)
                         .description("DRAFT")

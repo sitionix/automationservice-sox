@@ -1,12 +1,16 @@
 package com.sitionix.atmssox.postgresql.entity.agent;
 
+import com.sitionix.atmssox.domain.model.AgentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -44,6 +48,10 @@ public class AgentEntity {
     @Column(name = "instruction", columnDefinition = "TEXT")
     private String instruction;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 64)
+    private AgentType type;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
     private AgentStatusEntity status;
@@ -53,4 +61,11 @@ public class AgentEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @PrePersist
+    void prePersist() {
+        if (this.type == null) {
+            this.type = AgentType.USER;
+        }
+    }
 }

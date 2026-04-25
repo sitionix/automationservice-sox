@@ -42,4 +42,14 @@ public interface AgentRuleRepository {
      * @return rule when present.
      */
     Optional<AgentRule> findByIdAndAgentIdAndUserId(UUID ruleId, UUID agentId, Long userId);
+
+    /**
+     * Counts rules for one agent by status and author type.
+     *
+     * @param agentId agent identifier.
+     * @param status status filter.
+     * @param authorType author type filter.
+     * @return matching rules count.
+     */
+    long countByAgentIdAndStatusAndAuthorType(UUID agentId, AgentRuleStatus status, AgentRuleAuthorType authorType);
 }

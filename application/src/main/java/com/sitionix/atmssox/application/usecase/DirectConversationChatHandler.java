@@ -8,6 +8,7 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
@@ -24,8 +25,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DirectConversationChatHandler implements ConversationChatHandler {
@@ -36,6 +39,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
     private final OpenAiChatClient openAiChatClient;
+    private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
     @Override
     public ChatAgentResponse handle(final Conversation conversation,
@@ -49,7 +53,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         final Agent agent = this.agentRepository.findVisibleByIdAndUserId(agentId, userId)
                 .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
 
-        if (agent.getStatus() != AgentStatus.ACTIVE) {
+        if (agent.getType() != AgentType.USER || agent.getStatus() != AgentStatus.ACTIVE) {
             throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
         }
 
@@ -73,6 +77,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
         this.touchConversation(conversation, reply.getCreatedAt());
+        this.triggerRuleSuggestionAnalysis(agentId, conversation.getId(), userMessage);
 
         return ChatAgentResponse.builder()
                 .conversationId(conversation.getId())
@@ -85,6 +90,16 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 .updatedAt(lastMessageAt)
                 .lastMessageAt(lastMessageAt)
                 .build());
+    }
+
+    private void triggerRuleSuggestionAnalysis(final UUID agentId,
+                                               final UUID conversationId,
+                                               final ConversationMessage latestUserMessage) {
+        try {
+            this.ruleSuggestionAnalysisTrigger.submitIfAllowed(agentId, conversationId, latestUserMessage);
+        } catch (Exception exception) {
+            log.warn("Rule suggestion analyzer trigger failed for agentId={}, conversationId={}", agentId, conversationId, exception);
+        }
     }
 
     private UUID resolveAgentId(final List<ConversationParticipant> participants) {

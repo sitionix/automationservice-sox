@@ -63,6 +63,17 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                 .map(this::toDomain);
     }
 
+    @Override
+    public long countByAgentIdAndStatusAndAuthorType(final UUID agentId,
+                                                     final AgentRuleStatus status,
+                                                     final AgentRuleAuthorType authorType) {
+        return this.agentRuleJpaRepository.countByAgentAgentIdAndStatusIdAndAuthorType(
+                agentId,
+                status.getId(),
+                this.toAuthorTypeEntity(authorType)
+        );
+    }
+
     private AgentRuleEntity toEntity(final AgentRule rule) {
         final AgentEntity agent = new AgentEntity();
         agent.setAgentId(rule.getAgentId());

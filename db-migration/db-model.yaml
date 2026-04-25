@@ -30,6 +30,7 @@ tables:
       name: varchar(60)
       description: varchar(160)
       instruction: text
+      type: varchar(64)
       status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz
@@ -67,4 +68,11 @@ tables:
       author_type: varchar(32)
       author_id: varchar(64)
       content: text
+      created_at: timestamptz
+  agent_rule_analysis_runs:
+    columns:
+      analysis_id: uuid
+      agent_id: uuid
+      conversation_id: uuid
+      user_message_count: bigint
       created_at: timestamptz
