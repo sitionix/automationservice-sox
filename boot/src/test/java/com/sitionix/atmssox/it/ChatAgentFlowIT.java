@@ -24,10 +24,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @IntegrationTest
@@ -650,5 +652,432 @@ class ChatAgentFlowIT {
         assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
         assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
         assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
+    }
+
+    @Test
+    @DisplayName("Should create pending AI suggestion after threshold when analyzer returns valid JSON")
+    void givenAnalyzerPresentAndThresholdReached_whenChatAgent_thenPersistPendingAiSuggestionFromAnalyzerJson() {
+        //given
+        final String analyzerInstruction = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemRuleAnalyzerActiveAgent.json"))
+                .build();
+        final int baselineRuleCount = this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        when(this.openAiChatClient.execute(anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    final String instruction = invocation.getArgument(0, String.class);
+                    if (Objects.equals(instruction, analyzerInstruction)) {
+                        return """
+                                {"suggestions":[{"title":"Language preference","content":"Always answer in Ukrainian unless explicitly asked otherwise.","reason":"User repeatedly requested Ukrainian language."}]}
+                                """;
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Message 1"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        for (int index = 2; index <= 10; index++) {
+            final int messageNumber = index;
+            this.testManager.mockMvc()
+                    .ping(ControllerEndpoint.chatAgent())
+                    .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                    .withRequest("chatAgentRequest.json", request -> {
+                        request.setConversationId(conversationId);
+                        request.setMessage("Message " + messageNumber);
+                    })
+                    .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                    .assertDefault();
+        }
+
+        AgentRuleEntity persistedSuggestion = null;
+        for (int attempt = 0; attempt < 150; attempt++) {
+            final java.util.List<AgentRuleEntity> allRules = this.testManager.postgresql()
+                    .get(AgentRuleEntity.class)
+                    .getAll();
+            if (allRules.size() > baselineRuleCount) {
+                persistedSuggestion = allRules.stream()
+                        .max(java.util.Comparator.comparing(AgentRuleEntity::getCreatedAt))
+                        .orElse(null);
+                break;
+            }
+            try {
+                Thread.sleep(20L);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Unexpected interruption", exception);
+            }
+        }
+
+        //then
+        assertThat(persistedSuggestion).isNotNull();
+        assertThat(persistedSuggestion.getStatus().getId()).isEqualTo(3L);
+        assertThat(persistedSuggestion.getAuthorType().getId()).isEqualTo(2L);
+        assertThat(persistedSuggestion.getTitle()).isEqualTo("Language preference");
+        assertThat(persistedSuggestion.getContent()).isEqualTo("Always answer in Ukrainian unless explicitly asked otherwise.");
+        verify(this.openAiChatClient).execute(
+                eq(analyzerInstruction),
+                argThat(prompt -> Objects.nonNull(prompt)
+                        && prompt.contains("Return only JSON")
+                        && prompt.contains("Latest user message")));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and persist no suggestions when analyzer returns malformed JSON")
+    void givenAnalyzerReturnsMalformedJson_whenChatAgent_thenKeepChatSuccessAndDoNotPersistSuggestion() {
+        //given
+        final String analyzerInstruction = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemRuleAnalyzerActiveAgent.json"))
+                .build();
+        final int baselineRuleCount = this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        when(this.openAiChatClient.execute(anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    final String instruction = invocation.getArgument(0, String.class);
+                    if (Objects.equals(instruction, analyzerInstruction)) {
+                        return "not-json";
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Malformed message 1"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        for (int index = 2; index <= 10; index++) {
+            final int messageNumber = index;
+            this.testManager.mockMvc()
+                    .ping(ControllerEndpoint.chatAgent())
+                    .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                    .withRequest("chatAgentRequest.json", request -> {
+                        request.setConversationId(conversationId);
+                        request.setMessage("Malformed message " + messageNumber);
+                    })
+                    .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                    .assertDefault();
+        }
+
+        for (int attempt = 0; attempt < 100; attempt++) {
+            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
+                try {
+                    Thread.sleep(20L);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Unexpected interruption", exception);
+                }
+            }
+        }
+
+        //then
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        verify(this.openAiChatClient).execute(
+                eq(analyzerInstruction),
+                argThat(prompt -> Objects.nonNull(prompt) && prompt.contains("Return only JSON")));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and persist no suggestions when analyzer returns wrong payload shape")
+    void givenAnalyzerReturnsInvalidSuggestionsPayload_whenChatAgent_thenKeepChatSuccessAndDoNotPersistSuggestion() {
+        //given
+        final String analyzerInstruction = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemRuleAnalyzerActiveAgent.json"))
+                .build();
+        final int baselineRuleCount = this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        when(this.openAiChatClient.execute(anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    final String instruction = invocation.getArgument(0, String.class);
+                    if (Objects.equals(instruction, analyzerInstruction)) {
+                        return "{\"suggestions\":{\"title\":\"title\",\"content\":\"content\",\"reason\":\"reason\"}}";
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Invalid payload 1"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        for (int index = 2; index <= 10; index++) {
+            final int messageNumber = index;
+            this.testManager.mockMvc()
+                    .ping(ControllerEndpoint.chatAgent())
+                    .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                    .withRequest("chatAgentRequest.json", request -> {
+                        request.setConversationId(conversationId);
+                        request.setMessage("Invalid payload " + messageNumber);
+                    })
+                    .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                    .assertDefault();
+        }
+
+        for (int attempt = 0; attempt < 100; attempt++) {
+            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
+                try {
+                    Thread.sleep(20L);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Unexpected interruption", exception);
+                }
+            }
+        }
+
+        //then
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        verify(this.openAiChatClient).execute(
+                eq(analyzerInstruction),
+                argThat(prompt -> Objects.nonNull(prompt) && prompt.contains("Return only JSON")));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and persist no suggestions when system analyzer is missing")
+    void givenAnalyzerMissingInDatabase_whenChatAgentAndPolicyReached_thenKeepChatSuccessAndDoNotPersistSuggestion() {
+        //given
+        final int baselineRuleCount = this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        when(this.openAiChatClient.execute(anyString(), anyString()))
+                .thenReturn("Chat reply");
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("No analyzer 1"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        for (int index = 2; index <= 10; index++) {
+            final int messageNumber = index;
+            this.testManager.mockMvc()
+                    .ping(ControllerEndpoint.chatAgent())
+                    .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                    .withRequest("chatAgentRequest.json", request -> {
+                        request.setConversationId(conversationId);
+                        request.setMessage("No analyzer " + messageNumber);
+                    })
+                    .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                    .assertDefault();
+        }
+
+        for (int attempt = 0; attempt < 100; attempt++) {
+            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
+                try {
+                    Thread.sleep(20L);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Unexpected interruption", exception);
+                }
+            }
+        }
+
+        //then
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        verify(this.openAiChatClient, times(10)).execute(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should not persist duplicate suggestion when analyzer returns existing rule content")
+    void givenAnalyzerSuggestsExistingRuleContent_whenChatAgent_thenDoNotPersistDuplicatePendingRule() {
+        //given
+        final String analyzerInstruction = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemRuleAnalyzerActiveAgent.json"))
+                .build();
+        final int baselineRuleCount = this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentRule())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setTitle("Existing title");
+                    request.setContent("Always answer in Ukrainian unless explicitly asked otherwise.");
+                }));
+
+        when(this.openAiChatClient.execute(anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    final String instruction = invocation.getArgument(0, String.class);
+                    if (Objects.equals(instruction, analyzerInstruction)) {
+                        return """
+                                {"suggestions":[{"title":"Duplicate title","content":"Always answer in Ukrainian unless explicitly asked otherwise.","reason":"Duplicate"}]}
+                                """;
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Duplicate case 1"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        for (int index = 2; index <= 10; index++) {
+            final int messageNumber = index;
+            this.testManager.mockMvc()
+                    .ping(ControllerEndpoint.chatAgent())
+                    .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                    .withRequest("chatAgentRequest.json", request -> {
+                        request.setConversationId(conversationId);
+                        request.setMessage("Duplicate case " + messageNumber);
+                    })
+                    .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                    .assertDefault();
+        }
+
+        for (int attempt = 0; attempt < 100; attempt++) {
+            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == 1) {
+                try {
+                    Thread.sleep(20L);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Unexpected interruption", exception);
+                }
+            }
+        }
+
+        //then
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount + 1);
+        final AgentRuleEntity existingRule = this.testManager.postgresql()
+                .get(AgentRuleEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getContent(), "Always answer in Ukrainian unless explicitly asked otherwise."))
+                .max(java.util.Comparator.comparing(AgentRuleEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Existing rule not found"));
+        assertThat(existingRule.getStatus().getId()).isEqualTo(1L);
+        assertThat(existingRule.getAuthorType().getId()).isEqualTo(1L);
     }
 }

@@ -1,25 +1,37 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
+import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RuleSuggestionAnalyzerPromptBuilder implements SystemAgentPromptBuilder {
+public class RuleSuggestionAnalyzerSystemAgentHandler implements SystemAgentHandler {
 
-    @Override
-    public AgentType getAgentType() {
-        return AgentType.SYSTEM_RULE_ANALYZER;
+    private final OpenAiChatClient openAiChatClient;
+
+    public RuleSuggestionAnalyzerSystemAgentHandler(final OpenAiChatClient openAiChatClient) {
+        this.openAiChatClient = openAiChatClient;
     }
 
     @Override
-    public String build(final SystemAgentContext context) {
+    public String execute(final Agent agent, final SystemAgentContext context) {
         if (!(context instanceof RuleSuggestionAnalysisContext analysisContext)) {
             throw new AgentValidationException("RuleSuggestionAnalysisContext is required");
         }
+
+        final String instruction = this.normalize(agent.getInstruction());
+        if (instruction.isEmpty()) {
+            throw new AgentValidationException("System agent instruction is empty");
+        }
+
+        return this.openAiChatClient.execute(instruction, this.buildPrompt(analysisContext));
+    }
+
+    private String buildPrompt(final RuleSuggestionAnalysisContext analysisContext) {
         return """
                 Analyze conversation and propose agent rules.
                 Return only JSON:

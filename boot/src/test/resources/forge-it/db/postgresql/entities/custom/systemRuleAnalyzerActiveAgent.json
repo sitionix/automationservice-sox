@@ -1,0 +1,17 @@
+{
+  "agentId": "22222222-2222-2222-2222-222222222222",
+  "userId": 0,
+  "name": "Rule Analyzer",
+  "description": "Internal system agent for rule analysis",
+  "instruction": "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.",
+  "type": {
+    "id": 2,
+    "description": "SYSTEM_RULE_ANALYZER"
+  },
+  "status": {
+    "id": 2,
+    "description": "ACTIVE"
+  },
+  "createdAt": "2026-04-21T09:00:00Z",
+  "updatedAt": "2026-04-21T09:00:00Z"
+}
