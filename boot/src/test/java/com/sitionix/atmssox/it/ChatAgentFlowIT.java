@@ -365,6 +365,36 @@ class ChatAgentFlowIT {
     }
 
     @Test
+    @DisplayName("Should return not found and not call provider when target is system context optimizer")
+    void givenSystemContextOptimizerAsTarget_whenChatAgent_thenReturnNotFoundAndDoNotCallProvider() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+        final int beforeConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int beforeParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int beforeMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", "33333333-3333-3333-3333-333333333333"))
+                .header("X-Forge-User-Sub", "0")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        verifyNoInteractions(this.openAiChatClient);
+        final int afterConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int afterParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int afterMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+        assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
+        assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
+        assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
+    }
+
+    @Test
     @DisplayName("Should return bad request and not call provider when message is missing")
     void givenMissingMessage_whenChatAgent_thenReturnBadRequestAndDoNotCallProvider() {
         //given

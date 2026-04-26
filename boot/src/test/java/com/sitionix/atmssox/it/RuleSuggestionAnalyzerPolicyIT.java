@@ -98,9 +98,15 @@ class RuleSuggestionAnalyzerPolicyIT {
         //then
         final java.util.List<AgentRuleEntity> rules = this.testManager.postgresql().get(AgentRuleEntity.class).getAll();
         assertThat(rules).hasSize(baselineRuleCount + 1);
-        assertThat(rules.stream()
-                .map(AgentRuleEntity::getContent)
-                .toList()).contains("be helpful");
+        final AgentRuleEntity createdSuggestion = rules.stream()
+                .filter(rule -> Objects.equals(rule.getAgent().getAgentId(), userAgentId))
+                .filter(rule -> Objects.equals(rule.getContent(), "be helpful"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected analyzer suggestion not found"));
+        assertThat(createdSuggestion.getTitle()).isEqualTo("Generic");
+        assertThat(createdSuggestion.getStatus().getId()).isEqualTo(3L);
+        assertThat(createdSuggestion.getAuthorType().getId()).isEqualTo(2L);
+        assertThat(createdSuggestion.getAgent().getAgentId()).isEqualTo(userAgentId);
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)
                 && Objects.nonNull(request.input())));

@@ -10,6 +10,7 @@ import com.sitionix.atmssox.postgresql.entity.conversation.ConversationContextSn
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -370,6 +371,8 @@ class ContextOptimizerFlowIT {
         assertThat(initialSnapshot).isNotNull();
         final UUID snapshotId = initialSnapshot.getId();
         final Integer messageCountUntil = initialSnapshot.getMessageCountUntil();
+        final Instant initialSnapshotCreatedAt = initialSnapshot.getCreatedAt();
+        final Instant initialSnapshotUpdatedAt = initialSnapshot.getUpdatedAt();
 
         //when
         this.testManager.mockMvc()
@@ -405,6 +408,9 @@ class ContextOptimizerFlowIT {
         assertThat(updatedSnapshot.getId()).isEqualTo(snapshotId);
         assertThat(updatedSnapshot.getSummary()).isEqualTo("summary-2");
         assertThat(updatedSnapshot.getMessageCountUntil()).isGreaterThan(messageCountUntil);
+        assertThat(updatedSnapshot.getCreatedAt()).isEqualTo(initialSnapshotCreatedAt);
+        assertThat(updatedSnapshot.getUpdatedAt()).isAfter(initialSnapshotUpdatedAt);
+        assertThat(updatedSnapshot.getLastMessageIdUntil()).isNotNull();
         final long conversationSnapshots = this.testManager.postgresql()
                 .get(ConversationContextSnapshotEntity.class)
                 .getAll()
@@ -488,6 +494,241 @@ class ContextOptimizerFlowIT {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
                     if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
                         return "not-json";
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Message one"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage("Message two");
+                })
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+
+        for (int attempt = 0; attempt < 250; attempt++) {
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
+        }
+
+        //then
+        final long conversationSnapshots = this.testManager.postgresql()
+                .get(ConversationContextSnapshotEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .count();
+        assertThat(conversationSnapshots).isEqualTo(0L);
+        verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
+                && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and skip snapshot update when optimizer JSON has no summary field")
+    void givenOptimizerReturnsJsonWithoutSummary_whenChatAgent_thenKeepSuccessAndSkipSnapshotUpdate() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+
+        when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
+                .thenAnswer(invocation -> {
+                    final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
+                    if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
+                        return """
+                                {}
+                                """;
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Message one"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage("Message two");
+                })
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+
+        for (int attempt = 0; attempt < 250; attempt++) {
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
+        }
+
+        //then
+        final long conversationSnapshots = this.testManager.postgresql()
+                .get(ConversationContextSnapshotEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .count();
+        assertThat(conversationSnapshots).isEqualTo(0L);
+        verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
+                && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and skip snapshot update when optimizer returns blank summary")
+    void givenOptimizerReturnsBlankSummary_whenChatAgent_thenKeepSuccessAndSkipSnapshotUpdate() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+
+        when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
+                .thenAnswer(invocation -> {
+                    final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
+                    if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
+                        return """
+                                {"summary":"   "}
+                                """;
+                    }
+                    return "Chat reply";
+                });
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID userAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getType().getId(), 1L))
+                .max(java.util.Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("User agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage("Message one"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Conversation not found"))
+                .getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage("Message two");
+                })
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+
+        for (int attempt = 0; attempt < 250; attempt++) {
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
+        }
+
+        //then
+        final long conversationSnapshots = this.testManager.postgresql()
+                .get(ConversationContextSnapshotEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .count();
+        assertThat(conversationSnapshots).isEqualTo(0L);
+        verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
+                && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
+    }
+
+    @Test
+    @DisplayName("Should keep chat success and skip snapshot update when optimizer summary exceeds max length")
+    void givenOptimizerReturnsTooLongSummary_whenChatAgent_thenKeepSuccessAndSkipSnapshotUpdate() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+        final String tooLongSummary = "x".repeat(2101);
+
+        when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
+                .thenAnswer(invocation -> {
+                    final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
+                    if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
+                        return """
+                                {"summary":"%s"}
+                                """.formatted(tooLongSummary);
                     }
                     return "Chat reply";
                 });

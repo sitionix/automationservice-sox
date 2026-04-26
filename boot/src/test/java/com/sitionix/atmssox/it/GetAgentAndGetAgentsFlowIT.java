@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.it;
 
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
+import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
@@ -19,6 +20,33 @@ class GetAgentAndGetAgentsFlowIT {
 
     @Autowired
     private TestManager testManager;
+
+    @Test
+    @DisplayName("Should hide system agents from user list and direct get by id")
+    void givenSystemAgentsForSameUserContext_whenGetAgentsAndGetAgent_thenHideSystemAgents() {
+        // given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemRuleAnalyzerActiveAgent.json"))
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+        final UUID visibleUserAgentId = this.createAgentForUser("0", "Visible user zero", "Visible description");
+
+        // when/then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgents())
+                .header("X-Forge-User-Sub", "0")
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].id").value(visibleUserAgentId.toString()))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgent())
+                .withPathParameters(PathParams.create().add("agentId", "33333333-3333-3333-3333-333333333333"))
+                .header("X-Forge-User-Sub", "0")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+    }
 
     @Test
     @DisplayName("Should return only current user agents ordered by updatedAt desc")
