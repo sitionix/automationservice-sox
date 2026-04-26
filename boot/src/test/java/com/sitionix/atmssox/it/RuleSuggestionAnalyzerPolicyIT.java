@@ -43,8 +43,8 @@ class RuleSuggestionAnalyzerPolicyIT {
     private OpenAiChatClient openAiChatClient;
 
     @Test
-    @DisplayName("Should keep chat success and skip generic analyzer suggestion content")
-    void givenAnalyzerReturnsGenericRule_whenChatAgent_thenKeepSuccessAndDoNotPersistSuggestion() {
+    @DisplayName("Should keep chat success and persist generic analyzer suggestion content")
+    void givenAnalyzerReturnsGenericRule_whenChatAgent_thenKeepSuccessAndPersistSuggestion() {
         //given
         this.testManager.postgresql()
                 .create()
@@ -89,13 +89,18 @@ class RuleSuggestionAnalyzerPolicyIT {
                 .assertDefault();
 
         for (int attempt = 0; attempt < 100; attempt++) {
-            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == baselineRuleCount) {
-                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
+            if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() > baselineRuleCount) {
+                break;
             }
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
+        final java.util.List<AgentRuleEntity> rules = this.testManager.postgresql().get(AgentRuleEntity.class).getAll();
+        assertThat(rules).hasSize(baselineRuleCount + 1);
+        assertThat(rules.stream()
+                .map(AgentRuleEntity::getContent)
+                .toList()).contains("be helpful");
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)
                 && Objects.nonNull(request.input())));

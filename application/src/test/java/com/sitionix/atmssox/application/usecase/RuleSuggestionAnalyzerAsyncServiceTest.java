@@ -198,7 +198,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
     }
 
     @Test
-    void givenValidAnalyzerResponse_whenAnalyzeAsync_thenSaveNormalizedFilteredSuggestions() {
+    void givenValidAnalyzerResponse_whenAnalyzeAsync_thenSaveNormalizedSuggestions() {
         //given
         final UUID agentId = UUID.fromString("561d1097-f1a8-4811-8497-07ef15354bd0");
         final UUID conversationId = UUID.fromString("2ad7366f-5f7f-4a00-9e0b-e65f4cdb44f8");
@@ -227,7 +227,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
                         {
                           "suggestions": [
                             {"title": "  Rule 1  ", "content": "  Focus on logs  ", "reason": "  reason 1  "},
-                            {"title": "Generic", "content": "be helpful", "reason": "r"},
+                            {"title": "Generic", "content": "be helpful", "reason": "generic reason"},
                             {"title": "Duplicate", "content": " focus on tests ", "reason": "r"},
                             {"title": "Too long", "content": "This rule is way too long for configured limits", "reason": "r"},
                             {"title": "No reason", "content": "Use IDs", "reason": " "},
@@ -260,8 +260,8 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         assertThat(savedRules.get(0).getContent()).isEqualTo("Focus on logs");
         assertThat(savedRules.get(0).getStatus()).isEqualTo(AgentRuleStatus.PENDING);
         assertThat(savedRules.get(0).getAuthorType()).isEqualTo(AgentRuleAuthorType.AI);
-        assertThat(savedRules.get(1).getTitle()).isEqualTo("Rule 2");
-        assertThat(savedRules.get(1).getContent()).isEqualTo("Use IDs");
+        assertThat(savedRules.get(1).getTitle()).isEqualTo("Generic");
+        assertThat(savedRules.get(1).getContent()).isEqualTo("be helpful");
     }
 
     private Agent getAgent(final UUID id, final AgentType type, final AgentStatus status, final String instruction) {
