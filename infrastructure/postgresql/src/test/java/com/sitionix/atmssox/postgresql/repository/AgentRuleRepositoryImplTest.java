@@ -16,6 +16,8 @@ import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
+import com.sitionix.atmssox.postgresql.mapper.AgentRuleAuthorTypeInfraMapper;
+import com.sitionix.atmssox.postgresql.mapper.AgentRuleInfraMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -35,14 +37,24 @@ class AgentRuleRepositoryImplTest {
     @Mock
     private AgentRuleJpaRepository agentRuleJpaRepository;
 
+    @Mock
+    private AgentRuleInfraMapper agentRuleInfraMapper;
+
+    @Mock
+    private AgentRuleAuthorTypeInfraMapper agentRuleAuthorTypeInfraMapper;
+
     @BeforeEach
     void setUp() {
-        this.agentRuleRepository = new AgentRuleRepositoryImpl(this.agentRuleJpaRepository);
+        this.agentRuleRepository = new AgentRuleRepositoryImpl(
+                this.agentRuleJpaRepository,
+                this.agentRuleInfraMapper,
+                this.agentRuleAuthorTypeInfraMapper
+        );
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.agentRuleJpaRepository);
+        verifyNoMoreInteractions(this.agentRuleJpaRepository, this.agentRuleInfraMapper, this.agentRuleAuthorTypeInfraMapper);
     }
 
     @Test
@@ -70,14 +82,18 @@ class AgentRuleRepositoryImplTest {
                 given.getUpdatedAt()
         );
 
-        when(this.agentRuleJpaRepository.save(any(AgentRuleEntity.class))).thenReturn(persisted);
+        when(this.agentRuleInfraMapper.asAgentRuleEntity(given)).thenReturn(persisted);
+        when(this.agentRuleJpaRepository.save(persisted)).thenReturn(persisted);
+        when(this.agentRuleInfraMapper.asAgentRule(persisted)).thenReturn(given);
 
         //when
         final AgentRule actual = this.agentRuleRepository.save(given);
 
         //then
         assertThat(actual).isEqualTo(given);
-        verify(this.agentRuleJpaRepository).save(any(AgentRuleEntity.class));
+        verify(this.agentRuleInfraMapper).asAgentRuleEntity(given);
+        verify(this.agentRuleJpaRepository).save(persisted);
+        verify(this.agentRuleInfraMapper).asAgentRule(persisted);
     }
 
     @Test
@@ -133,6 +149,8 @@ class AgentRuleRepositoryImplTest {
 
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId()))
                 .thenReturn(List.of(first, second));
+        when(this.agentRuleInfraMapper.asAgentRule(first)).thenReturn(expected.get(0));
+        when(this.agentRuleInfraMapper.asAgentRule(second)).thenReturn(expected.get(1));
 
         //when
         final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
@@ -145,6 +163,8 @@ class AgentRuleRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(agentId, userId, status.getId());
+        verify(this.agentRuleInfraMapper).asAgentRule(first);
+        verify(this.agentRuleInfraMapper).asAgentRule(second);
     }
 
     @Test
@@ -178,6 +198,7 @@ class AgentRuleRepositoryImplTest {
 
         when(this.agentRuleJpaRepository.findByRuleIdAndAgentAgentIdAndAgentUserId(ruleId, agentId, userId))
                 .thenReturn(Optional.of(entity));
+        when(this.agentRuleInfraMapper.asAgentRule(entity)).thenReturn(expected.orElseThrow());
 
         //when
         final Optional<AgentRule> actual = this.agentRuleRepository.findByIdAndAgentIdAndUserId(ruleId, agentId, userId);
@@ -185,6 +206,7 @@ class AgentRuleRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.agentRuleJpaRepository).findByRuleIdAndAgentAgentIdAndAgentUserId(ruleId, agentId, userId);
+        verify(this.agentRuleInfraMapper).asAgentRule(entity);
     }
 
     @Test
@@ -235,14 +257,15 @@ class AgentRuleRepositoryImplTest {
                 )
         );
 
+        final AgentRuleAuthorTypeEntity authorTypeEntity = this.getAuthorTypeEntity(authorType);
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdAndAuthorTypeOrderByCreatedAtAsc(
                 eq(agentId),
                 eq(userId),
                 eq(status.getId()),
-                argThat(entityAuthorType -> entityAuthorType != null
-                        && entityAuthorType.getId().equals(authorType.getId())
-                        && entityAuthorType.getDescription().equals(authorType.name()))
+                eq(authorTypeEntity)
         )).thenReturn(List.of(entity));
+        when(this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)).thenReturn(authorTypeEntity);
+        when(this.agentRuleInfraMapper.asAgentRule(entity)).thenReturn(expected.get(0));
 
         //when
         final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
@@ -258,10 +281,10 @@ class AgentRuleRepositoryImplTest {
                 eq(agentId),
                 eq(userId),
                 eq(status.getId()),
-                argThat(entityAuthorType -> entityAuthorType != null
-                        && entityAuthorType.getId().equals(authorType.getId())
-                        && entityAuthorType.getDescription().equals(authorType.name()))
+                eq(authorTypeEntity)
         );
+        verify(this.agentRuleAuthorTypeInfraMapper).asAuthorTypeEntity(authorType);
+        verify(this.agentRuleInfraMapper).asAgentRule(entity);
     }
 
     @Test
@@ -293,13 +316,14 @@ class AgentRuleRepositoryImplTest {
                 )
         );
 
+        final AgentRuleAuthorTypeEntity authorTypeEntity = this.getAuthorTypeEntity(authorType);
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
                 eq(agentId),
                 eq(userId),
-                argThat(entityAuthorType -> entityAuthorType != null
-                        && entityAuthorType.getId().equals(authorType.getId())
-                        && entityAuthorType.getDescription().equals(authorType.name()))
+                eq(authorTypeEntity)
         )).thenReturn(List.of(entity));
+        when(this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)).thenReturn(authorTypeEntity);
+        when(this.agentRuleInfraMapper.asAgentRule(entity)).thenReturn(expected.get(0));
 
         //when
         final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
@@ -314,10 +338,10 @@ class AgentRuleRepositoryImplTest {
         verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
                 eq(agentId),
                 eq(userId),
-                argThat(entityAuthorType -> entityAuthorType != null
-                        && entityAuthorType.getId().equals(authorType.getId())
-                        && entityAuthorType.getDescription().equals(authorType.name()))
+                eq(authorTypeEntity)
         );
+        verify(this.agentRuleAuthorTypeInfraMapper).asAuthorTypeEntity(authorType);
+        verify(this.agentRuleInfraMapper).asAgentRule(entity);
     }
 
     @Test
@@ -350,6 +374,7 @@ class AgentRuleRepositoryImplTest {
 
         when(this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId))
                 .thenReturn(List.of(entity));
+        when(this.agentRuleInfraMapper.asAgentRule(entity)).thenReturn(expected.get(0));
 
         //when
         final List<AgentRule> actual = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
@@ -362,6 +387,7 @@ class AgentRuleRepositoryImplTest {
         //then
         assertThat(actual).isEqualTo(expected);
         verify(this.agentRuleJpaRepository).findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
+        verify(this.agentRuleInfraMapper).asAgentRule(entity);
     }
 
     private AgentRule getAgentRule(final UUID id,
@@ -412,6 +438,13 @@ class AgentRuleRepositoryImplTest {
                 .authorType(authorTypeEntity)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
+                .build();
+    }
+
+    private AgentRuleAuthorTypeEntity getAuthorTypeEntity(final AgentRuleAuthorType authorType) {
+        return AgentRuleAuthorTypeEntity.builder()
+                .id(authorType.getId())
+                .description(authorType.name())
                 .build();
     }
 }
