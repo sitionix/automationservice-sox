@@ -61,7 +61,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
                 this.conversationMessageRepository,
                 this.agentExecutionService,
                 this.properties,
-                new ObjectMapper()
+                new OpenAiJsonResponseParser(new ObjectMapper())
         );
     }
 

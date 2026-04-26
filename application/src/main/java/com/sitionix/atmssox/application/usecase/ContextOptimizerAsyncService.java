@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
@@ -32,7 +30,7 @@ public class ContextOptimizerAsyncService {
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     private final AgentExecutionService agentExecutionService;
     private final ContextOptimizerProperties properties;
-    private final ObjectMapper objectMapper;
+    private final OpenAiJsonResponseParser openAiJsonResponseParser;
 
     @Async("contextOptimizerTaskExecutor")
     public void optimizeAsync(final UUID agentId, final UUID conversationId) {
@@ -105,32 +103,31 @@ public class ContextOptimizerAsyncService {
     private Optional<String> parseSummary(final String rawResponse,
                                           final UUID agentId,
                                           final UUID conversationId) {
-        try {
-            final JsonNode root = this.objectMapper.readTree(rawResponse);
-            final JsonNode summaryNode = root.get("summary");
-            if (summaryNode == null || !summaryNode.isTextual()) {
-                log.warn("Context optimizer response has no textual summary for agentId={}, conversationId={}", agentId, conversationId);
-                return Optional.empty();
-            }
-            final String summary = AgentRuleTextNormalizer.normalizeToEmpty(summaryNode.asText());
-            if (summary.isEmpty()) {
-                return Optional.empty();
-            }
-            if (summary.length() > this.properties.getMaxSummaryLength()) {
-                log.warn(
-                        "Context optimizer summary exceeds max length for agentId={}, conversationId={}, actualLength={}, maxLength={}",
-                        agentId,
-                        conversationId,
-                        summary.length(),
-                        this.properties.getMaxSummaryLength()
-                );
-                return Optional.empty();
-            }
-            return Optional.of(summary);
-        } catch (JsonProcessingException exception) {
-            log.warn("Context optimizer returned invalid JSON for agentId={}, conversationId={}", agentId, conversationId, exception);
+        final Optional<JsonNode> root = this.openAiJsonResponseParser.parseObject(rawResponse);
+        if (root.isEmpty()) {
+            log.warn("Context optimizer returned invalid JSON for agentId={}, conversationId={}", agentId, conversationId);
             return Optional.empty();
         }
+        final JsonNode summaryNode = root.get().get("summary");
+        if (summaryNode == null || !summaryNode.isTextual()) {
+            log.warn("Context optimizer response has no textual summary for agentId={}, conversationId={}", agentId, conversationId);
+            return Optional.empty();
+        }
+        final String summary = AgentRuleTextNormalizer.normalizeToEmpty(summaryNode.asText());
+        if (summary.isEmpty()) {
+            return Optional.empty();
+        }
+        if (summary.length() > this.properties.getMaxSummaryLength()) {
+            log.warn(
+                    "Context optimizer summary exceeds max length for agentId={}, conversationId={}, actualLength={}, maxLength={}",
+                    agentId,
+                    conversationId,
+                    summary.length(),
+                    this.properties.getMaxSummaryLength()
+            );
+            return Optional.empty();
+        }
+        return Optional.of(summary);
     }
 
     private void saveSnapshot(final Optional<ConversationContextSnapshot> existingSnapshot,

@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.domain.model.Agent;
@@ -39,7 +37,7 @@ public class RuleSuggestionAnalyzerAsyncService {
     private final ConversationMessageRepository conversationMessageRepository;
     private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalyzerProperties properties;
-    private final ObjectMapper objectMapper;
+    private final OpenAiJsonResponseParser openAiJsonResponseParser;
 
     @Async("ruleSuggestionAnalyzerTaskExecutor")
     public void analyzeAsync(final UUID agentId, final UUID conversationId) {
@@ -150,21 +148,22 @@ public class RuleSuggestionAnalyzerAsyncService {
     private List<RuleSuggestionCandidate> parseSuggestions(final String rawResponse,
                                                            final UUID agentId,
                                                            final UUID conversationId) {
+        final Optional<JsonNode> root = this.openAiJsonResponseParser.parseObject(rawResponse);
+        if (root.isEmpty()) {
+            log.warn("Rule suggestion analyzer returned invalid JSON for agentId={}, conversationId={}", agentId, conversationId);
+            return List.of();
+        }
+        final List<RuleSuggestionDto> parsed = this.openAiJsonResponseParser.parseArrayField(
+                root.get(),
+                "suggestions",
+                new TypeReference<List<RuleSuggestionDto>>() {
+                }
+        );
         try {
-            final JsonNode root = this.objectMapper.readTree(rawResponse);
-            final JsonNode suggestions = root.path("suggestions");
-            if (!suggestions.isArray()) {
-                return List.of();
-            }
-            final List<RuleSuggestionDto> parsed = this.objectMapper.convertValue(
-                    suggestions,
-                    new TypeReference<List<RuleSuggestionDto>>() {
-                    }
-            );
             return parsed.stream()
                     .map(item -> new RuleSuggestionCandidate(item.title(), item.content(), item.reason()))
                     .toList();
-        } catch (JsonProcessingException | IllegalArgumentException exception) {
+        } catch (RuntimeException exception) {
             log.warn("Rule suggestion analyzer returned invalid JSON for agentId={}, conversationId={}", agentId, conversationId, exception);
             return List.of();
         }
