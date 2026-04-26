@@ -53,6 +53,6 @@ public class ContextOptimizerPolicy {
         final Instant nextAllowedAt = snapshot.get()
                 .getUpdatedAt()
                 .plusSeconds((long) this.properties.getConversationCooldownMinutes() * 60L);
-        return nextAllowedAt.isBefore(Instant.now());
+        return !nextAllowedAt.isAfter(Instant.now());
     }
 }
