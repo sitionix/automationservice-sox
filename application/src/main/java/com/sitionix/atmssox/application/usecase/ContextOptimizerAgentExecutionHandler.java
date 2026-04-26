@@ -45,7 +45,7 @@ public class ContextOptimizerAgentExecutionHandler implements AgentExecutionHand
                 Messages to summarize:
                 %s
                 """.formatted(
-                AgentRuleTextNormalizer.normalizeToEmpty(context.targetAgent().getInstruction()),
+                AgentRuleTextNormalizer.normalizeToEmpty(context.targetAgentInstruction()),
                 this.formatExistingSummary(context.existingSummary()),
                 this.formatMessages(context.messagesToSummarize())
         );

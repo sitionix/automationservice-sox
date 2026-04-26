@@ -2,7 +2,6 @@ package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationContextSnapshot;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.ConversationContextSnapshotRepository;
@@ -21,6 +20,8 @@ public class ContextOptimizerPolicy {
     private final AgentRepository agentRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
+    private final ActiveUserAgentResolver activeUserAgentResolver;
+    private final ContextOptimizationCoverageCalculator contextOptimizationCoverageCalculator;
 
     public boolean shouldOptimize(final UUID agentId, final UUID conversationId) {
         if (!this.properties.isEnabled()) {
@@ -31,10 +32,7 @@ public class ContextOptimizerPolicy {
             return false;
         }
 
-        final Optional<Agent> targetAgent = this.agentRepository.findById(agentId);
-        if (targetAgent.isEmpty()
-                || targetAgent.get().getType() != AgentType.USER
-                || targetAgent.get().getStatus() != AgentStatus.ACTIVE) {
+        if (this.activeUserAgentResolver.findById(agentId).isEmpty()) {
             return false;
         }
 
@@ -42,12 +40,19 @@ public class ContextOptimizerPolicy {
         if (totalMessageCount <= (long) this.properties.getLastMessagesLimit() + this.properties.getOptimizeThresholdMessages()) {
             return false;
         }
+        final int compressUntilCount = this.contextOptimizationCoverageCalculator.resolveCompressUntilCount(
+                totalMessageCount,
+                this.properties.getLastMessagesLimit()
+        );
 
         final Optional<ConversationContextSnapshot> snapshot = this.conversationContextSnapshotRepository.findByConversationId(conversationId);
         if (snapshot.isEmpty()) {
             return true;
         }
-        if (totalMessageCount <= snapshot.get().getMessageCountUntil()) {
+        if (!this.contextOptimizationCoverageCalculator.hasNewCoverage(
+                snapshot.get().getMessageCountUntil(),
+                compressUntilCount
+        )) {
             return false;
         }
         final Instant nextAllowedAt = snapshot.get()

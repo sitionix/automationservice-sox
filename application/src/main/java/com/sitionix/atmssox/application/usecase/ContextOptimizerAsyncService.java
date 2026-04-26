@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationContextSnapshot;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
@@ -31,6 +30,8 @@ public class ContextOptimizerAsyncService {
     private final AgentExecutionService agentExecutionService;
     private final ContextOptimizerProperties properties;
     private final OpenAiJsonResponseParser openAiJsonResponseParser;
+    private final ActiveUserAgentResolver activeUserAgentResolver;
+    private final ContextOptimizationCoverageCalculator contextOptimizationCoverageCalculator;
 
     @Async("contextOptimizerTaskExecutor")
     public void optimizeAsync(final UUID agentId, final UUID conversationId) {
@@ -52,14 +53,17 @@ public class ContextOptimizerAsyncService {
 
         final Optional<ConversationContextSnapshot> existingSnapshot = this.conversationContextSnapshotRepository.findByConversationId(conversationId);
         final int alreadyCoveredCount = existingSnapshot.map(ConversationContextSnapshot::getMessageCountUntil).orElse(0);
-        final int compressUntilCount = Math.max(0, fullHistory.size() - Math.max(1, this.properties.getLastMessagesLimit()));
-        if (compressUntilCount <= alreadyCoveredCount) {
+        final int compressUntilCount = this.contextOptimizationCoverageCalculator.resolveCompressUntilCount(
+                fullHistory.size(),
+                this.properties.getLastMessagesLimit()
+        );
+        if (!this.contextOptimizationCoverageCalculator.hasNewCoverage(alreadyCoveredCount, compressUntilCount)) {
             return;
         }
 
         final List<ConversationMessage> messagesToSummarize = fullHistory.subList(alreadyCoveredCount, compressUntilCount);
         final ContextOptimizationContext context = new ContextOptimizationContext(
-                targetAgent.get(),
+                targetAgent.get().getInstruction(),
                 existingSnapshot.map(ConversationContextSnapshot::getSummary).orElse(""),
                 messagesToSummarize
         );
@@ -82,9 +86,7 @@ public class ContextOptimizerAsyncService {
     }
 
     private Optional<Agent> findActiveUserAgent(final UUID agentId) {
-        return this.agentRepository.findById(agentId)
-                .filter(agent -> agent.getType() == AgentType.USER)
-                .filter(agent -> agent.getStatus() == AgentStatus.ACTIVE);
+        return this.activeUserAgentResolver.findById(agentId);
     }
 
     private Optional<String> executeAndParseSummary(final Agent optimizerAgent,

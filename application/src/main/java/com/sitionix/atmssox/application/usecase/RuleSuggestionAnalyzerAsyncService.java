@@ -8,9 +8,7 @@ import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
-import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
-import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
@@ -38,6 +36,8 @@ public class RuleSuggestionAnalyzerAsyncService {
     private final AgentExecutionService agentExecutionService;
     private final RuleSuggestionAnalyzerProperties properties;
     private final OpenAiJsonResponseParser openAiJsonResponseParser;
+    private final ActiveUserAgentResolver activeUserAgentResolver;
+    private final ConversationMessageWindowService conversationMessageWindowService;
 
     @Async("ruleSuggestionAnalyzerTaskExecutor")
     public void analyzeAsync(final UUID agentId, final UUID conversationId) {
@@ -47,7 +47,7 @@ public class RuleSuggestionAnalyzerAsyncService {
         }
         final Agent analyzer = analyzerOptional.get();
 
-        final Optional<Agent> targetAgentOptional = this.findActiveUserAgent(agentId);
+        final Optional<Agent> targetAgentOptional = this.activeUserAgentResolver.findById(agentId);
         if (targetAgentOptional.isEmpty()) {
             return;
         }
@@ -55,7 +55,7 @@ public class RuleSuggestionAnalyzerAsyncService {
 
         final List<ConversationMessage> fullHistory =
                 this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        final String latestUserMessage = this.findLatestUserMessage(fullHistory);
+        final Optional<String> latestUserMessage = this.conversationMessageWindowService.findLatestUserMessageContent(fullHistory);
         if (latestUserMessage.isEmpty()) {
             return;
         }
@@ -68,8 +68,8 @@ public class RuleSuggestionAnalyzerAsyncService {
                 activeRules,
                 pendingRules,
                 rejectedRules,
-                this.takeLastMessages(fullHistory),
-                latestUserMessage
+                this.conversationMessageWindowService.takeLastMessages(fullHistory, this.properties.getLastMessagesLimit()),
+                latestUserMessage.get()
         );
         final Optional<String> rawResponse = this.executeAnalyzer(analyzer, context, agentId, conversationId);
         if (rawResponse.isEmpty()) {
@@ -101,21 +101,6 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(agent -> agent.getStatus() == AgentStatus.ACTIVE);
     }
 
-    private Optional<Agent> findActiveUserAgent(final UUID agentId) {
-        return this.agentRepository.findById(agentId)
-                .filter(agent -> agent.getType() == AgentType.USER)
-                .filter(agent -> agent.getStatus() == AgentStatus.ACTIVE);
-    }
-
-    private String findLatestUserMessage(final List<ConversationMessage> fullHistory) {
-        return fullHistory.stream()
-                .filter(message -> message.getAuthorType() == ConversationParticipantType.USER)
-                .reduce((first, second) -> second)
-                .map(ConversationMessage::getContent)
-                .map(AgentRuleTextNormalizer::normalizeToEmpty)
-                .orElse("");
-    }
-
     private List<AgentRule> findRules(final UUID agentId, final Long userId, final AgentRuleStatus status) {
         return this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
                 agentId,
@@ -135,14 +120,6 @@ public class RuleSuggestionAnalyzerAsyncService {
             log.warn("Rule suggestion analyzer OpenAI execution failed for agentId={}, conversationId={}", agentId, conversationId, exception);
             return Optional.empty();
         }
-    }
-
-    private List<ConversationMessage> takeLastMessages(final List<ConversationMessage> fullHistory) {
-        if (fullHistory.isEmpty()) {
-            return List.of();
-        }
-        final int fromIndex = Math.max(0, fullHistory.size() - Math.max(1, this.properties.getLastMessagesLimit()));
-        return fullHistory.subList(fromIndex, fullHistory.size());
     }
 
     private List<RuleSuggestionCandidate> parseSuggestions(final String rawResponse,

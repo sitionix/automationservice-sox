@@ -38,10 +38,10 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     private final ConversationContextBuilder conversationContextBuilder;
+    private final ConversationMessageWindowService conversationMessageWindowService;
     private final ContextOptimizerProperties contextOptimizerProperties;
     private final AgentExecutionService agentExecutionService;
-    private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
-    private final ContextOptimizerTrigger contextOptimizerTrigger;
+    private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
 
     @Override
     public ChatAgentResponse handle(final Conversation conversation,
@@ -69,7 +69,10 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 message
         ));
         final List<ConversationMessage> history = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversation.getId());
-        final List<ConversationMessage> lastMessages = this.takeLastMessages(history, this.contextOptimizerProperties.getLastMessagesLimit());
+        final List<ConversationMessage> lastMessages = this.conversationMessageWindowService.takeLastMessages(
+                history,
+                this.contextOptimizerProperties.getLastMessagesLimit()
+        );
         final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
                 agentId,
                 userId,
@@ -92,7 +95,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
         this.touchConversation(conversation, reply.getCreatedAt());
-        this.triggerBackgroundWorkflows(agentId, conversation.getId(), userMessage);
+        this.triggerBackgroundWorkflows(new ChatCompletedContext(agentId, conversation.getId(), userMessage));
 
         return ChatAgentResponse.builder()
                 .conversationId(conversation.getId())
@@ -107,20 +110,8 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 .build());
     }
 
-    private void triggerBackgroundWorkflows(final UUID agentId,
-                                            final UUID conversationId,
-                                            final ConversationMessage latestUserMessage) {
-        this.ruleSuggestionAnalysisTrigger.submitIfAllowed(agentId, conversationId, latestUserMessage);
-        this.contextOptimizerTrigger.submitIfAllowed(agentId, conversationId);
-    }
-
-    private List<ConversationMessage> takeLastMessages(final List<ConversationMessage> history, final int lastMessagesLimit) {
-        if (history.isEmpty()) {
-            return List.of();
-        }
-        final int normalizedLimit = Math.max(1, lastMessagesLimit);
-        final int fromIndex = Math.max(0, history.size() - normalizedLimit);
-        return history.subList(fromIndex, history.size());
+    private void triggerBackgroundWorkflows(final ChatCompletedContext context) {
+        this.postChatWorkflowDispatcher.dispatch(context);
     }
 
     private UUID resolveAgentId(final List<ConversationParticipant> participants) {
