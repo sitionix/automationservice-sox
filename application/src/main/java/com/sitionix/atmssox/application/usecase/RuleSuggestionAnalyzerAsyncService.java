@@ -34,6 +34,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RuleSuggestionAnalyzerAsyncService {
 
+    private static final Set<String> GENERIC_RULE_CONTENTS = Set.of(
+            "be helpful",
+            "be clear"
+    );
+
     private final AgentRepository agentRepository;
     private final AgentRuleRepository agentRuleRepository;
     private final ConversationMessageRepository conversationMessageRepository;
@@ -186,6 +191,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .filter(candidate -> !candidate.content().isEmpty())
                 .filter(candidate -> !candidate.reason().isEmpty())
                 .filter(candidate -> candidate.content().length() <= this.properties.getMaxSuggestionContentLength())
+                .filter(candidate -> !GENERIC_RULE_CONTENTS.contains(this.normalizeContent(candidate.content())))
                 .filter(candidate -> !existingContents.contains(this.normalizeContent(candidate.content())))
                 .limit(this.properties.getMaxSuggestionsPerRun())
                 .toList();
