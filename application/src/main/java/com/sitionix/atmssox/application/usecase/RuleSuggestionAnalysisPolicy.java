@@ -65,7 +65,10 @@ public class RuleSuggestionAnalysisPolicy {
                 conversationId,
                 ConversationParticipantType.USER
         );
-        return userMessageCount >= this.properties.getMessageCountThreshold();
+        if (userMessageCount < this.properties.getMessageCountThreshold()) {
+            return false;
+        }
+        return true;
     }
 
     private boolean isCooldownPassed(final UUID agentId, final Instant now) {

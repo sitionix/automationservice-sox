@@ -16,8 +16,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecutionHandler<RuleSuggestionAnalysisContext> {
 
-    private static final String NO_DATA = "(none)";
-
     private final OpenAiChatClient openAiChatClient;
 
     @Override
@@ -66,22 +64,22 @@ public class RuleSuggestionAnalyzerAgentExecutionHandler implements AgentExecuti
 
     private String formatRules(final List<AgentRule> rules) {
         if (rules.isEmpty()) {
-            return NO_DATA;
+            return "(none)";
         }
         return rules.stream()
                 .map(rule -> "- " + AgentRuleTextNormalizer.normalizeToEmpty(rule.getTitle()) + ": "
                         + AgentRuleTextNormalizer.normalizeToEmpty(rule.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
-                .orElse(NO_DATA);
+                .orElse("(none)");
     }
 
     private String formatMessages(final List<ConversationMessage> messages) {
         if (messages.isEmpty()) {
-            return NO_DATA;
+            return "(none)";
         }
         return messages.stream()
                 .map(message -> message.getAuthorType().name() + ": " + AgentRuleTextNormalizer.normalizeToEmpty(message.getContent()))
                 .reduce((first, second) -> first + "\n" + second)
-                .orElse(NO_DATA);
+                .orElse("(none)");
     }
 }
