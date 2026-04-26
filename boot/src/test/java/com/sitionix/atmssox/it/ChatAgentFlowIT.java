@@ -26,7 +26,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import static org.hamcrest.Matchers.nullValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -72,10 +71,10 @@ class ChatAgentFlowIT {
                 .singleElement()
                 .assertEntity();
 
-        when(this.openAiChatClient.execute(eq(new OpenAiChatRequest(
+        when(this.openAiChatClient.execute(new OpenAiChatRequest(
                 "Follow security-first code review checklist",
                 "Conversation history:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
-        ))))
+        )))
                 .thenReturn("Clean architecture separates core business rules from frameworks.");
 
         //when
@@ -89,10 +88,10 @@ class ChatAgentFlowIT {
                 .assertDefault();
 
         //then
-        verify(this.openAiChatClient).execute(eq(new OpenAiChatRequest(
+        verify(this.openAiChatClient).execute(new OpenAiChatRequest(
                 "Follow security-first code review checklist",
                 "Conversation history:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
-        )));
+        ));
 
         this.testManager.postgresql()
                 .get(AgentEntity.class)
@@ -737,12 +736,7 @@ class ChatAgentFlowIT {
                         .orElse(null);
                 break;
             }
-            try {
-                Thread.sleep(20L);
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError("Unexpected interruption", exception);
-            }
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
         }
 
         //then
@@ -824,17 +818,12 @@ class ChatAgentFlowIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), analyzerInstruction)
                 && Objects.nonNull(request.input())
@@ -907,17 +896,12 @@ class ChatAgentFlowIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), analyzerInstruction)
                 && Objects.nonNull(request.input())
@@ -978,17 +962,12 @@ class ChatAgentFlowIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().isEmpty()) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient, times(10)).execute(any(OpenAiChatRequest.class));
     }
 
@@ -1067,17 +1046,12 @@ class ChatAgentFlowIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == 1) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount + 1);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount + 1);
         final AgentRuleEntity existingRule = this.testManager.postgresql()
                 .get(AgentRuleEntity.class)
                 .getAll()

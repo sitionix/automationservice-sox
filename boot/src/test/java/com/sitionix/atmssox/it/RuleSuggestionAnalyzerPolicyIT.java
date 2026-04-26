@@ -23,7 +23,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -91,17 +90,12 @@ class RuleSuggestionAnalyzerPolicyIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == baselineRuleCount) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)
                 && Objects.nonNull(request.input())));
@@ -153,17 +147,12 @@ class RuleSuggestionAnalyzerPolicyIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == baselineRuleCount) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)
                 && Objects.nonNull(request.input())));
@@ -225,12 +214,7 @@ class RuleSuggestionAnalyzerPolicyIT {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() > baselineRuleCount) {
                 break;
             }
-            try {
-                Thread.sleep(20L);
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError("Unexpected interruption", exception);
-            }
+            java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
         }
 
         this.testManager.mockMvc()
@@ -245,17 +229,12 @@ class RuleSuggestionAnalyzerPolicyIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == baselineRuleCount + 1) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount + 1);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount + 1);
         verify(this.openAiChatClient, times(1)).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)
                 && Objects.nonNull(request.input())));
@@ -290,17 +269,12 @@ class RuleSuggestionAnalyzerPolicyIT {
 
         for (int attempt = 0; attempt < 100; attempt++) {
             if (this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size() == baselineRuleCount) {
-                try {
-                    Thread.sleep(20L);
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Unexpected interruption", exception);
-                }
+                java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
             }
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSize(baselineRuleCount);
         verify(this.openAiChatClient, never()).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)));
     }
