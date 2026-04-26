@@ -56,9 +56,6 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
     @Mock
     private ActiveUserAgentResolver activeUserAgentResolver;
 
-    @Mock
-    private ConversationMessageWindowService conversationMessageWindowService;
-
     @BeforeEach
     void setUp() {
         this.ruleSuggestionAnalyzerAsyncService = new RuleSuggestionAnalyzerAsyncService(
@@ -68,8 +65,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
                 this.agentExecutionService,
                 this.properties,
                 new OpenAiJsonResponseParser(new ObjectMapper()),
-                this.activeUserAgentResolver,
-                this.conversationMessageWindowService
+                this.activeUserAgentResolver
         );
     }
 
@@ -89,9 +85,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
                 this.agentRuleRepository,
                 this.conversationMessageRepository,
                 this.agentExecutionService,
-                this.properties,
-                this.activeUserAgentResolver,
-                this.conversationMessageWindowService
+                this.properties
         );
     }
 
@@ -101,8 +95,6 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         final UUID agentId = UUID.fromString("79c5ae7d-f11d-4217-a6d6-6e65f0d28f6e");
         final UUID conversationId = UUID.fromString("ac3029ac-ff21-4eb7-a6a7-450aa16a79db");
         final Agent analyzer = this.getAgent(UUID.fromString("4f0fb6ec-5371-4b2f-bf2b-fefd42ccf31f"), AgentType.SYSTEM_RULE_ANALYZER, AgentStatus.ACTIVE, "Analyze");
-        final Agent targetAgent = this.getAgent(agentId, AgentType.USER, AgentStatus.DRAFT, "Instruction");
-
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
         when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.empty());
 
@@ -116,8 +108,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
                 this.agentRuleRepository,
                 this.conversationMessageRepository,
                 this.agentExecutionService,
-                this.properties,
-                this.conversationMessageWindowService
+                this.properties
         );
     }
 
@@ -127,14 +118,14 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         final UUID agentId = UUID.fromString("910e219e-a711-4de9-b618-419e6f46f26d");
         final UUID conversationId = UUID.fromString("f3e5298f-1cc3-4f3f-af42-4860ad7b1767");
         final Agent analyzer = this.getAgent(UUID.fromString("4f0fb6ec-5371-4b2f-bf2b-fefd42ccf31f"), AgentType.SYSTEM_RULE_ANALYZER, AgentStatus.ACTIVE, "Analyze");
-        final Agent targetAgent = this.getAgent(agentId, AgentType.USER, AgentStatus.ACTIVE, "Instruction");
         final ConversationMessage message = this.getMessage(conversationId, ConversationParticipantType.AGENT, "agent", "answer");
 
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
-        when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(targetAgent));
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
-                .thenReturn(List.of(message));
-        when(this.conversationMessageWindowService.findLatestUserMessageContent(List.of(message))).thenReturn(Optional.empty());
+        when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(
+                this.getAgent(agentId, AgentType.USER, AgentStatus.ACTIVE, "Instruction")
+        ));
+        when(this.conversationMessageRepository.findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER))
+                .thenReturn(Optional.empty());
 
         //when
         this.ruleSuggestionAnalyzerAsyncService.analyzeAsync(agentId, conversationId);
@@ -142,8 +133,7 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         //then
         verify(this.agentRepository).findSystemRuleAnalyzer();
         verify(this.activeUserAgentResolver).findById(agentId);
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        verify(this.conversationMessageWindowService).findLatestUserMessageContent(List.of(message));
+        verify(this.conversationMessageRepository).findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER);
         verifyNoInteractions(this.agentRuleRepository, this.agentExecutionService, this.properties);
     }
 
@@ -158,10 +148,10 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
 
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
         when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(targetAgent));
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
+        when(this.conversationMessageRepository.findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER))
+                .thenReturn(Optional.of(userMessage));
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 20))
                 .thenReturn(List.of(userMessage));
-        when(this.conversationMessageWindowService.findLatestUserMessageContent(List.of(userMessage))).thenReturn(Optional.of("Help"));
-        when(this.conversationMessageWindowService.takeLastMessages(List.of(userMessage), 20)).thenReturn(List.of(userMessage));
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.PENDING, null))
@@ -178,9 +168,8 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         //then
         verify(this.agentRepository).findSystemRuleAnalyzer();
         verify(this.activeUserAgentResolver).findById(agentId);
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        verify(this.conversationMessageWindowService).findLatestUserMessageContent(List.of(userMessage));
-        verify(this.conversationMessageWindowService).takeLastMessages(List.of(userMessage), 20);
+        verify(this.conversationMessageRepository).findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER);
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 20);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.PENDING, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.REJECTED, null);
@@ -199,10 +188,10 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
 
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
         when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(targetAgent));
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
+        when(this.conversationMessageRepository.findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER))
+                .thenReturn(Optional.of(userMessage));
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 20))
                 .thenReturn(List.of(userMessage));
-        when(this.conversationMessageWindowService.findLatestUserMessageContent(List.of(userMessage))).thenReturn(Optional.of("Help"));
-        when(this.conversationMessageWindowService.takeLastMessages(List.of(userMessage), 20)).thenReturn(List.of(userMessage));
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.PENDING, null))
@@ -218,9 +207,8 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         //then
         verify(this.agentRepository).findSystemRuleAnalyzer();
         verify(this.activeUserAgentResolver).findById(agentId);
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        verify(this.conversationMessageWindowService).findLatestUserMessageContent(List.of(userMessage));
-        verify(this.conversationMessageWindowService).takeLastMessages(List.of(userMessage), 20);
+        verify(this.conversationMessageRepository).findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER);
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 20);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.PENDING, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.REJECTED, null);
@@ -242,11 +230,9 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
 
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
         when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(targetAgent));
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
-                .thenReturn(List.of(firstUserMessage, agentMessage, latestUserMessage));
-        when(this.conversationMessageWindowService.findLatestUserMessageContent(List.of(firstUserMessage, agentMessage, latestUserMessage)))
-                .thenReturn(Optional.of("latest ask"));
-        when(this.conversationMessageWindowService.takeLastMessages(List.of(firstUserMessage, agentMessage, latestUserMessage), 2))
+        when(this.conversationMessageRepository.findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER))
+                .thenReturn(Optional.of(latestUserMessage));
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 2))
                 .thenReturn(List.of(agentMessage, latestUserMessage));
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of(activeRule));
@@ -280,9 +266,8 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         final ArgumentCaptor<AgentRule> ruleCaptor = ArgumentCaptor.forClass(AgentRule.class);
         verify(this.agentRepository).findSystemRuleAnalyzer();
         verify(this.activeUserAgentResolver).findById(agentId);
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        verify(this.conversationMessageWindowService).findLatestUserMessageContent(List.of(firstUserMessage, agentMessage, latestUserMessage));
-        verify(this.conversationMessageWindowService).takeLastMessages(List.of(firstUserMessage, agentMessage, latestUserMessage), 2);
+        verify(this.conversationMessageRepository).findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER);
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 2);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.PENDING, null);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.REJECTED, null);

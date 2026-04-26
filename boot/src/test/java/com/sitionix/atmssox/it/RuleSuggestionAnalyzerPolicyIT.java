@@ -103,6 +103,7 @@ class RuleSuggestionAnalyzerPolicyIT {
                 .filter(rule -> Objects.equals(rule.getContent(), "be helpful"))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Expected analyzer suggestion not found"));
+        assertThat(createdSuggestion.getRuleId()).isNotNull();
         assertThat(createdSuggestion.getTitle()).isEqualTo("Generic");
         assertThat(createdSuggestion.getStatus().getId()).isEqualTo(3L);
         assertThat(createdSuggestion.getAuthorType().getId()).isEqualTo(2L);

@@ -38,7 +38,6 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     private final ConversationContextBuilder conversationContextBuilder;
-    private final ConversationMessageWindowService conversationMessageWindowService;
     private final ContextOptimizerProperties contextOptimizerProperties;
     private final AgentExecutionService agentExecutionService;
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
@@ -68,9 +67,8 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 userId,
                 message
         ));
-        final List<ConversationMessage> history = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversation.getId());
-        final List<ConversationMessage> lastMessages = this.conversationMessageWindowService.takeLastMessages(
-                history,
+        final List<ConversationMessage> lastMessages = this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(
+                conversation.getId(),
                 this.contextOptimizerProperties.getLastMessagesLimit()
         );
         final List<AgentRule> activeRules = this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(

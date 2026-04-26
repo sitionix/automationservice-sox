@@ -68,9 +68,6 @@ class DirectConversationChatHandlerTest {
     private ConversationContextBuilder conversationContextBuilder;
 
     @Mock
-    private ConversationMessageWindowService conversationMessageWindowService;
-
-    @Mock
     private ContextOptimizerProperties contextOptimizerProperties;
 
     @Mock
@@ -91,7 +88,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
-                this.conversationMessageWindowService,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
@@ -113,7 +109,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
-                this.conversationMessageWindowService,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,
@@ -151,10 +146,9 @@ class DirectConversationChatHandlerTest {
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10))
                 .thenReturn(List.of(userMessage));
         when(this.contextOptimizerProperties.getLastMessagesLimit()).thenReturn(10);
-        when(this.conversationMessageWindowService.takeLastMessages(List.of(userMessage), 10)).thenReturn(List.of(userMessage));
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextSnapshotRepository.findByConversationId(conversationId))
@@ -175,9 +169,8 @@ class DirectConversationChatHandlerTest {
         verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10);
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
-        verify(this.conversationMessageWindowService).takeLastMessages(List.of(userMessage), 10);
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversationId);
         verify(this.conversationContextBuilder).build("  Keep answers concise.  ", List.of(), "summary", List.of(userMessage), userMessage);
         verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
@@ -205,10 +198,9 @@ class DirectConversationChatHandlerTest {
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId))
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10))
                 .thenReturn(List.of(userMessage));
         when(this.contextOptimizerProperties.getLastMessagesLimit()).thenReturn(10);
-        when(this.conversationMessageWindowService.takeLastMessages(List.of(userMessage), 10)).thenReturn(List.of(userMessage));
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextSnapshotRepository.findByConversationId(conversationId))
@@ -228,9 +220,8 @@ class DirectConversationChatHandlerTest {
         verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
-        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10);
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
-        verify(this.conversationMessageWindowService).takeLastMessages(List.of(userMessage), 10);
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversationId);
         verify(this.conversationContextBuilder).build(null, List.of(), "", List.of(userMessage), userMessage);
         verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
@@ -270,7 +261,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
-                this.conversationMessageWindowService,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,
@@ -306,7 +296,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
-                this.conversationMessageWindowService,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,
@@ -344,7 +333,6 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationContextBuilder,
                 this.conversationContextSnapshotRepository,
-                this.conversationMessageWindowService,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher

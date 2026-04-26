@@ -60,6 +60,16 @@ public class AgentRepositoryImpl implements AgentRepository {
     }
 
     @Override
+    public Optional<Agent> findActiveUserById(final UUID agentId) {
+        return this.agentJpaRepository.findByAgentIdAndTypeIdAndStatusId(
+                        agentId,
+                        AgentType.USER.getId(),
+                        AgentStatus.ACTIVE.getId()
+                )
+                .map(this.agentInfraMapper::asAgent);
+    }
+
+    @Override
     public Optional<Agent> findSystemRuleAnalyzer() {
         return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(AgentType.SYSTEM_RULE_ANALYZER.getId())
                 .map(this.agentInfraMapper::asAgent);

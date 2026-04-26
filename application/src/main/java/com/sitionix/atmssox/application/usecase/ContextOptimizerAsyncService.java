@@ -45,31 +45,40 @@ public class ContextOptimizerAsyncService {
             log.warn("Target USER agent missing or inactive for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
-
-        final List<ConversationMessage> fullHistory = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        if (fullHistory.isEmpty()) {
+        final Agent optimizer = optimizerAgent.get();
+        final Agent target = targetAgent.get();
+        final long totalMessageCount = this.conversationMessageRepository.countByConversationId(conversationId);
+        if (totalMessageCount <= 0) {
             return;
         }
 
         final Optional<ConversationContextSnapshot> existingSnapshot = this.conversationContextSnapshotRepository.findByConversationId(conversationId);
         final int alreadyCoveredCount = existingSnapshot.map(ConversationContextSnapshot::getMessageCountUntil).orElse(0);
         final int compressUntilCount = this.contextOptimizationCoverageCalculator.resolveCompressUntilCount(
-                fullHistory.size(),
+                totalMessageCount,
                 this.properties.getLastMessagesLimit()
         );
         if (!this.contextOptimizationCoverageCalculator.hasNewCoverage(alreadyCoveredCount, compressUntilCount)) {
             return;
         }
+        final int messagesToSummarizeCount = compressUntilCount - alreadyCoveredCount;
+        final List<ConversationMessage> messagesToSummarize = this.conversationMessageRepository.findSliceByConversationIdOrderByCreatedAtAsc(
+                conversationId,
+                alreadyCoveredCount,
+                messagesToSummarizeCount
+        );
+        if (messagesToSummarize.isEmpty()) {
+            return;
+        }
 
-        final List<ConversationMessage> messagesToSummarize = fullHistory.subList(alreadyCoveredCount, compressUntilCount);
         final ContextOptimizationContext context = new ContextOptimizationContext(
-                targetAgent.get().getInstruction(),
+                target.getInstruction(),
                 existingSnapshot.map(ConversationContextSnapshot::getSummary).orElse(""),
                 messagesToSummarize
         );
 
         final Optional<String> summary = this.executeAndParseSummary(
-                optimizerAgent.get(),
+                optimizer,
                 context,
                 agentId,
                 conversationId
@@ -77,7 +86,7 @@ public class ContextOptimizerAsyncService {
         if (summary.isEmpty()) {
             return;
         }
-        this.saveSnapshot(existingSnapshot, conversationId, summary.get(), fullHistory, compressUntilCount);
+        this.saveSnapshot(existingSnapshot, conversationId, summary.get(), messagesToSummarize, compressUntilCount);
     }
 
     private Optional<Agent> findActiveOptimizer() {
@@ -135,12 +144,10 @@ public class ContextOptimizerAsyncService {
     private void saveSnapshot(final Optional<ConversationContextSnapshot> existingSnapshot,
                               final UUID conversationId,
                               final String summary,
-                              final List<ConversationMessage> fullHistory,
+                              final List<ConversationMessage> messagesToSummarize,
                               final int compressUntilCount) {
         final Instant now = Instant.now();
-        final UUID lastMessageIdUntil = compressUntilCount > 0
-                ? fullHistory.get(compressUntilCount - 1).getId()
-                : null;
+        final UUID lastMessageIdUntil = messagesToSummarize.get(messagesToSummarize.size() - 1).getId();
         final ConversationContextSnapshot snapshot = existingSnapshot
                 .map(value -> value.toBuilder()
                         .summary(summary)

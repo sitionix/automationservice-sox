@@ -9,6 +9,7 @@ import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
@@ -37,7 +38,6 @@ public class RuleSuggestionAnalyzerAsyncService {
     private final RuleSuggestionAnalyzerProperties properties;
     private final OpenAiJsonResponseParser openAiJsonResponseParser;
     private final ActiveUserAgentResolver activeUserAgentResolver;
-    private final ConversationMessageWindowService conversationMessageWindowService;
 
     @Async("ruleSuggestionAnalyzerTaskExecutor")
     public void analyzeAsync(final UUID agentId, final UUID conversationId) {
@@ -53,12 +53,18 @@ public class RuleSuggestionAnalyzerAsyncService {
         }
         final Agent targetAgent = targetAgentOptional.get();
 
-        final List<ConversationMessage> fullHistory =
-                this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId);
-        final Optional<String> latestUserMessage = this.conversationMessageWindowService.findLatestUserMessageContent(fullHistory);
+        final Optional<String> latestUserMessage = this.conversationMessageRepository
+                .findLastByConversationIdAndAuthorType(conversationId, ConversationParticipantType.USER)
+                .map(ConversationMessage::getContent)
+                .map(AgentRuleTextNormalizer::normalizeToEmpty)
+                .filter(content -> !content.isEmpty());
         if (latestUserMessage.isEmpty()) {
             return;
         }
+        final List<ConversationMessage> lastMessages = this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(
+                conversationId,
+                this.properties.getLastMessagesLimit()
+        );
 
         final List<AgentRule> activeRules = this.findRules(agentId, targetAgent.getUserId(), AgentRuleStatus.ACTIVE);
         final List<AgentRule> pendingRules = this.findRules(agentId, targetAgent.getUserId(), AgentRuleStatus.PENDING);
@@ -68,7 +74,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 activeRules,
                 pendingRules,
                 rejectedRules,
-                this.conversationMessageWindowService.takeLastMessages(fullHistory, this.properties.getLastMessagesLimit()),
+                lastMessages,
                 latestUserMessage.get()
         );
         final Optional<String> rawResponse = this.executeAnalyzer(analyzer, context, agentId, conversationId);

@@ -50,6 +50,14 @@ public interface AgentRepository {
     Optional<Agent> findById(UUID agentId);
 
     /**
+     * Finds ACTIVE USER agent by id.
+     *
+     * @param agentId agent identifier.
+     * @return active user agent when present.
+     */
+    Optional<Agent> findActiveUserById(UUID agentId);
+
+    /**
      * Finds internal system agent used for rule analysis.
      *
      * @return analyzer agent when present.

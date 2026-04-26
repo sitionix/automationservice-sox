@@ -408,6 +408,7 @@ class ContextOptimizerFlowIT {
         assertThat(updatedSnapshot.getId()).isEqualTo(snapshotId);
         assertThat(updatedSnapshot.getSummary()).isEqualTo("summary-2");
         assertThat(updatedSnapshot.getMessageCountUntil()).isGreaterThan(messageCountUntil);
+        assertThat(updatedSnapshot.getConversation().getConversationId()).isEqualTo(conversationId);
         assertThat(updatedSnapshot.getCreatedAt()).isEqualTo(initialSnapshotCreatedAt);
         assertThat(updatedSnapshot.getUpdatedAt()).isAfter(initialSnapshotUpdatedAt);
         assertThat(updatedSnapshot.getLastMessageIdUntil()).isNotNull();
