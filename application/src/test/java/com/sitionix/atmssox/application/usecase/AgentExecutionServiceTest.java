@@ -43,7 +43,7 @@ class AgentExecutionServiceTest {
     void givenAgentAndContext_whenExecute_thenDelegateToAgentTypeHandler() {
         //given
         final Agent givenAgent = this.getAgent();
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("Prompt");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("Instruction", "Prompt");
         when(this.userAgentExecutionHandler.executeWithContext(any(Agent.class), any(UserAgentExecutionContext.class))).thenReturn("reply");
 
         //when

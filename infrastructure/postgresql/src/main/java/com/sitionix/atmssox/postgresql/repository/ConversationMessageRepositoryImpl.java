@@ -35,6 +35,11 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
         return this.conversationMessageJpaRepository.countByConversationConversationIdAndAuthorType(conversationId, authorType);
     }
 
+    @Override
+    public long countByConversationId(final UUID conversationId) {
+        return this.conversationMessageJpaRepository.countByConversationConversationId(conversationId);
+    }
+
     private ConversationMessageEntity toEntity(final ConversationMessage message) {
         return ConversationMessageEntity.builder()
                 .messageId(message.getId())

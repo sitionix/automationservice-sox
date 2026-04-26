@@ -11,7 +11,8 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public enum AgentType {
     USER(1L, "userAgentExecutionHandler"),
-    SYSTEM_RULE_ANALYZER(2L, "ruleSuggestionAnalyzerAgentExecutionHandler");
+    SYSTEM_RULE_ANALYZER(2L, "ruleSuggestionAnalyzerAgentExecutionHandler"),
+    SYSTEM_CONTEXT_OPTIMIZER(3L, "contextOptimizerAgentExecutionHandler");
 
     private final Long id;
     private final String bindingKey;

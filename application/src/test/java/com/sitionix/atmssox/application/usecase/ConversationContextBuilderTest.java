@@ -41,16 +41,26 @@ class ConversationContextBuilderTest {
         );
         final AgentRule rule = this.getAgentRule("Tone", "Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
-        final String expected = "Active rules:\n"
-                + "- Always keep answers explicit.\n"
-                + "\n"
-                + "Conversation history:\n"
-                + "USER: Explain clean architecture\n"
-                + "AGENT: It separates core business logic from frameworks.\n"
-                + "Respond as AGENT to the latest USER message.";
+        final UserAgentExecutionContext expected = new UserAgentExecutionContext(
+                "Follow architecture guidance.\n\n"
+                        + "Active rules:\n"
+                        + "- Always keep answers explicit.\n\n"
+                        + "Conversation context summary:\n"
+                        + "Project Alpha uses Spring Boot and Kafka.",
+                "Messages:\n"
+                        + "USER: Explain clean architecture\n"
+                        + "AGENT: It separates core business logic from frameworks.\n"
+                        + "Respond as AGENT to the latest USER message."
+        );
 
         //when
-        final String actual = this.conversationContextBuilder.build(List.of(rule), given);
+        final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                "Follow architecture guidance.",
+                List.of(rule),
+                "Project Alpha uses Spring Boot and Kafka.",
+                given,
+                userMessage
+        );
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -60,11 +70,28 @@ class ConversationContextBuilderTest {
     void givenEmptyOrderedHistory_whenBuild_thenReturnContextWithOnlyInstruction() {
         //given
         final List<ConversationMessage> given = List.of();
-        final String expected = "Conversation history:\n"
-                + "Respond as AGENT to the latest USER message.";
+        final ConversationMessage currentUserMessage = this.getConversationMessage(
+                UUID.fromString("11111111-1111-1111-1111-111111111111"),
+                ConversationParticipantType.USER,
+                "17",
+                "Hello",
+                Instant.parse("2026-04-21T10:00:00Z")
+        );
+        final UserAgentExecutionContext expected = new UserAgentExecutionContext(
+                "Instruction",
+                "Messages:\n"
+                        + "USER: Hello\n"
+                        + "Respond as AGENT to the latest USER message."
+        );
 
         //when
-        final String actual = this.conversationContextBuilder.build(List.of(), given);
+        final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                "Instruction",
+                List.of(),
+                "",
+                given,
+                currentUserMessage
+        );
 
         //then
         assertThat(actual).isEqualTo(expected);

@@ -20,4 +20,15 @@ public class AsyncConfiguration {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "contextOptimizerTaskExecutor")
+    public Executor contextOptimizerTaskExecutor() {
+        final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("context-optimizer-");
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(100);
+        executor.initialize();
+        return executor;
+    }
 }

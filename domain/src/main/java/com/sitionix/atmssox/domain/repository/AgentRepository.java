@@ -55,4 +55,11 @@ public interface AgentRepository {
      * @return analyzer agent when present.
      */
     Optional<Agent> findSystemRuleAnalyzer();
+
+    /**
+     * Finds internal system agent used for context optimization.
+     *
+     * @return context optimizer agent when present.
+     */
+    Optional<Agent> findSystemContextOptimizer();
 }

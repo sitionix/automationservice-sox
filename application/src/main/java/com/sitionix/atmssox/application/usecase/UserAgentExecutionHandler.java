@@ -22,12 +22,14 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgen
 
     @Override
     public String execute(final Agent agent, final UserAgentExecutionContext context) {
-        final String instruction = AgentRuleTextNormalizer.normalizeToEmpty(agent.getInstruction());
-        final String prompt = AgentRuleTextNormalizer.normalizeToEmpty(context.prompt());
-        if (prompt.isEmpty()) {
+        final String contextInstruction = AgentRuleTextNormalizer.normalizeToEmpty(context.instruction());
+        final String fallbackInstruction = AgentRuleTextNormalizer.normalizeToEmpty(agent.getInstruction());
+        final String input = AgentRuleTextNormalizer.normalizeToEmpty(context.input());
+        if (input.isEmpty()) {
             throw new AgentValidationException("User prompt is empty");
         }
+        final String instruction = contextInstruction.isEmpty() ? fallbackInstruction : contextInstruction;
 
-        return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, prompt));
+        return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
     }
 }

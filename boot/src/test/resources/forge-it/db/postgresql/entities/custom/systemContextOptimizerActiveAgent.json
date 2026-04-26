@@ -1,0 +1,17 @@
+{
+  "agentId": "33333333-3333-3333-3333-333333333333",
+  "userId": 0,
+  "name": "Context Optimizer",
+  "description": "Internal system agent for context optimization",
+  "instruction": "Summarize conversation context. Return only strict JSON {\"summary\":\"...\"}.",
+  "type": {
+    "id": 3,
+    "description": "SYSTEM_CONTEXT_OPTIMIZER"
+  },
+  "status": {
+    "id": 2,
+    "description": "ACTIVE"
+  },
+  "createdAt": "2026-04-21T09:00:00Z",
+  "updatedAt": "2026-04-21T09:00:00Z"
+}

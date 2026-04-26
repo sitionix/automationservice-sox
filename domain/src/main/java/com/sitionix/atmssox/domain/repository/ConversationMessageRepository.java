@@ -34,4 +34,12 @@ public interface ConversationMessageRepository {
      * @return count of matching messages.
      */
     long countByConversationIdAndAuthorType(UUID conversationId, ConversationParticipantType authorType);
+
+    /**
+     * Counts all messages for one conversation.
+     *
+     * @param conversationId conversation identifier.
+     * @return total message count.
+     */
+    long countByConversationId(UUID conversationId);
 }

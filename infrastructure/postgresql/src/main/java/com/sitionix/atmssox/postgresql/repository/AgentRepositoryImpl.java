@@ -64,4 +64,10 @@ public class AgentRepositoryImpl implements AgentRepository {
         return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(AgentType.SYSTEM_RULE_ANALYZER.getId())
                 .map(this.agentInfraMapper::asAgent);
     }
+
+    @Override
+    public Optional<Agent> findSystemContextOptimizer() {
+        return this.agentJpaRepository.findFirstByTypeIdOrderByCreatedAtAsc(AgentType.SYSTEM_CONTEXT_OPTIMIZER.getId())
+                .map(this.agentInfraMapper::asAgent);
+    }
 }

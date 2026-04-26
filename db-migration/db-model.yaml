@@ -73,3 +73,12 @@ tables:
       author_id: varchar(64)
       content: text
       created_at: timestamptz
+  conversation_context_snapshots:
+    columns:
+      id: uuid
+      conversation_id: uuid
+      summary: text
+      message_count_until: integer
+      last_message_id_until: uuid
+      created_at: timestamptz
+      updated_at: timestamptz

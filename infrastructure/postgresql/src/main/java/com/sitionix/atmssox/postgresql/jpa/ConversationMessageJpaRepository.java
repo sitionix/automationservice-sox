@@ -11,4 +11,6 @@ public interface ConversationMessageJpaRepository extends JpaRepository<Conversa
     List<ConversationMessageEntity> findAllByConversationConversationIdOrderByCreatedAtAsc(UUID conversationId);
 
     long countByConversationConversationIdAndAuthorType(UUID conversationId, ConversationParticipantType authorType);
+
+    long countByConversationConversationId(UUID conversationId);
 }
