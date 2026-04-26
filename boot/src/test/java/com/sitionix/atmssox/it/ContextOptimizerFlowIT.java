@@ -12,6 +12,7 @@ import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -296,18 +297,15 @@ class ContextOptimizerFlowIT {
                 .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
                 .build();
 
+        final AtomicInteger optimizerInvocationCounter = new AtomicInteger(0);
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
                 .thenAnswer(invocation -> {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
                     if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
-                        if (Objects.nonNull(request.input()) && request.input().contains("Message three")) {
-                            return """
-                                    {"summary":"summary-after-three"}
-                                    """;
-                        }
+                        final int invocationCount = optimizerInvocationCounter.incrementAndGet();
                         return """
-                                {"summary":"summary-after-two"}
-                                """;
+                                {"summary":"summary-%d"}
+                                """.formatted(invocationCount);
                     }
                     return "Chat reply";
                 });
@@ -363,7 +361,7 @@ class ContextOptimizerFlowIT {
                     .findFirst()
                     .orElse(null);
             if (Objects.nonNull(initialSnapshot)
-                    && Objects.equals(initialSnapshot.getSummary(), "summary-after-two")) {
+                    && Objects.equals(initialSnapshot.getSummary(), "summary-1")) {
                 break;
             }
             java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
@@ -394,7 +392,7 @@ class ContextOptimizerFlowIT {
                     .findFirst()
                     .orElse(null);
             if (Objects.nonNull(snapshot)
-                    && Objects.equals(snapshot.getSummary(), "summary-after-three")
+                    && Objects.equals(snapshot.getSummary(), "summary-2")
                     && snapshot.getMessageCountUntil() > messageCountUntil) {
                 updatedSnapshot = snapshot;
                 break;
@@ -405,7 +403,7 @@ class ContextOptimizerFlowIT {
         //then
         assertThat(updatedSnapshot).isNotNull();
         assertThat(updatedSnapshot.getId()).isEqualTo(snapshotId);
-        assertThat(updatedSnapshot.getSummary()).isEqualTo("summary-after-three");
+        assertThat(updatedSnapshot.getSummary()).isEqualTo("summary-2");
         assertThat(updatedSnapshot.getMessageCountUntil()).isGreaterThan(messageCountUntil);
         final long conversationSnapshots = this.testManager.postgresql()
                 .get(ConversationContextSnapshotEntity.class)
