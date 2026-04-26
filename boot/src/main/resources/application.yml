@@ -51,6 +51,17 @@ openai:
     org-id: ${OPENAI_ORG_ID:}
     project-id: ${OPENAI_PROJECT_ID:}
 automation:
+  async:
+    rule-suggestion-analyzer:
+      thread-name-prefix: "rule-suggestion-analyzer-"
+      core-pool-size: 2
+      max-pool-size: 4
+      queue-capacity: 100
+    context-optimizer:
+      thread-name-prefix: "context-optimizer-"
+      core-pool-size: 2
+      max-pool-size: 4
+      queue-capacity: 100
   rule-suggestion-analyzer:
     enabled: true
     last-messages-limit: 20
