@@ -44,4 +44,8 @@ public final class AgentRuleTextNormalizer {
         }
         return normalized;
     }
+
+    public static String normalizeToEmpty(final String value) {
+        return value == null ? "" : value.trim();
+    }
 }

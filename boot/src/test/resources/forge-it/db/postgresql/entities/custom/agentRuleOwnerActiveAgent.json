@@ -4,6 +4,10 @@
   "name": "Rule lifecycle agent",
   "description": "Agent for lifecycle IT",
   "instruction": "Follow only active rules",
+  "type": {
+    "id": 1,
+    "description": "USER"
+  },
   "status": {
     "id": 2
   },

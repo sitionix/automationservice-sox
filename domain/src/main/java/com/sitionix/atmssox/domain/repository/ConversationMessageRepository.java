@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.domain.repository;
 
 import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,4 +25,13 @@ public interface ConversationMessageRepository {
      * @return ordered message history.
      */
     List<ConversationMessage> findAllByConversationIdOrderByCreatedAtAsc(UUID conversationId);
+
+    /**
+     * Counts messages for one conversation and author type.
+     *
+     * @param conversationId conversation identifier.
+     * @param authorType message author type.
+     * @return count of matching messages.
+     */
+    long countByConversationIdAndAuthorType(UUID conversationId, ConversationParticipantType authorType);
 }

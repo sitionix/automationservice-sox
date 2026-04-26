@@ -43,6 +43,7 @@ class CreateAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getUserId(), userId))
                 .andExpected(entity -> Objects.equals(entity.getName(), "Architecture Reviewer"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Minimal internal agent foundation entry"))
+                .andExpected(entity -> Objects.equals(entity.getType().getId(), 1L))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 1L))
                 .andExpected(entity -> Objects.nonNull(entity.getAgentId()))
                 .andExpected(entity -> Objects.nonNull(entity.getCreatedAt()))

@@ -9,6 +9,7 @@ import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,6 +62,39 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
     public Optional<AgentRule> findByIdAndAgentIdAndUserId(final UUID ruleId, final UUID agentId, final Long userId) {
         return this.agentRuleJpaRepository.findByRuleIdAndAgentAgentIdAndAgentUserId(ruleId, agentId, userId)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public long countByAgentIdAndStatusAndAuthorType(final UUID agentId,
+                                                     final AgentRuleStatus status,
+                                                     final AgentRuleAuthorType authorType) {
+        return this.agentRuleJpaRepository.countByAgentAgentIdAndStatusIdAndAuthorType(
+                agentId,
+                status.getId(),
+                this.toAuthorTypeEntity(authorType)
+        );
+    }
+
+    @Override
+    public long countByAgentIdAndAuthorTypeAndCreatedAtBetween(final UUID agentId,
+                                                               final AgentRuleAuthorType authorType,
+                                                               final Instant startInclusive,
+                                                               final Instant endExclusive) {
+        return this.agentRuleJpaRepository.countByAgentAgentIdAndAuthorTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                agentId,
+                this.toAuthorTypeEntity(authorType),
+                startInclusive,
+                endExclusive
+        );
+    }
+
+    @Override
+    public Optional<Instant> findLastCreatedAtByAgentIdAndAuthorType(final UUID agentId, final AgentRuleAuthorType authorType) {
+        return this.agentRuleJpaRepository.findFirstByAgentAgentIdAndAuthorTypeOrderByCreatedAtDesc(
+                        agentId,
+                        this.toAuthorTypeEntity(authorType)
+                )
+                .map(AgentRuleEntity::getCreatedAt);
     }
 
     private AgentRuleEntity toEntity(final AgentRule rule) {

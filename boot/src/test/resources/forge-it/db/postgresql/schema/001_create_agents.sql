@@ -9,16 +9,30 @@ VALUES (1, 'DRAFT'),
        (3, 'ARCHIVED'),
        (4, 'DELETED');
 
+CREATE TABLE agent_types (
+    id BIGINT PRIMARY KEY,
+    description VARCHAR(64) NOT NULL
+);
+
+INSERT INTO agent_types (id, description)
+VALUES (1, 'USER'),
+       (2, 'SYSTEM_RULE_ANALYZER');
+
 CREATE TABLE agents (
     agent_id UUID PRIMARY KEY,
     user_id BIGINT NOT NULL,
     name VARCHAR(60) NOT NULL,
     description VARCHAR(160),
     instruction TEXT,
+    type_id BIGINT NOT NULL REFERENCES agent_types(id),
     status_id BIGINT NOT NULL REFERENCES agent_statuses(id),
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE UNIQUE INDEX uq_agent_single_rule_analyzer
+    ON agents (type_id)
+    WHERE type_id = 2;
 
 CREATE TABLE agent_rules (
     rule_id UUID PRIMARY KEY,

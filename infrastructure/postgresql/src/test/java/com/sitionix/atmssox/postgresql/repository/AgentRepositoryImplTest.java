@@ -84,7 +84,10 @@ class AgentRepositoryImplTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
-        verify(this.agentJpaRepository).findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(given, AgentStatus.DELETED.getId());
+        verify(this.agentJpaRepository).findAllByUserIdAndStatusIdNotOrderByUpdatedAtDesc(
+                given,
+                AgentStatus.DELETED.getId()
+        );
         verify(this.agentInfraMapper).asAgent(firstEntity);
         verify(this.agentInfraMapper).asAgent(secondEntity);
     }

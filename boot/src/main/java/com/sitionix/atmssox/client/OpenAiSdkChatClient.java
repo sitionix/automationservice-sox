@@ -6,6 +6,7 @@ import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
 import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
+import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,14 +21,17 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
     private final OpenAiChatProperties openAiChatProperties;
 
     @Override
-    public String execute(final String instruction, final String message) {
+    public String execute(final OpenAiChatRequest request) {
         this.validateConfiguration();
+        if (request == null) {
+            throw new OpenAiExecutionException("OpenAI request is not configured");
+        }
 
         try {
             final ResponseCreateParams params = ResponseCreateParams.builder()
                     .model(this.openAiChatProperties.getModel())
-                    .instructions(instruction)
-                    .input(message)
+                    .instructions(request.instruction())
+                    .input(request.input())
                     .build();
             final Response response = this.openAIClient.responses().create(params);
             final String output = response.output().stream()

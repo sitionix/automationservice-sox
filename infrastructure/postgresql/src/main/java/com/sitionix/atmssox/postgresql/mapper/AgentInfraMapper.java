@@ -9,7 +9,10 @@ import org.mapstruct.Mapping;
 @Mapper(
         componentModel = "spring",
         injectionStrategy = InjectionStrategy.CONSTRUCTOR,
-        uses = AgentStatusInfraMapper.class
+        uses = {
+                AgentStatusInfraMapper.class,
+                AgentTypeInfraMapper.class
+        }
 )
 public interface AgentInfraMapper {
 

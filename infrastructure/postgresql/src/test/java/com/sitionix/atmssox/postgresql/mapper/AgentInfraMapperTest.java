@@ -5,8 +5,10 @@ import static org.mockito.Mockito.when;
 
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentStatusEntity;
+import com.sitionix.atmssox.postgresql.entity.agent.AgentTypeEntity;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,10 +24,12 @@ class AgentInfraMapperTest {
 
     @Mock
     private AgentStatusInfraMapper agentStatusInfraMapper;
+    @Mock
+    private AgentTypeInfraMapper agentTypeInfraMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentInfraMapper = new AgentInfraMapperImpl(this.agentStatusInfraMapper);
+        this.agentInfraMapper = new AgentInfraMapperImpl(this.agentStatusInfraMapper, this.agentTypeInfraMapper);
     }
 
     @Test
@@ -35,6 +39,7 @@ class AgentInfraMapperTest {
         final AgentEntity expected = this.getAgentEntity();
 
         when(this.agentStatusInfraMapper.asStatusEntity(given.getStatus())).thenReturn(expected.getStatus());
+        when(this.agentTypeInfraMapper.asTypeEntity(given.getType())).thenReturn(expected.getType());
 
         //when
         final AgentEntity actual = this.agentInfraMapper.asAgentEntity(given);
@@ -50,6 +55,7 @@ class AgentInfraMapperTest {
         final Agent expected = this.getAgent();
 
         when(this.agentStatusInfraMapper.asStatus(given.getStatus())).thenReturn(expected.getStatus());
+        when(this.agentTypeInfraMapper.asType(given.getType())).thenReturn(expected.getType());
 
         //when
         final Agent actual = this.agentInfraMapper.asAgent(given);
@@ -102,6 +108,10 @@ class AgentInfraMapperTest {
                 "My agent",
                 "My description",
                 "My instruction",
+                AgentTypeEntity.builder()
+                        .id(1L)
+                        .description(AgentType.USER.name())
+                        .build(),
                 AgentStatusEntity.builder()
                         .id(1L)
                         .description("DRAFT")

@@ -1,12 +1,12 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.AgentType;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
@@ -19,6 +19,8 @@ import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionContext;
+import com.sitionix.atmssox.domain.usecase.AgentExecutionHandler;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +63,13 @@ class DirectConversationChatHandlerTest {
     private ConversationContextBuilder conversationContextBuilder;
 
     @Mock
-    private OpenAiChatClient openAiChatClient;
+    private AgentExecutionService agentExecutionService;
+
+    @Mock
+    private AgentExecutionHandler agentExecutionHandler;
+
+    @Mock
+    private RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
     @BeforeEach
     void setUp() {
@@ -71,19 +79,25 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService,
+                this.ruleSuggestionAnalysisTrigger
         );
+        AgentType.USER.setHandler(this.agentExecutionHandler);
+        AgentType.SYSTEM_RULE_ANALYZER.setHandler(this.agentExecutionHandler);
     }
 
     @AfterEach
     void tearDown() {
+        AgentType.USER.setHandler(null);
+        AgentType.SYSTEM_RULE_ANALYZER.setHandler(null);
         verifyNoMoreInteractions(
                 this.agentRepository,
                 this.agentRuleRepository,
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionHandler,
+                this.agentExecutionService
         );
     }
 
@@ -113,6 +127,7 @@ class DirectConversationChatHandlerTest {
         );
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
@@ -121,7 +136,7 @@ class DirectConversationChatHandlerTest {
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
-        when(this.openAiChatClient.execute("Keep answers concise.", "context-prompt"))
+        when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class)))
                 .thenReturn("It separates business rules from external frameworks.");
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
@@ -132,11 +147,12 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));
-        verify(this.openAiChatClient).execute("Keep answers concise.", "context-prompt");
+        verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
     }
 
@@ -156,6 +172,7 @@ class DirectConversationChatHandlerTest {
         final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, agentId.toString(), "hi");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
         when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(replyMessage);
@@ -164,7 +181,7 @@ class DirectConversationChatHandlerTest {
         when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
                 .thenReturn(List.of());
         when(this.conversationContextBuilder.build(List.of(), List.of(userMessage))).thenReturn("context-prompt");
-        when(this.openAiChatClient.execute("", "context-prompt")).thenReturn("hi");
+        when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class))).thenReturn("hi");
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
         //when
@@ -174,11 +191,12 @@ class DirectConversationChatHandlerTest {
         assertThat(actual.getConversationId()).isEqualTo(conversationId);
         assertThat(actual.getReply()).isEqualTo(replyMessage);
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null);
         verify(this.conversationMessageRepository, times(2)).save(any(ConversationMessage.class));
         verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
         verify(this.conversationContextBuilder).build(List.of(), List.of(userMessage));
-        verify(this.openAiChatClient).execute("", "context-prompt");
+        verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
     }
 
@@ -213,7 +231,8 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionHandler,
+                this.agentExecutionService
         );
     }
 
@@ -244,7 +263,8 @@ class DirectConversationChatHandlerTest {
                 this.conversationRepository,
                 this.conversationMessageRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionHandler,
+                this.agentExecutionService
         );
     }
 
@@ -258,6 +278,7 @@ class DirectConversationChatHandlerTest {
         final Agent agent = this.getAgent(AgentStatus.ACTIVE, "Instruction");
 
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
 
         //when
         //then
@@ -270,12 +291,13 @@ class DirectConversationChatHandlerTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Message must not be blank");
         verify(this.agentRepository).findVisibleByIdAndUserId(agentId, 17L);
+        verify(this.agentExecutionHandler).supportedContextType();
         verify(this.conversationMessageRepository, never()).save(any(ConversationMessage.class));
         verifyNoInteractions(
                 this.agentRuleRepository,
                 this.conversationRepository,
                 this.conversationContextBuilder,
-                this.openAiChatClient
+                this.agentExecutionService
         );
     }
 

@@ -19,6 +19,9 @@ public class Agent {
 
     String instruction;
 
+    @Builder.Default
+    AgentType type = AgentType.USER;
+
     AgentStatus status;
 
     Instant createdAt;

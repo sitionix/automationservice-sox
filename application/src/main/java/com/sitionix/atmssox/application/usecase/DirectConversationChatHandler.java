@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
@@ -35,7 +34,8 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextBuilder conversationContextBuilder;
-    private final OpenAiChatClient openAiChatClient;
+    private final AgentExecutionService agentExecutionService;
+    private final RuleSuggestionAnalysisTrigger ruleSuggestionAnalysisTrigger;
 
     @Override
     public ChatAgentResponse handle(final Conversation conversation,
@@ -52,6 +52,9 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         if (agent.getStatus() != AgentStatus.ACTIVE) {
             throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
         }
+        if (!UserAgentExecutionContext.class.equals(agent.getType().supportedContextType())) {
+            throw new AgentChatNotAllowedException("Only agent with USER chat context can execute chat");
+        }
 
         final String message = this.normalizeMessage(command);
         final ConversationMessage userMessage = this.conversationMessageRepository.save(this.buildUserMessage(
@@ -67,12 +70,15 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 null
         );
 
-        final String instruction = this.normalizeInstruction(agent);
         final String contextPrompt = this.conversationContextBuilder.build(activeRules, history);
-        final String replyContent = this.openAiChatClient.execute(instruction, contextPrompt);
+        final String replyContent = this.agentExecutionService.execute(
+                agent,
+                new UserAgentExecutionContext(contextPrompt)
+        );
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
         this.touchConversation(conversation, reply.getCreatedAt());
+        this.triggerRuleSuggestionAnalysis(agentId, conversation.getId(), userMessage);
 
         return ChatAgentResponse.builder()
                 .conversationId(conversation.getId())
@@ -85,6 +91,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 .updatedAt(lastMessageAt)
                 .lastMessageAt(lastMessageAt)
                 .build());
+    }
+
+    private void triggerRuleSuggestionAnalysis(final UUID agentId,
+                                               final UUID conversationId,
+                                               final ConversationMessage latestUserMessage) {
+        this.ruleSuggestionAnalysisTrigger.submitIfAllowed(agentId, conversationId, latestUserMessage);
     }
 
     private UUID resolveAgentId(final List<ConversationParticipant> participants) {
@@ -130,7 +142,4 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         return command.getMessage().trim();
     }
 
-    private String normalizeInstruction(final Agent agent) {
-        return agent.getInstruction() == null ? "" : agent.getInstruction().trim();
-    }
 }

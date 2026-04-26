@@ -45,6 +45,10 @@ public class AgentEntity {
     private String instruction;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "type_id", nullable = false, referencedColumnName = "id")
+    private AgentTypeEntity type;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
     private AgentStatusEntity status;
 

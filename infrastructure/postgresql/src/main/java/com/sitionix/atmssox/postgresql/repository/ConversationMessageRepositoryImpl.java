@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
@@ -27,6 +28,11 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
                 .stream()
                 .map(this::toDomain)
                 .toList();
+    }
+
+    @Override
+    public long countByConversationIdAndAuthorType(final UUID conversationId, final ConversationParticipantType authorType) {
+        return this.conversationMessageJpaRepository.countByConversationConversationIdAndAuthorType(conversationId, authorType);
     }
 
     private ConversationMessageEntity toEntity(final ConversationMessage message) {
