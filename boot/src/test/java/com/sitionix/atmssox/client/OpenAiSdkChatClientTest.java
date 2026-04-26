@@ -31,6 +31,8 @@ import static org.mockito.Mockito.when;
 
 class OpenAiSdkChatClientTest {
 
+    private static final OpenAiChatRequest DEFAULT_REQUEST = new OpenAiChatRequest("instruction", "message");
+
     private OpenAiChatProperties openAiChatProperties;
 
     private OpenAIClient openAIClient;
@@ -55,7 +57,7 @@ class OpenAiSdkChatClientTest {
         final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
 
         //when
-        final String actual = client.execute(new OpenAiChatRequest("instruction", "message"));
+        final String actual = client.execute(DEFAULT_REQUEST);
 
         //then
         assertThat(actual).isEqualTo("Hello from assistant.");
@@ -72,7 +74,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI returned empty reply");
     }
@@ -85,7 +87,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI API key is not configured");
     }
@@ -98,7 +100,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI model is not configured");
     }
@@ -111,7 +113,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .hasMessage("OpenAI request failed");
     }
@@ -134,7 +136,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
@@ -163,7 +165,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
@@ -187,7 +189,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
@@ -212,7 +214,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;
@@ -236,7 +238,7 @@ class OpenAiSdkChatClientTest {
 
         //when
         //then
-        assertThatThrownBy(() -> client.execute(new OpenAiChatRequest("instruction", "message")))
+        assertThatThrownBy(() -> client.execute(DEFAULT_REQUEST))
                 .isInstanceOf(OpenAiExecutionException.class)
                 .satisfies(throwable -> {
                     final OpenAiExecutionException actual = (OpenAiExecutionException) throwable;

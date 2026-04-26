@@ -64,10 +64,11 @@ class RuleSuggestionAnalyzerAgentExecutionHandlerTest {
     void givenBlankInstruction_whenExecute_thenThrowAgentValidationException() {
         //given
         final Agent givenAgent = this.getAgent("  ");
+        final RuleSuggestionAnalysisContext givenContext = this.getFullContext();
 
         //when
         //then
-        assertThatThrownBy(() -> this.ruleSuggestionAnalyzerAgentExecutionHandler.execute(givenAgent, this.getFullContext()))
+        assertThatThrownBy(() -> this.ruleSuggestionAnalyzerAgentExecutionHandler.execute(givenAgent, givenContext))
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("System agent instruction is empty");
         verifyNoInteractions(this.openAiChatClient);
