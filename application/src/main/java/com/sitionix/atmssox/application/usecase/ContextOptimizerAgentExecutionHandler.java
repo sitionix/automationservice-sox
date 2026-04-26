@@ -44,9 +44,6 @@ public class ContextOptimizerAgentExecutionHandler implements AgentExecutionHand
 
                 Messages to summarize:
                 %s
-
-                Return strict JSON only:
-                {"summary":"<updated compact summary or empty string>"}
                 """.formatted(
                 AgentRuleTextNormalizer.normalizeToEmpty(context.targetAgent().getInstruction()),
                 this.formatExistingSummary(context.existingSummary()),
