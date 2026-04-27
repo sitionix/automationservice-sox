@@ -3,12 +3,14 @@ package com.sitionix.atmssox.it;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationContextSnapshotEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
@@ -39,6 +41,8 @@ class ContextOptimizerIndependenceIT {
 
     private static final String OPTIMIZER_INSTRUCTION = "Summarize conversation context. Return only strict JSON {\"summary\":\"...\"}.";
     private static final String ANALYZER_INSTRUCTION = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
+    private static final String ANALYZER_FAILS_MESSAGE = "Independence message analyzer-fails optimizer-succeeds";
+    private static final String OPTIMIZER_FAILS_MESSAGE = "Independence message optimizer-fails analyzer-succeeds";
 
     @Autowired
     private TestManager testManager;
@@ -92,16 +96,19 @@ class ContextOptimizerIndependenceIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.chatAgent())
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
-                .withRequest("chatAgentRequest.json", request -> request.setMessage("Independence message"))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage(ANALYZER_FAILS_MESSAGE))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
                 .assertDefault();
         final UUID conversationId = this.testManager.postgresql()
-                .get(ConversationEntity.class)
+                .get(ConversationMessageEntity.class)
                 .getAll()
                 .stream()
-                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Conversation not found"))
-                .getConversationId();
+                .filter(message -> Objects.equals(message.getAuthorType(), ConversationParticipantType.USER))
+                .filter(message -> Objects.equals(message.getContent(), ANALYZER_FAILS_MESSAGE))
+                .max(java.util.Comparator.comparing(ConversationMessageEntity::getCreatedAt))
+                .map(ConversationMessageEntity::getConversation)
+                .map(ConversationEntity::getConversationId)
+                .orElseThrow(() -> new AssertionError("Conversation not found for analyzer-fails test message"));
         ConversationContextSnapshotEntity snapshot = null;
         for (int attempt = 0; attempt < 1000; attempt++) {
             final java.util.List<ConversationContextSnapshotEntity> snapshots = this.testManager.postgresql()
@@ -169,16 +176,19 @@ class ContextOptimizerIndependenceIT {
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.chatAgent())
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
-                .withRequest("chatAgentRequest.json", request -> request.setMessage("Independence message"))
+                .withRequest("chatAgentRequest.json", request -> request.setMessage(OPTIMIZER_FAILS_MESSAGE))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
                 .assertDefault();
         final UUID conversationId = this.testManager.postgresql()
-                .get(ConversationEntity.class)
+                .get(ConversationMessageEntity.class)
                 .getAll()
                 .stream()
-                .max(java.util.Comparator.comparing(ConversationEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Conversation not found"))
-                .getConversationId();
+                .filter(message -> Objects.equals(message.getAuthorType(), ConversationParticipantType.USER))
+                .filter(message -> Objects.equals(message.getContent(), OPTIMIZER_FAILS_MESSAGE))
+                .max(java.util.Comparator.comparing(ConversationMessageEntity::getCreatedAt))
+                .map(ConversationMessageEntity::getConversation)
+                .map(ConversationEntity::getConversationId)
+                .orElseThrow(() -> new AssertionError("Conversation not found for optimizer-fails test message"));
 
         for (int attempt = 0; attempt < 150; attempt++) {
             java.util.concurrent.locks.LockSupport.parkNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(20L));
