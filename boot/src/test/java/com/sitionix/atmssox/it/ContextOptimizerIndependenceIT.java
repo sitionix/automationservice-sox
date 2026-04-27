@@ -16,7 +16,6 @@ import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +39,8 @@ import static org.mockito.Mockito.when;
 })
 class ContextOptimizerIndependenceIT {
 
-    private static final String ANALYZER_INSTRUCTION = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
     private static final String ANALYZER_FAILS_MESSAGE = "Independence message analyzer-fails optimizer-succeeds";
+    private static final String ANALYZER_FAILS_SECOND_MESSAGE = "Independence message analyzer-fails optimizer-succeeds second";
     private static final String OPTIMIZER_FAILS_MESSAGE = "Independence message optimizer-fails analyzer-succeeds";
 
     @Autowired
@@ -78,25 +77,18 @@ class ContextOptimizerIndependenceIT {
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
                 .assertDefault();
 
-        final AtomicBoolean chatHandled = new AtomicBoolean(false);
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
                 .thenAnswer(invocation -> {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
-                    if (!chatHandled.getAndSet(true)) {
-                        return "Chat reply";
-                    }
-                    if (Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)) {
+                    if (Objects.nonNull(request.input()) && request.input().contains("Latest user message:")) {
                         throw new OpenAiExecutionException("Analyzer failure");
                     }
-                    if (Objects.nonNull(request.instruction())
-                            && request.instruction().contains("Summarize conversation context")) {
+                    if (Objects.nonNull(request.input()) && request.input().contains("Messages to summarize:")) {
                         return """
                                 {"summary":"Optimizer summary"}
                                 """;
                     }
-                    return """
-                            {"summary":"Optimizer summary"}
-                            """;
+                    return "Chat reply";
                 });
 
         //when
@@ -116,6 +108,16 @@ class ContextOptimizerIndependenceIT {
                 .map(ConversationMessageEntity::getConversation)
                 .map(ConversationEntity::getConversationId)
                 .orElseThrow(() -> new AssertionError("Conversation not found for analyzer-fails test message"));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", userAgentId))
+                .withRequest("chatAgentRequest.json", request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage(ANALYZER_FAILS_SECOND_MESSAGE);
+                })
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.reply.content").value("Chat reply"))
+                .assertDefault();
+
         ConversationContextSnapshotEntity snapshot = null;
         for (int attempt = 0; attempt < 1000; attempt++) {
             final java.util.List<ConversationContextSnapshotEntity> snapshots = this.testManager.postgresql()
@@ -165,25 +167,18 @@ class ContextOptimizerIndependenceIT {
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
                 .assertDefault();
 
-        final AtomicBoolean chatHandled = new AtomicBoolean(false);
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
                 .thenAnswer(invocation -> {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
-                    if (!chatHandled.getAndSet(true)) {
-                        return "Chat reply";
-                    }
-                    if (Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)) {
+                    if (Objects.nonNull(request.input()) && request.input().contains("Latest user message:")) {
                         return """
                                 {"suggestions":[{"title":"Analyzer title","content":"Analyzer content","reason":"Analyzer reason"}]}
                                 """;
                     }
-                    if (Objects.nonNull(request.instruction())
-                            && request.instruction().contains("Summarize conversation context")) {
+                    if (Objects.nonNull(request.input()) && request.input().contains("Messages to summarize:")) {
                         throw new OpenAiExecutionException("Optimizer failure");
                     }
-                    return """
-                            {"suggestions":[{"title":"Analyzer title","content":"Analyzer content","reason":"Analyzer reason"}]}
-                            """;
+                    return "Chat reply";
                 });
 
         //when
