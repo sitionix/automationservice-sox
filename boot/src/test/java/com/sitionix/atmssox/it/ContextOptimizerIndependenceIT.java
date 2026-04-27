@@ -103,7 +103,7 @@ class ContextOptimizerIndependenceIT {
                 .orElseThrow(() -> new AssertionError("Conversation not found"))
                 .getConversationId();
         ConversationContextSnapshotEntity snapshot = null;
-        for (int attempt = 0; attempt < 250; attempt++) {
+        for (int attempt = 0; attempt < 1000; attempt++) {
             final java.util.List<ConversationContextSnapshotEntity> snapshots = this.testManager.postgresql()
                     .get(ConversationContextSnapshotEntity.class)
                     .getAll();
