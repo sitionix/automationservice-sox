@@ -204,7 +204,7 @@ class ContextOptimizerIndependenceIT {
         }
 
         //then
-        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll().size()).isGreaterThanOrEqualTo(baselineRuleCount);
+        assertThat(this.testManager.postgresql().get(AgentRuleEntity.class).getAll()).hasSizeGreaterThanOrEqualTo(baselineRuleCount);
         final boolean hasConversationSnapshot = this.testManager.postgresql()
                 .get(ConversationContextSnapshotEntity.class)
                 .getAll()

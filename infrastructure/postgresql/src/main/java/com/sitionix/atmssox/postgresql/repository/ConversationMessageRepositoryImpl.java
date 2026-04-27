@@ -6,8 +6,6 @@ import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationMessageJpaRepository;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,11 +37,10 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
         if (limit <= 0) {
             return List.of();
         }
-        final List<ConversationMessageEntity> loadedDesc = this.conversationMessageJpaRepository
-                .findAllByConversationConversationIdOrderByCreatedAtDescMessageIdDesc(conversationId, PageRequest.of(0, limit));
-        final List<ConversationMessageEntity> loadedAsc = new ArrayList<>(loadedDesc);
-        Collections.reverse(loadedAsc);
-        return loadedAsc.stream()
+        return this.conversationMessageJpaRepository
+                .findAllByConversationConversationIdOrderByCreatedAtDescMessageIdDesc(conversationId, PageRequest.of(0, limit))
+                .reversed()
+                .stream()
                 .map(this::toDomain)
                 .toList();
     }

@@ -108,7 +108,7 @@ public class RuleSuggestionAnalysisPolicy {
             return true;
         }
         return lastAiSuggestionCreatedAt.get()
-                .plusSeconds((long) this.properties.getConversationCooldownMinutes() * 60L)
+                .plusSeconds(this.properties.getConversationCooldownMinutes() * 60L)
                 .isBefore(now);
     }
 

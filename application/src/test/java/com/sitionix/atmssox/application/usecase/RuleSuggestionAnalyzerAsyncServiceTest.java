@@ -118,7 +118,6 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         final UUID agentId = UUID.fromString("910e219e-a711-4de9-b618-419e6f46f26d");
         final UUID conversationId = UUID.fromString("f3e5298f-1cc3-4f3f-af42-4860ad7b1767");
         final Agent analyzer = this.getAgent(UUID.fromString("4f0fb6ec-5371-4b2f-bf2b-fefd42ccf31f"), AgentType.SYSTEM_RULE_ANALYZER, AgentStatus.ACTIVE, "Analyze");
-        final ConversationMessage message = this.getMessage(conversationId, ConversationParticipantType.AGENT, "agent", "answer");
 
         when(this.agentRepository.findSystemRuleAnalyzer()).thenReturn(Optional.of(analyzer));
         when(this.activeUserAgentResolver.findById(agentId)).thenReturn(Optional.of(
@@ -223,7 +222,6 @@ class RuleSuggestionAnalyzerAsyncServiceTest {
         final UUID conversationId = UUID.fromString("2ad7366f-5f7f-4a00-9e0b-e65f4cdb44f8");
         final Agent analyzer = this.getAgent(UUID.fromString("4f0fb6ec-5371-4b2f-bf2b-fefd42ccf31f"), AgentType.SYSTEM_RULE_ANALYZER, AgentStatus.ACTIVE, "Analyze");
         final Agent targetAgent = this.getAgent(agentId, AgentType.USER, AgentStatus.ACTIVE, "Instruction");
-        final ConversationMessage firstUserMessage = this.getMessage(conversationId, ConversationParticipantType.USER, "17", "First");
         final ConversationMessage agentMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, "agent", "Reply");
         final ConversationMessage latestUserMessage = this.getMessage(conversationId, ConversationParticipantType.USER, "17", "  latest ask  ");
         final AgentRule activeRule = this.getRule(agentId, "Active", "Focus on tests", AgentRuleStatus.ACTIVE);

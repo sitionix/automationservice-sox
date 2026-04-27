@@ -42,15 +42,21 @@ class ConversationContextBuilderTest {
         final AgentRule rule = this.getAgentRule("Tone", "Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
         final UserAgentExecutionContext expected = new UserAgentExecutionContext(
-                "Follow architecture guidance.\n\n"
-                        + "Active rules:\n"
-                        + "- Always keep answers explicit.\n\n"
-                        + "Conversation context summary:\n"
-                        + "Project Alpha uses Spring Boot and Kafka.",
-                "Messages:\n"
-                        + "USER: Explain clean architecture\n"
-                        + "AGENT: It separates core business logic from frameworks.\n"
-                        + "Respond as AGENT to the latest USER message."
+                """
+                Follow architecture guidance.
+
+                Active rules:
+                - Always keep answers explicit.
+
+                Conversation context summary:
+                Project Alpha uses Spring Boot and Kafka.
+                """.stripTrailing(),
+                """
+                Messages:
+                USER: Explain clean architecture
+                AGENT: It separates core business logic from frameworks.
+                Respond as AGENT to the latest USER message.
+                """.stripTrailing()
         );
 
         //when
@@ -79,9 +85,11 @@ class ConversationContextBuilderTest {
         );
         final UserAgentExecutionContext expected = new UserAgentExecutionContext(
                 "Instruction",
-                "Messages:\n"
-                        + "USER: Hello\n"
-                        + "Respond as AGENT to the latest USER message."
+                """
+                Messages:
+                USER: Hello
+                Respond as AGENT to the latest USER message.
+                """.stripTrailing()
         );
 
         //when

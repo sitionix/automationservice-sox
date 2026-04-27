@@ -476,7 +476,7 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
         verify(this.openAiChatClient, never()).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
     }
@@ -552,7 +552,7 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
     }
@@ -630,7 +630,7 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
     }
@@ -708,7 +708,7 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
     }
@@ -787,7 +787,7 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
                 && Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)));
     }
@@ -852,6 +852,6 @@ class ContextOptimizerFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
                 .count();
-        assertThat(conversationSnapshots).isEqualTo(0L);
+        assertThat(conversationSnapshots).isZero();
     }
 }
