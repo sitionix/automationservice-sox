@@ -26,8 +26,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DirectConversationChatHandler implements ConversationChatHandler {
@@ -47,6 +49,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                                     final List<ConversationParticipant> participants,
                                     final ChatAgentCommand command,
                                     final Long userId) {
+        log.debug(
+                "Handling direct chat for conversationId={}, userId={}, participantsCount={}",
+                conversation.getId(),
+                userId,
+                participants.size()
+        );
         if (conversation.getType() != ConversationType.DIRECT) {
             throw new AgentValidationException("Conversation type is not supported by direct handler");
         }
@@ -78,6 +86,14 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 null
         );
         final Optional<ConversationContextSnapshot> snapshot = this.conversationContextSnapshotRepository.findByConversationId(conversation.getId());
+        log.debug(
+                "Prepared chat execution context for conversationId={}, agentId={}, lastMessagesCount={}, activeRulesCount={}, snapshotCoveredUntil={}",
+                conversation.getId(),
+                agentId,
+                lastMessages.size(),
+                activeRules.size(),
+                snapshot.map(ConversationContextSnapshot::getMessageCountUntil).orElse(0)
+        );
 
         final UserAgentExecutionContext contextPrompt = this.conversationContextBuilder.build(
                 agent.getInstruction(),
@@ -92,6 +108,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         );
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
+        log.debug(
+                "Agent reply saved for conversationId={}, agentId={}, replyMessageId={}",
+                conversation.getId(),
+                agentId,
+                reply.getId()
+        );
         this.touchConversation(conversation, reply.getCreatedAt());
         this.triggerBackgroundWorkflows(new ChatCompletedContext(agentId, conversation.getId(), userMessage));
 
@@ -109,6 +131,12 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     }
 
     private void triggerBackgroundWorkflows(final ChatCompletedContext context) {
+        log.debug(
+                "Dispatching post-chat workflows for conversationId={}, agentId={}, latestUserMessageId={}",
+                context.conversationId(),
+                context.agentId(),
+                context.latestUserMessage().getId()
+        );
         this.postChatWorkflowDispatcher.dispatch(context);
     }
 

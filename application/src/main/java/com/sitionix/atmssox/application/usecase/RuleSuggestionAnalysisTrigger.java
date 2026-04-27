@@ -19,8 +19,13 @@ public class RuleSuggestionAnalysisTrigger {
                                 final UUID conversationId,
                                 final ConversationMessage latestUserMessage) {
         try {
-            if (this.ruleSuggestionAnalysisPolicy.shouldAnalyze(agentId, conversationId, latestUserMessage)) {
+            final boolean shouldAnalyze = this.ruleSuggestionAnalysisPolicy.shouldAnalyze(agentId, conversationId, latestUserMessage);
+            if (shouldAnalyze) {
+                log.debug("Rule suggestion analyzer accepted by policy for agentId={}, conversationId={}", agentId, conversationId);
                 this.ruleSuggestionAnalyzerAsyncService.analyzeAsync(agentId, conversationId);
+                log.debug("Rule suggestion analyzer async submitted for agentId={}, conversationId={}", agentId, conversationId);
+            } else {
+                log.debug("Rule suggestion analyzer skipped by policy for agentId={}, conversationId={}", agentId, conversationId);
             }
         } catch (TaskRejectedException | IllegalStateException exception) {
             log.warn("Rule suggestion analyzer scheduling failed for agentId={}, conversationId={}", agentId, conversationId, exception);

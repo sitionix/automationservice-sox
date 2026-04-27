@@ -16,8 +16,13 @@ public class ContextOptimizerTrigger {
 
     public void submitIfAllowed(final UUID agentId, final UUID conversationId) {
         try {
-            if (this.contextOptimizerPolicy.shouldOptimize(agentId, conversationId)) {
+            final boolean shouldOptimize = this.contextOptimizerPolicy.shouldOptimize(agentId, conversationId);
+            if (shouldOptimize) {
+                log.debug("Context optimizer accepted by policy for agentId={}, conversationId={}", agentId, conversationId);
                 this.contextOptimizerAsyncService.optimizeAsync(agentId, conversationId);
+                log.debug("Context optimizer async submitted for agentId={}, conversationId={}", agentId, conversationId);
+            } else {
+                log.debug("Context optimizer skipped by policy for agentId={}, conversationId={}", agentId, conversationId);
             }
         } catch (TaskRejectedException | IllegalStateException exception) {
             log.warn("Context optimizer scheduling failed for agentId={}, conversationId={}", agentId, conversationId, exception);

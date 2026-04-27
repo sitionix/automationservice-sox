@@ -41,14 +41,17 @@ public class RuleSuggestionAnalyzerAsyncService {
 
     @Async("ruleSuggestionAnalyzerTaskExecutor")
     public void analyzeAsync(final UUID agentId, final UUID conversationId) {
+        log.debug("Rule suggestion async started for agentId={}, conversationId={}", agentId, conversationId);
         final Optional<Agent> analyzerOptional = this.findActiveAnalyzer();
         if (analyzerOptional.isEmpty()) {
+            log.debug("Rule suggestion async skipped: analyzer agent missing/inactive for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
         final Agent analyzer = analyzerOptional.get();
 
         final Optional<Agent> targetAgentOptional = this.activeUserAgentResolver.findById(agentId);
         if (targetAgentOptional.isEmpty()) {
+            log.debug("Rule suggestion async skipped: target agent missing/inactive for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
         final Agent targetAgent = targetAgentOptional.get();
@@ -59,6 +62,7 @@ public class RuleSuggestionAnalyzerAsyncService {
                 .map(AgentRuleTextNormalizer::normalizeToEmpty)
                 .filter(content -> !content.isEmpty());
         if (latestUserMessage.isEmpty()) {
+            log.debug("Rule suggestion async skipped: no latest USER message for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
         final List<ConversationMessage> lastMessages = this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(
@@ -79,11 +83,13 @@ public class RuleSuggestionAnalyzerAsyncService {
         );
         final Optional<String> rawResponse = this.executeAnalyzer(analyzer, context, agentId, conversationId);
         if (rawResponse.isEmpty()) {
+            log.debug("Rule suggestion async skipped: analyzer response unavailable for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
         final List<RuleSuggestionCandidate> suggestions = this.parseSuggestions(rawResponse.get(), agentId, conversationId);
         final List<RuleSuggestionCandidate> validSuggestions = this.filterValidSuggestions(suggestions, activeRules, pendingRules, rejectedRules);
         if (validSuggestions.isEmpty()) {
+            log.debug("Rule suggestion async finished with no valid suggestions for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
 
@@ -100,6 +106,12 @@ public class RuleSuggestionAnalyzerAsyncService {
                         .updatedAt(now)
                         .build())
                 .forEach(this.agentRuleRepository::save);
+        log.info(
+                "Rule suggestion async saved suggestions for agentId={}, conversationId={}, savedCount={}",
+                agentId,
+                conversationId,
+                validSuggestions.size()
+        );
     }
 
     private Optional<Agent> findActiveAnalyzer() {

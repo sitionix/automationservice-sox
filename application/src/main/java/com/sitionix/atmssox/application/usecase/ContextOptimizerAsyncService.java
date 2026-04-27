@@ -35,6 +35,7 @@ public class ContextOptimizerAsyncService {
 
     @Async("contextOptimizerTaskExecutor")
     public void optimizeAsync(final UUID agentId, final UUID conversationId) {
+        log.debug("Context optimizer async started for agentId={}, conversationId={}", agentId, conversationId);
         final Optional<Agent> optimizerAgent = this.findActiveOptimizer();
         if (optimizerAgent.isEmpty()) {
             log.warn("Context optimizer agent missing or inactive for conversationId={}", conversationId);
@@ -49,6 +50,7 @@ public class ContextOptimizerAsyncService {
         final Agent target = targetAgent.get();
         final long totalMessageCount = this.conversationMessageRepository.countByConversationId(conversationId);
         if (totalMessageCount <= 0) {
+            log.debug("Context optimizer async skipped: no messages for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
 
@@ -59,6 +61,13 @@ public class ContextOptimizerAsyncService {
                 this.properties.getLastMessagesLimit()
         );
         if (!this.contextOptimizationCoverageCalculator.hasNewCoverage(alreadyCoveredCount, compressUntilCount)) {
+            log.debug(
+                    "Context optimizer async skipped: no new coverage for agentId={}, conversationId={}, coveredUntil={}, compressUntilCount={}",
+                    agentId,
+                    conversationId,
+                    alreadyCoveredCount,
+                    compressUntilCount
+            );
             return;
         }
         final int messagesToSummarizeCount = compressUntilCount - alreadyCoveredCount;
@@ -68,6 +77,7 @@ public class ContextOptimizerAsyncService {
                 messagesToSummarizeCount
         );
         if (messagesToSummarize.isEmpty()) {
+            log.debug("Context optimizer async skipped: messages slice is empty for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
 
@@ -84,9 +94,17 @@ public class ContextOptimizerAsyncService {
                 conversationId
         );
         if (summary.isEmpty()) {
+            log.debug("Context optimizer async skipped: summary is empty for agentId={}, conversationId={}", agentId, conversationId);
             return;
         }
         this.saveSnapshot(existingSnapshot, conversationId, summary.get(), messagesToSummarize, compressUntilCount);
+        log.info(
+                "Context optimizer async updated snapshot for agentId={}, conversationId={}, coveredUntil={}, summarizedMessagesCount={}",
+                agentId,
+                conversationId,
+                compressUntilCount,
+                messagesToSummarize.size()
+        );
     }
 
     private Optional<Agent> findActiveOptimizer() {
