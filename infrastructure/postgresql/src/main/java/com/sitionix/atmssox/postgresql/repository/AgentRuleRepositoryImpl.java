@@ -4,11 +4,10 @@ import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleAuthorType;
 import com.sitionix.atmssox.domain.model.AgentRuleStatus;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
-import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
-import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleAuthorTypeEntity;
 import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleEntity;
-import com.sitionix.atmssox.postgresql.entity.rule.AgentRuleStatusEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentRuleJpaRepository;
+import com.sitionix.atmssox.postgresql.mapper.AgentRuleAuthorTypeInfraMapper;
+import com.sitionix.atmssox.postgresql.mapper.AgentRuleInfraMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -21,10 +20,12 @@ import org.springframework.stereotype.Repository;
 public class AgentRuleRepositoryImpl implements AgentRuleRepository {
 
     private final AgentRuleJpaRepository agentRuleJpaRepository;
+    private final AgentRuleInfraMapper agentRuleInfraMapper;
+    private final AgentRuleAuthorTypeInfraMapper agentRuleAuthorTypeInfraMapper;
 
     @Override
     public AgentRule save(final AgentRule rule) {
-        return this.toDomain(this.agentRuleJpaRepository.save(this.toEntity(rule)));
+        return this.agentRuleInfraMapper.asAgentRule(this.agentRuleJpaRepository.save(this.agentRuleInfraMapper.asAgentRuleEntity(rule)));
     }
 
     @Override
@@ -38,7 +39,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                     agentId,
                     userId,
                     status.getId(),
-                    this.toAuthorTypeEntity(authorType)
+                    this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)
             );
         } else if (status != null) {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndStatusIdOrderByCreatedAtAsc(
@@ -50,18 +51,18 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdAndAuthorTypeOrderByCreatedAtAsc(
                     agentId,
                     userId,
-                    this.toAuthorTypeEntity(authorType)
+                    this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)
             );
         } else {
             entities = this.agentRuleJpaRepository.findAllByAgentAgentIdAndAgentUserIdOrderByCreatedAtAsc(agentId, userId);
         }
-        return entities.stream().map(this::toDomain).toList();
+        return entities.stream().map(this.agentRuleInfraMapper::asAgentRule).toList();
     }
 
     @Override
     public Optional<AgentRule> findByIdAndAgentIdAndUserId(final UUID ruleId, final UUID agentId, final Long userId) {
         return this.agentRuleJpaRepository.findByRuleIdAndAgentAgentIdAndAgentUserId(ruleId, agentId, userId)
-                .map(this::toDomain);
+                .map(this.agentRuleInfraMapper::asAgentRule);
     }
 
     @Override
@@ -71,7 +72,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
         return this.agentRuleJpaRepository.countByAgentAgentIdAndStatusIdAndAuthorType(
                 agentId,
                 status.getId(),
-                this.toAuthorTypeEntity(authorType)
+                this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)
         );
     }
 
@@ -82,7 +83,7 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
                                                                final Instant endExclusive) {
         return this.agentRuleJpaRepository.countByAgentAgentIdAndAuthorTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                 agentId,
-                this.toAuthorTypeEntity(authorType),
+                this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType),
                 startInclusive,
                 endExclusive
         );
@@ -92,49 +93,8 @@ public class AgentRuleRepositoryImpl implements AgentRuleRepository {
     public Optional<Instant> findLastCreatedAtByAgentIdAndAuthorType(final UUID agentId, final AgentRuleAuthorType authorType) {
         return this.agentRuleJpaRepository.findFirstByAgentAgentIdAndAuthorTypeOrderByCreatedAtDesc(
                         agentId,
-                        this.toAuthorTypeEntity(authorType)
+                        this.agentRuleAuthorTypeInfraMapper.asAuthorTypeEntity(authorType)
                 )
                 .map(AgentRuleEntity::getCreatedAt);
-    }
-
-    private AgentRuleEntity toEntity(final AgentRule rule) {
-        final AgentEntity agent = new AgentEntity();
-        agent.setAgentId(rule.getAgentId());
-        final AgentRuleStatusEntity status = AgentRuleStatusEntity.builder()
-                .id(rule.getStatus().getId())
-                .description(rule.getStatus().name())
-                .build();
-        final AgentRuleAuthorTypeEntity authorType = this.toAuthorTypeEntity(rule.getAuthorType());
-
-        return AgentRuleEntity.builder()
-                .ruleId(rule.getId())
-                .agent(agent)
-                .title(rule.getTitle())
-                .content(rule.getContent())
-                .status(status)
-                .authorType(authorType)
-                .createdAt(rule.getCreatedAt())
-                .updatedAt(rule.getUpdatedAt())
-                .build();
-    }
-
-    private AgentRuleAuthorTypeEntity toAuthorTypeEntity(final AgentRuleAuthorType authorType) {
-        return AgentRuleAuthorTypeEntity.builder()
-                .id(authorType.getId())
-                .description(authorType.name())
-                .build();
-    }
-
-    private AgentRule toDomain(final AgentRuleEntity entity) {
-        return AgentRule.builder()
-                .id(entity.getRuleId())
-                .agentId(entity.getAgent().getAgentId())
-                .title(entity.getTitle())
-                .content(entity.getContent())
-                .status(AgentRuleStatus.fromId(entity.getStatus().getId()))
-                .authorType(AgentRuleAuthorType.fromId(entity.getAuthorType().getId()))
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
     }
 }

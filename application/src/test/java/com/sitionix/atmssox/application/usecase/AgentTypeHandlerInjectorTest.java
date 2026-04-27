@@ -35,6 +35,7 @@ class AgentTypeHandlerInjectorTest {
     void tearDown() {
         AgentType.USER.setHandler(null);
         AgentType.SYSTEM_RULE_ANALYZER.setHandler(null);
+        AgentType.SYSTEM_CONTEXT_OPTIMIZER.setHandler(null);
         verifyNoMoreInteractions(this.context);
     }
 
@@ -43,10 +44,12 @@ class AgentTypeHandlerInjectorTest {
         //given
         final AgentExecutionHandler<?> userHandler = mock(AgentExecutionHandler.class);
         final AgentExecutionHandler<?> analyzerHandler = mock(AgentExecutionHandler.class);
+        final AgentExecutionHandler<?> optimizerHandler = mock(AgentExecutionHandler.class);
         when(this.context.getBeansOfType(AgentExecutionHandler.class))
                 .thenReturn(Map.of(
                         "userAgentExecutionHandler", userHandler,
-                        "ruleSuggestionAnalyzerAgentExecutionHandler", analyzerHandler
+                        "ruleSuggestionAnalyzerAgentExecutionHandler", analyzerHandler,
+                        "contextOptimizerAgentExecutionHandler", optimizerHandler
                 ));
 
         //when
@@ -55,6 +58,7 @@ class AgentTypeHandlerInjectorTest {
         //then
         assertThat(AgentType.USER.getHandler()).isEqualTo(userHandler);
         assertThat(AgentType.SYSTEM_RULE_ANALYZER.getHandler()).isEqualTo(analyzerHandler);
+        assertThat(AgentType.SYSTEM_CONTEXT_OPTIMIZER.getHandler()).isEqualTo(optimizerHandler);
         verify(this.context).getBeansOfType(AgentExecutionHandler.class);
     }
 

@@ -46,7 +46,7 @@ class UserAgentExecutionHandlerTest {
     void givenValidAgentAndPrompt_whenExecute_thenExecuteOpenAiWithNormalizedInput() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class))).thenReturn("answer");
 
         //when
@@ -63,7 +63,7 @@ class UserAgentExecutionHandlerTest {
     void givenBlankPrompt_whenExecute_thenThrowAgentValidationException() {
         //given
         final Agent givenAgent = this.getAgent("Instruction");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("   ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("Instruction", "   ");
 
         //when
         //then

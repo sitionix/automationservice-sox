@@ -45,5 +45,7 @@ public interface AgentJpaRepository extends JpaRepository<AgentEntity, UUID> {
 
     Optional<AgentEntity> findByAgentId(UUID agentId);
 
+    Optional<AgentEntity> findByAgentIdAndTypeIdAndStatusId(UUID agentId, Long typeId, Long statusId);
+
     Optional<AgentEntity> findFirstByTypeIdOrderByCreatedAtAsc(Long typeId);
 }

@@ -51,6 +51,11 @@ openai:
     org-id: ${OPENAI_ORG_ID:}
     project-id: ${OPENAI_PROJECT_ID:}
 automation:
+  async:
+    rule-suggestion-analyzer:
+      thread-name-prefix: "rule-suggestion-analyzer-"
+    context-optimizer:
+      thread-name-prefix: "context-optimizer-"
   rule-suggestion-analyzer:
     enabled: true
     last-messages-limit: 20
@@ -60,3 +65,9 @@ automation:
     max-pending-suggestions-per-agent: 5
     max-suggestions-per-run: 3
     max-suggestion-content-length: 1000
+  context-optimizer:
+    enabled: true
+    last-messages-limit: 10
+    optimize-threshold-messages: 20
+    conversation-cooldown-minutes: 15
+    max-summary-length: 2000

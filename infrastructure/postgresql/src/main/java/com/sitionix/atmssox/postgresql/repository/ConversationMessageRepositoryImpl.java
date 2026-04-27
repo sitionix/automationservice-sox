@@ -7,8 +7,10 @@ import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.jpa.ConversationMessageJpaRepository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -31,8 +33,49 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
     }
 
     @Override
+    public List<ConversationMessage> findLastByConversationIdOrderByCreatedAtAsc(final UUID conversationId, final int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        return this.conversationMessageJpaRepository
+                .findAllByConversationConversationIdOrderByCreatedAtDescMessageIdDesc(conversationId, PageRequest.of(0, limit))
+                .reversed()
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<ConversationMessage> findLastByConversationIdAndAuthorType(final UUID conversationId,
+                                                                                final ConversationParticipantType authorType) {
+        return this.conversationMessageJpaRepository
+                .findFirstByConversationConversationIdAndAuthorTypeOrderByCreatedAtDescMessageIdDesc(conversationId, authorType)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public List<ConversationMessage> findSliceByConversationIdOrderByCreatedAtAsc(final UUID conversationId,
+                                                                                   final int offset,
+                                                                                   final int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        final int normalizedOffset = Math.max(0, offset);
+        return this.conversationMessageJpaRepository
+                .findSliceByConversationIdOrderByCreatedAtAsc(conversationId, normalizedOffset, limit)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public long countByConversationIdAndAuthorType(final UUID conversationId, final ConversationParticipantType authorType) {
         return this.conversationMessageJpaRepository.countByConversationConversationIdAndAuthorType(conversationId, authorType);
+    }
+
+    @Override
+    public long countByConversationId(final UUID conversationId) {
+        return this.conversationMessageJpaRepository.countByConversationConversationId(conversationId);
     }
 
     private ConversationMessageEntity toEntity(final ConversationMessage message) {

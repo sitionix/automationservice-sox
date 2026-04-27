@@ -73,7 +73,7 @@ class ChatAgentFlowIT {
 
         when(this.openAiChatClient.execute(new OpenAiChatRequest(
                 "Follow security-first code review checklist",
-                "Conversation history:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
+                "Messages:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
         )))
                 .thenReturn("Clean architecture separates core business rules from frameworks.");
 
@@ -90,7 +90,7 @@ class ChatAgentFlowIT {
         //then
         verify(this.openAiChatClient).execute(new OpenAiChatRequest(
                 "Follow security-first code review checklist",
-                "Conversation history:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
+                "Messages:\nUSER: Explain clean architecture in simple words.\nRespond as AGENT to the latest USER message."
         ));
 
         this.testManager.postgresql()
@@ -158,12 +158,11 @@ class ChatAgentFlowIT {
                 .assertDefault();
 
         when(this.openAiChatClient.execute(argThat(request -> Objects.nonNull(request)
-                && Objects.equals(request.instruction(), "Follow only active rules")
+                && Objects.nonNull(request.instruction())
+                && request.instruction().contains("Follow only active rules")
+                && request.instruction().contains("Active rules:")
+                && request.instruction().contains("- Always produce deterministic output")
                 && Objects.nonNull(request.input())
-                && request.input().contains("Active rules:")
-                && request.input().contains("- Always produce deterministic output")
-                && !request.input().contains("Deleted AI title")
-                && !request.input().contains("Deleted rule title")
                 && request.input().contains("USER: Explain clean architecture in simple words."))))
                 .thenReturn("Only active rules were applied.");
 
@@ -176,11 +175,12 @@ class ChatAgentFlowIT {
 
         //then
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
-                && Objects.equals(request.instruction(), "Follow only active rules")
+                && Objects.nonNull(request.instruction())
+                && request.instruction().contains("Follow only active rules")
+                && request.instruction().contains("Active rules:")
+                && request.instruction().contains("- Always produce deterministic output")
+                && !request.instruction().contains("Deleted rule title")
                 && Objects.nonNull(request.input())
-                && request.input().contains("Active rules:")
-                && request.input().contains("- Always produce deterministic output")
-                && !request.input().contains("Deleted rule title")
                 && request.input().contains("USER: Explain clean architecture in simple words.")));
     }
 
@@ -199,14 +199,15 @@ class ChatAgentFlowIT {
                 .build();
 
         when(this.openAiChatClient.execute(argThat(request -> Objects.nonNull(request)
-                && Objects.equals(request.instruction(), "Follow only active rules")
+                && Objects.nonNull(request.instruction())
+                && request.instruction().contains("Follow only active rules")
+                && request.instruction().contains("Active rules:")
+                && request.instruction().contains("- Active USER content")
+                && request.instruction().contains("- Active AI content")
+                && !request.instruction().contains("Pending AI title")
+                && !request.instruction().contains("Rejected AI title")
+                && !request.instruction().contains("Deleted AI title")
                 && Objects.nonNull(request.input())
-                && request.input().contains("Active rules:")
-                && request.input().contains("- Active USER content")
-                && request.input().contains("- Active AI content")
-                && !request.input().contains("Pending AI title")
-                && !request.input().contains("Rejected AI title")
-                && !request.input().contains("Deleted AI title")
                 && request.input().contains("USER: Explain clean architecture in simple words."))))
                 .thenReturn("Only active persisted rules were applied.");
 
@@ -219,14 +220,15 @@ class ChatAgentFlowIT {
 
         //then
         verify(this.openAiChatClient).execute(argThat(request -> Objects.nonNull(request)
-                && Objects.equals(request.instruction(), "Follow only active rules")
+                && Objects.nonNull(request.instruction())
+                && request.instruction().contains("Follow only active rules")
+                && request.instruction().contains("Active rules:")
+                && request.instruction().contains("- Active USER content")
+                && request.instruction().contains("- Active AI content")
+                && !request.instruction().contains("Pending AI title")
+                && !request.instruction().contains("Rejected AI title")
+                && !request.instruction().contains("Deleted AI title")
                 && Objects.nonNull(request.input())
-                && request.input().contains("Active rules:")
-                && request.input().contains("- Active USER content")
-                && request.input().contains("- Active AI content")
-                && !request.input().contains("Pending AI title")
-                && !request.input().contains("Rejected AI title")
-                && !request.input().contains("Deleted AI title")
                 && request.input().contains("USER: Explain clean architecture in simple words.")));
     }
 
@@ -360,6 +362,36 @@ class ChatAgentFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), 2L))
                 .andExpected(entity -> Objects.equals(entity.getUpdatedAt(), beforeChat.getUpdatedAt()))
                 .assertEntity();
+    }
+
+    @Test
+    @DisplayName("Should return not found and not call provider when target is system context optimizer")
+    void givenSystemContextOptimizerAsTarget_whenChatAgent_thenReturnNotFoundAndDoNotCallProvider() {
+        //given
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_ENTITY_DB_CONTRACT.withJson("systemContextOptimizerActiveAgent.json"))
+                .build();
+        final int beforeConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int beforeParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int beforeMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", "33333333-3333-3333-3333-333333333333"))
+                .header("X-Forge-User-Sub", "0")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        verifyNoInteractions(this.openAiChatClient);
+        final int afterConversationSize = this.testManager.postgresql().get(ConversationEntity.class).getAll().size();
+        final int afterParticipantSize = this.testManager.postgresql().get(ConversationParticipantEntity.class).getAll().size();
+        final int afterMessageSize = this.testManager.postgresql().get(ConversationMessageEntity.class).getAll().size();
+        assertThat(afterConversationSize).isEqualTo(beforeConversationSize);
+        assertThat(afterParticipantSize).isEqualTo(beforeParticipantSize);
+        assertThat(afterMessageSize).isEqualTo(beforeMessageSize);
     }
 
     @Test

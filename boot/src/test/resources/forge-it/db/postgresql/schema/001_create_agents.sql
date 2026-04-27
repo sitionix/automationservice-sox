@@ -16,7 +16,8 @@ CREATE TABLE agent_types (
 
 INSERT INTO agent_types (id, description)
 VALUES (1, 'USER'),
-       (2, 'SYSTEM_RULE_ANALYZER');
+       (2, 'SYSTEM_RULE_ANALYZER'),
+       (3, 'SYSTEM_CONTEXT_OPTIMIZER');
 
 CREATE TABLE agents (
     agent_id UUID PRIMARY KEY,
@@ -33,6 +34,10 @@ CREATE TABLE agents (
 CREATE UNIQUE INDEX uq_agent_single_rule_analyzer
     ON agents (type_id)
     WHERE type_id = 2;
+
+CREATE UNIQUE INDEX uq_agent_single_context_optimizer
+    ON agents (type_id)
+    WHERE type_id = 3;
 
 CREATE TABLE agent_rules (
     rule_id UUID PRIMARY KEY,
@@ -98,3 +103,16 @@ CREATE TABLE conversation_messages (
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE conversation_context_snapshots (
+    id UUID PRIMARY KEY,
+    conversation_id UUID NOT NULL REFERENCES conversations(conversation_id),
+    summary TEXT NOT NULL,
+    message_count_until INTEGER NOT NULL,
+    last_message_id_until UUID,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE UNIQUE INDEX uq_conversation_context_snapshots_conversation_id
+    ON conversation_context_snapshots (conversation_id);
