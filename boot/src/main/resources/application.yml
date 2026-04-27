@@ -1,4 +1,9 @@
 environment: localhost
+api:
+  rest:
+    client:
+      wagssox:
+        base-path: ${WAGSSOX_BASE_PATH:http://workspaceaggregationservice-sox:9082/wagssox}
 server:
   port: 9083
   servlet:
