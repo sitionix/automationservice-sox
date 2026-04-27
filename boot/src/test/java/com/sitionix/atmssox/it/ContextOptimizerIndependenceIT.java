@@ -16,6 +16,7 @@ import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,6 @@ import static org.mockito.Mockito.when;
 })
 class ContextOptimizerIndependenceIT {
 
-    private static final String OPTIMIZER_INSTRUCTION = "Summarize conversation context. Return only strict JSON {\"summary\":\"...\"}.";
     private static final String ANALYZER_INSTRUCTION = "You analyze agent conversations and suggest rules. Return only valid JSON with suggestions.";
     private static final String ANALYZER_FAILS_MESSAGE = "Independence message analyzer-fails optimizer-succeeds";
     private static final String OPTIMIZER_FAILS_MESSAGE = "Independence message optimizer-fails analyzer-succeeds";
@@ -78,18 +78,25 @@ class ContextOptimizerIndependenceIT {
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
                 .assertDefault();
 
+        final AtomicBoolean chatHandled = new AtomicBoolean(false);
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
                 .thenAnswer(invocation -> {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
+                    if (!chatHandled.getAndSet(true)) {
+                        return "Chat reply";
+                    }
                     if (Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)) {
                         throw new OpenAiExecutionException("Analyzer failure");
                     }
-                    if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
+                    if (Objects.nonNull(request.instruction())
+                            && request.instruction().contains("Summarize conversation context")) {
                         return """
                                 {"summary":"Optimizer summary"}
                                 """;
                     }
-                    return "Chat reply";
+                    return """
+                            {"summary":"Optimizer summary"}
+                            """;
                 });
 
         //when
@@ -158,18 +165,25 @@ class ContextOptimizerIndependenceIT {
                 .withPathParameters(PathParams.create().add("agentId", userAgentId))
                 .assertDefault();
 
+        final AtomicBoolean chatHandled = new AtomicBoolean(false);
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class)))
                 .thenAnswer(invocation -> {
                     final OpenAiChatRequest request = invocation.getArgument(0, OpenAiChatRequest.class);
+                    if (!chatHandled.getAndSet(true)) {
+                        return "Chat reply";
+                    }
                     if (Objects.equals(request.instruction(), ANALYZER_INSTRUCTION)) {
                         return """
                                 {"suggestions":[{"title":"Analyzer title","content":"Analyzer content","reason":"Analyzer reason"}]}
                                 """;
                     }
-                    if (Objects.equals(request.instruction(), OPTIMIZER_INSTRUCTION)) {
+                    if (Objects.nonNull(request.instruction())
+                            && request.instruction().contains("Summarize conversation context")) {
                         throw new OpenAiExecutionException("Optimizer failure");
                     }
-                    return "Chat reply";
+                    return """
+                            {"suggestions":[{"title":"Analyzer title","content":"Analyzer content","reason":"Analyzer reason"}]}
+                            """;
                 });
 
         //when
