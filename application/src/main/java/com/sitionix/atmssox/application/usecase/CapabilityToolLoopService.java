@@ -1,8 +1,8 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolCall;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolResult;
+import com.sitionix.atmssox.domain.client.OpenAiToolChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiToolChatRequest;
 import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CapabilityToolLoopService {
 
-    private final OpenAiChatClient openAiChatClient;
+    private final OpenAiToolChatClient openAiToolChatClient;
     private final CapabilityRouterService capabilityRouterService;
     private final DiscoveryCapabilityToolService discoveryCapabilityToolService;
     private final ConcreteCapabilityExecutionService concreteCapabilityExecutionService;
@@ -27,7 +27,7 @@ public class CapabilityToolLoopService {
         final LoopState state = new LoopState(List.of(this.discoveryCapabilityToolService.getDefinition()));
 
         while (true) {
-            final OpenAiToolChatResponse response = this.openAiChatClient.executeWithTools(
+            final OpenAiToolChatResponse response = this.openAiToolChatClient.executeWithTools(
                     new OpenAiToolChatRequest(instruction, input, state.previousResponseId, state.activeTools, state.toolResults)
             );
             state.previousResponseId = response.responseId();
