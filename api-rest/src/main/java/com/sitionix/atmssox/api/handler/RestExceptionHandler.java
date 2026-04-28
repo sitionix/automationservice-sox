@@ -1,16 +1,19 @@
 package com.sitionix.atmssox.api.handler;
 
 import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
+import com.sitionix.atmssox.domain.exception.ClientResponseException;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Optional;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -22,8 +25,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class RestExceptionHandler {
+
+    private final ObjectMapper objectMapper;
 
     @ExceptionHandler(AgentValidationException.class)
     public ResponseEntity<ErrorDTO> handleValidation(final AgentValidationException exception) {
@@ -60,6 +67,20 @@ public class RestExceptionHandler {
                         .title(title)
                         .details(exception.getUpstreamMessage())
                         .build());
+    }
+
+    @ExceptionHandler(ClientResponseException.class)
+    public ResponseEntity<ErrorDTO> handleClientResponseException(final ClientResponseException exception) {
+        final HttpStatus status = HttpStatus.resolve(exception.getStatusCode());
+        if (status == null) {
+            return buildError(HttpStatus.BAD_GATEWAY, "Invalid upstream response status");
+        }
+
+        final ErrorDTO upstreamError = this.parseError(exception.getResponseBody());
+        if (upstreamError != null) {
+            return ResponseEntity.status(status).body(upstreamError);
+        }
+        return buildError(status, status.getReasonPhrase());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -116,5 +137,17 @@ public class RestExceptionHandler {
             return exception.getUpstreamCode();
         }
         return null;
+    }
+
+    private ErrorDTO parseError(final String responseBody) {
+        if (!StringUtils.hasText(responseBody)) {
+            return null;
+        }
+        try {
+            return this.objectMapper.readValue(responseBody, ErrorDTO.class);
+        } catch (Exception exception) {
+            log.warn("Failed to parse upstream error body", exception);
+            return null;
+        }
     }
 }
