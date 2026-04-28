@@ -59,4 +59,28 @@ class DiscoveryCapabilityToolServiceTest {
         assertThat(actual.callId()).isEqualTo("c1");
         assertThat(actual.outputJson()).contains("\"capabilities\"");
     }
+
+    @Test
+    void givenDiscoveryToolCallWithNullIntent_whenExtractUserIntent_thenReturnFallback() {
+        //given
+        final OpenAiNativeToolCall givenToolCall = new OpenAiNativeToolCall("c1", DiscoveryCapabilityToolService.TOOL_NAME, "{\"userIntent\":null}");
+
+        //when
+        final String actual = this.discoveryCapabilityToolService.extractUserIntent(givenToolCall);
+
+        //then
+        assertThat(actual).isEqualTo("User asks for assistance");
+    }
+
+    @Test
+    void givenNonDiscoveryToolCall_whenIsDiscoveryCall_thenReturnFalse() {
+        //given
+        final OpenAiNativeToolCall givenToolCall = new OpenAiNativeToolCall("c1", "GET_WORKSPACE_SITES", "{}");
+
+        //when
+        final boolean actual = this.discoveryCapabilityToolService.isDiscoveryCall(givenToolCall);
+
+        //then
+        assertThat(actual).isFalse();
+    }
 }

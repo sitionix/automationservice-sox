@@ -101,6 +101,26 @@ class UserAgentExecutionHandlerTest {
                 .hasMessage("User prompt is empty");
     }
 
+    @Test
+    void givenCapabilityLoopFails_whenExecute_thenFallbackToPlainOpenAiExecution() {
+        //given
+        final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
+        when(this.capabilityToolLoopService.execute("Keep answers concise.", "Explain SOLID."))
+                .thenThrow(new RuntimeException("tool loop fail"));
+        when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("fallback");
+
+        //when
+        final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
+
+        //then
+        assertThat(actual).isEqualTo("fallback");
+        verify(this.automationCapabilitiesProperties).isEnabled();
+        verify(this.capabilityToolLoopService).execute("Keep answers concise.", "Explain SOLID.");
+        verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
+    }
+
     private Agent getAgent(final String instruction) {
         return Agent.builder()
                 .id(UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"))

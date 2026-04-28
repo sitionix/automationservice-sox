@@ -282,6 +282,40 @@ class OpenAiSdkChatClientTest {
         verify(this.responseService).create(any(ResponseCreateParams.class));
     }
 
+    @Test
+    void givenToolRequestWithoutToolResults_whenExecuteWithTools_thenReturnToolChatResponse() {
+        //given
+        final Response response = this.getResponseWithText("tool-mode-output");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
+        final OpenAiSdkChatClient client = this.createClient();
+        final OpenAiToolChatRequest request = new OpenAiToolChatRequest(
+                "instruction",
+                "input",
+                null,
+                List.of(),
+                List.of()
+        );
+
+        //when
+        final OpenAiToolChatResponse actual = client.executeWithTools(request);
+
+        //then
+        assertThat(actual.outputText()).isEqualTo("tool-mode-output");
+        verify(this.responseService).create(any(ResponseCreateParams.class));
+    }
+
+    @Test
+    void givenNullToolRequest_whenExecuteWithTools_thenThrowOpenAiExecutionException() {
+        //given
+        final OpenAiSdkChatClient client = this.createClient();
+
+        //when
+        //then
+        assertThatThrownBy(() -> client.executeWithTools(null))
+                .isInstanceOf(OpenAiExecutionException.class)
+                .hasMessage("OpenAI request is not configured");
+    }
+
     private Response getResponseWithText(final String text) {
         final ResponseOutputText outputText = ResponseOutputText.builder()
                 .text(text)
