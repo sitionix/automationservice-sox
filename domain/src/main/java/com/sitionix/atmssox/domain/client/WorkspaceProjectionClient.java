@@ -18,10 +18,9 @@ public interface WorkspaceProjectionClient {
     JsonNode getSiteOverview(Long userId, UUID siteId);
 
     /**
-     * Loads workspace sites page for a given user.
+     * Loads workspace sites page.
      *
-     * @param userId authenticated user identifier.
      * @return workspace sites payload.
      */
-    JsonNode getWorkspaceSites(Long userId);
+    JsonNode getWorkspaceSites();
 }

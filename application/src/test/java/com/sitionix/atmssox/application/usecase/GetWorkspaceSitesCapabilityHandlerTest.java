@@ -68,14 +68,14 @@ class GetWorkspaceSitesCapabilityHandlerTest {
                 new WorkspaceSitesArg()
         );
         final JsonNode givenPayload = new ObjectMapper().valueToTree(Map.of("total", 1));
-        when(this.workspaceProjectionClient.getWorkspaceSites(17L)).thenReturn(givenPayload);
+        when(this.workspaceProjectionClient.getWorkspaceSites()).thenReturn(givenPayload);
 
         //when
         final CapabilityExecutionResult actual = this.getWorkspaceSitesCapabilityHandler.execute(givenCommand);
 
         //then
         assertThat(actual).isEqualTo(new CapabilityExecutionResult(CapabilityName.GET_WORKSPACE_SITES, givenPayload));
-        verify(this.workspaceProjectionClient).getWorkspaceSites(17L);
+        verify(this.workspaceProjectionClient).getWorkspaceSites();
     }
 
     @Test
@@ -88,12 +88,12 @@ class GetWorkspaceSitesCapabilityHandlerTest {
                 new WorkspaceSitesArg()
         );
         final IllegalStateException givenException = new IllegalStateException("downstream failure");
-        when(this.workspaceProjectionClient.getWorkspaceSites(17L)).thenThrow(givenException);
+        when(this.workspaceProjectionClient.getWorkspaceSites()).thenThrow(givenException);
 
         //when
         //then
         assertThatThrownBy(() -> this.getWorkspaceSitesCapabilityHandler.execute(givenCommand))
                 .isSameAs(givenException);
-        verify(this.workspaceProjectionClient).getWorkspaceSites(17L);
+        verify(this.workspaceProjectionClient).getWorkspaceSites();
     }
 }

@@ -29,8 +29,7 @@ public class WorkspaceProjectionHttpClient implements WorkspaceProjectionClient 
     }
 
     @Override
-    public JsonNode getWorkspaceSites(final Long userId) {
-        this.validateUserId(userId);
+    public JsonNode getWorkspaceSites() {
         return this.clientCallExecutor.execute(() -> {
             final WorkspaceSitesPageDTO response = this.siteApi.getSites(null, null);
             return this.objectMapper.valueToTree(response);

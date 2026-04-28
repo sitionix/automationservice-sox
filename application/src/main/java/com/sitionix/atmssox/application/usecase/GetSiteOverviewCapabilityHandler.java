@@ -6,16 +6,14 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
-import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchema;
+import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemas;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
-import com.sitionix.atmssox.domain.model.capability.CapabilityProperty;
 import com.sitionix.atmssox.domain.model.capability.SiteOverviewArg;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Component("getSiteOverviewCapabilityHandler")
 @RequiredArgsConstructor
@@ -29,7 +27,7 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
                 CapabilityName.GET_SITE_OVERVIEW.name(),
                 "Returns overview information for a specific site.",
                 List.of("site", "overview", "workspace", "status"),
-                buildInputSchema(),
+                CapabilityInputSchemas.requiredSiteId(),
                 "Site overview with identity, status, domain/publication-related metadata if available."
         );
     }
@@ -43,12 +41,4 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
         return new CapabilityExecutionResult(CapabilityName.GET_SITE_OVERVIEW, payload);
     }
 
-    private static CapabilityInputSchema buildInputSchema() {
-        return new CapabilityInputSchema(
-                "object",
-                Map.of("siteId", new CapabilityProperty("string", "uuid", "Site identifier")),
-                List.of("siteId"),
-                Boolean.FALSE
-        );
-    }
 }

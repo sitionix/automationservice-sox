@@ -81,7 +81,7 @@ class WorkspaceProjectionHttpClientTest {
         when(this.objectMapper.valueToTree(givenDto)).thenReturn(givenJson);
 
         //when
-        final JsonNode actual = this.workspaceProjectionHttpClient.getWorkspaceSites(17L);
+        final JsonNode actual = this.workspaceProjectionHttpClient.getWorkspaceSites();
 
         //then
         assertThat(actual).isEqualTo(givenJson);
