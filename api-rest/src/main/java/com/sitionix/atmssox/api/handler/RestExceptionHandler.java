@@ -34,27 +34,27 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(AgentValidationException.class)
     public ResponseEntity<ErrorDTO> handleValidation(final AgentValidationException exception) {
-        return buildError(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return this.asErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     @ExceptionHandler(AgentLifecycleTransitionException.class)
     public ResponseEntity<ErrorDTO> handleTransition(final AgentLifecycleTransitionException exception) {
-        return buildError(HttpStatus.CONFLICT, exception.getMessage());
+        return this.asErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(AgentChatNotAllowedException.class)
     public ResponseEntity<ErrorDTO> handleChatNotAllowed(final AgentChatNotAllowedException exception) {
-        return buildError(HttpStatus.CONFLICT, exception.getMessage());
+        return this.asErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(AgentNotFoundException.class)
     public ResponseEntity<ErrorDTO> handleNotFound(final AgentNotFoundException exception) {
-        return buildError(HttpStatus.NOT_FOUND, exception.getMessage());
+        return this.asErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
     @ExceptionHandler(AuthenticationRequiredException.class)
     public ResponseEntity<ErrorDTO> handleAuthenticationRequired(final AuthenticationRequiredException exception) {
-        return buildError(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        return this.asErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @ExceptionHandler(OpenAiExecutionException.class)
@@ -70,17 +70,18 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(ClientResponseException.class)
-    public ResponseEntity<ErrorDTO> handleClientResponseException(final ClientResponseException exception) {
+    public ResponseEntity<ErrorDTO> handle(final ClientResponseException exception) {
         final HttpStatus status = HttpStatus.resolve(exception.getStatusCode());
         if (status == null) {
-            return buildError(HttpStatus.BAD_GATEWAY, "Invalid upstream response status");
+            log.warn("Unknown upstream status code: {}", exception.getStatusCode());
+            return this.asErrorResponse(HttpStatus.BAD_GATEWAY, "Invalid upstream response status");
         }
 
         final ErrorDTO upstreamError = this.parseError(exception.getResponseBody());
         if (upstreamError != null) {
             return ResponseEntity.status(status).body(upstreamError);
         }
-        return buildError(status, status.getReasonPhrase());
+        return this.asErrorResponse(status, status.getReasonPhrase());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -89,7 +90,7 @@ public class RestExceptionHandler {
                 .findFirst()
                 .map(ConstraintViolation::getMessage)
                 .orElse(exception.getMessage());
-        return buildError(HttpStatus.BAD_REQUEST, details);
+        return this.asErrorResponse(HttpStatus.BAD_REQUEST, details);
     }
 
     @ExceptionHandler({HandlerMethodValidationException.class, MethodArgumentNotValidException.class})
@@ -99,32 +100,28 @@ public class RestExceptionHandler {
                     .flatMap(result -> result.getResolvableErrors().stream())
                     .map(MessageSourceResolvable::getDefaultMessage)
                     .findFirst();
-            return buildError(HttpStatus.BAD_REQUEST, details.orElse("Validation failed"));
+            return this.asErrorResponse(HttpStatus.BAD_REQUEST, details.orElse("Validation failed"));
         }
         if (exception instanceof MethodArgumentNotValidException methodArgumentNotValidException) {
             final String details = methodArgumentNotValidException.getBindingResult().getAllErrors().stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .findFirst()
                     .orElse("Validation failed");
-            return buildError(HttpStatus.BAD_REQUEST, details);
+            return this.asErrorResponse(HttpStatus.BAD_REQUEST, details);
         }
-        return buildError(HttpStatus.BAD_REQUEST, "Validation failed");
+        return this.asErrorResponse(HttpStatus.BAD_REQUEST, "Validation failed");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorDTO> handleNotReadable(final HttpMessageNotReadableException exception) {
-        return buildError(HttpStatus.BAD_REQUEST, "Malformed request body");
+        return this.asErrorResponse(HttpStatus.BAD_REQUEST, "Malformed request body");
     }
 
-    private static ResponseEntity<ErrorDTO> buildError(final HttpStatus status, final String details) {
-        return buildError(status, status.getReasonPhrase(), details);
-    }
-
-    private static ResponseEntity<ErrorDTO> buildError(final HttpStatus status, final String title, final String details) {
+    private ResponseEntity<ErrorDTO> asErrorResponse(final HttpStatus status, final String details) {
         return ResponseEntity.status(status)
                 .body(ErrorDTO.builder()
                         .code(status.value())
-                        .title(title)
+                        .title(status.getReasonPhrase())
                         .details(details)
                         .build());
     }

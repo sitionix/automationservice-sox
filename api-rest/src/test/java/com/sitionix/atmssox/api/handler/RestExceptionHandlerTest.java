@@ -230,7 +230,7 @@ class RestExceptionHandlerTest {
         );
 
         //when
-        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleClientResponseException(given);
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.NOT_FOUND.value(), "Not Found", "Site overview not found"));
@@ -247,7 +247,7 @@ class RestExceptionHandlerTest {
         );
 
         //when
-        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleClientResponseException(given);
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase()));
@@ -264,7 +264,7 @@ class RestExceptionHandlerTest {
         );
 
         //when
-        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handleClientResponseException(given);
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "Invalid upstream response status"));
