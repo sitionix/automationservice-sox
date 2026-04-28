@@ -30,7 +30,6 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
                 CapabilityInputSchemaBuilder.objectSchema()
                         .property("siteId", "string", "uuid", "Site identifier")
                         .required("siteId")
-                        .additionalProperties(false)
                         .build(),
                 "Site overview with identity, status, domain/publication-related metadata if available."
         );

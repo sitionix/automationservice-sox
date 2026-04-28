@@ -25,9 +25,7 @@ public class GetWorkspaceSitesCapabilityHandler implements CapabilityHandler<Wor
                 CapabilityName.GET_WORKSPACE_SITES.name(),
                 "Returns the current user's workspace sites with identifiers, names, statuses, domains and basic metadata.",
                 List.of("site", "sites", "workspace", "list", "status"),
-                CapabilityInputSchemaBuilder.objectSchema()
-                        .additionalProperties(false)
-                        .build(),
+                CapabilityInputSchemaBuilder.objectSchema().build(),
                 "List of workspace sites with site identifiers and metadata that can be used by other site capabilities."
         );
     }
