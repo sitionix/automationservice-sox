@@ -23,4 +23,11 @@ public interface CapabilityHandler<H> {
      * @return execution result payload.
      */
     CapabilityExecutionResult execute(CapabilityExecutionCommand<H> command);
+
+    /**
+     * Runtime argument type expected by this capability.
+     *
+     * @return argument class for JSON deserialization.
+     */
+    Class<H> argType();
 }

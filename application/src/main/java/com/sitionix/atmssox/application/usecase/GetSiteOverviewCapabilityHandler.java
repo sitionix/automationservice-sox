@@ -44,4 +44,9 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
         return new CapabilityExecutionResult(CapabilityName.GET_SITE_OVERVIEW, payload);
     }
 
+    @Override
+    public Class<SiteOverviewArg> argType() {
+        return SiteOverviewArg.class;
+    }
+
 }

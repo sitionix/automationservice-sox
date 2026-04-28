@@ -7,11 +7,17 @@ import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import com.sitionix.atmssox.domain.usecase.AgentExecutionHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgentExecutionContext> {
+
+    private final CapabilityToolLoopService capabilityToolLoopService;
+
+    private final AutomationCapabilitiesProperties automationCapabilitiesProperties;
 
     private final OpenAiChatClient openAiChatClient;
 
@@ -29,7 +35,14 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgen
             throw new AgentValidationException("User prompt is empty");
         }
         final String instruction = contextInstruction.isEmpty() ? fallbackInstruction : contextInstruction;
-
-        return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
+        if (!this.automationCapabilitiesProperties.isEnabled()) {
+            return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
+        }
+        try {
+            return this.capabilityToolLoopService.execute(instruction, input);
+        } catch (RuntimeException exception) {
+            log.warn("[CAPABILITY] tool loop failed, fallback to plain chat execution", exception);
+            return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
+        }
     }
 }
