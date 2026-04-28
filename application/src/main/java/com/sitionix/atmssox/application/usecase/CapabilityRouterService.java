@@ -6,6 +6,7 @@ import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,15 +40,13 @@ public class CapabilityRouterService {
     private final ObjectMapper objectMapper;
 
     public List<CapabilityDefinition> discover(final String userIntent) {
-        final List<CapabilityDefinition> candidates = List.of(
-                CapabilityName.GET_WORKSPACE_SITES.definition(),
-                CapabilityName.GET_SITE_OVERVIEW.definition()
-        );
+        final List<CapabilityDefinition> candidates = Arrays.stream(CapabilityName.values())
+                .map(CapabilityName::definition)
+                .toList();
         final List<Map<String, Object>> compactCatalog = candidates.stream().map(definition -> Map.<String, Object>of(
                 "name", definition.name(),
                 "description", definition.description(),
-                "tags", definition.tags(),
-                "outputDescription", definition.outputDescription()
+                "tags", definition.tags()
         )).toList();
         final String input = this.serializeRouterInput(userIntent, compactCatalog);
         try {
