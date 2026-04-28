@@ -8,7 +8,8 @@ import lombok.Setter;
 @Getter
 @RequiredArgsConstructor
 public enum CapabilityName {
-    GET_SITE_OVERVIEW("getSiteOverviewCapabilityHandler");
+    GET_SITE_OVERVIEW("getSiteOverviewCapabilityHandler"),
+    GET_WORKSPACE_SITES("getWorkspaceSitesCapabilityHandler");
 
     private final String bindingKey;
 

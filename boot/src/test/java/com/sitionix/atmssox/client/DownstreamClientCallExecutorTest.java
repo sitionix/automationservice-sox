@@ -2,7 +2,6 @@ package com.sitionix.atmssox.client;
 
 import com.sitionix.atmssox.domain.exception.ClientResponseException;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,16 +10,16 @@ import org.springframework.web.client.HttpClientErrorException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class WorkspaceProjectionClientCallExecutorTest {
+class DownstreamClientCallExecutorTest {
 
-    private final WorkspaceProjectionClientCallExecutor workspaceProjectionClientCallExecutor = new WorkspaceProjectionClientCallExecutor();
+    private final DownstreamClientCallExecutor downstreamClientCallExecutor = new DownstreamClientCallExecutor();
 
     @Test
     void givenSuccessfulSupplier_whenExecute_thenReturnSupplierResult() {
         //given
 
         //when
-        final String actual = this.workspaceProjectionClientCallExecutor.execute(() -> "ok");
+        final String actual = this.downstreamClientCallExecutor.execute(() -> "ok");
 
         //then
         assertThat(actual).isEqualTo("ok");
@@ -41,7 +40,7 @@ class WorkspaceProjectionClientCallExecutorTest {
 
         //when
         //then
-        assertThatThrownBy(() -> this.workspaceProjectionClientCallExecutor.execute(() -> {
+        assertThatThrownBy(() -> this.downstreamClientCallExecutor.execute(() -> {
             throw givenException;
         }))
                 .isInstanceOf(ClientResponseException.class)

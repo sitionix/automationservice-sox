@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 
 @Component
-public class WorkspaceProjectionClientCallExecutor {
+public class DownstreamClientCallExecutor {
 
     public <T> T execute(final Supplier<T> call) {
         try {

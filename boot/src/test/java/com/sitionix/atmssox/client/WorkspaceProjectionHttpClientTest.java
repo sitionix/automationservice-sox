@@ -2,6 +2,7 @@ package com.sitionix.atmssox.client;
 
 import com.app_afesox.wagssox.client.api.SiteApi;
 import com.app_afesox.wagssox.client.dto.SiteOverviewDTO;
+import com.app_afesox.wagssox.client.dto.WorkspaceSitesPageDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
@@ -25,17 +26,17 @@ class WorkspaceProjectionHttpClientTest {
 
     private ObjectMapper objectMapper;
 
-    private WorkspaceProjectionClientCallExecutor workspaceProjectionClientCallExecutor;
+    private DownstreamClientCallExecutor downstreamClientCallExecutor;
 
     @BeforeEach
     void setUp() {
         this.siteApi = Mockito.mock(SiteApi.class);
         this.objectMapper = Mockito.mock(ObjectMapper.class);
-        this.workspaceProjectionClientCallExecutor = new WorkspaceProjectionClientCallExecutor();
+        this.downstreamClientCallExecutor = new DownstreamClientCallExecutor();
         this.workspaceProjectionHttpClient = new WorkspaceProjectionHttpClient(
                 this.siteApi,
                 this.objectMapper,
-                this.workspaceProjectionClientCallExecutor
+                this.downstreamClientCallExecutor
         );
     }
 
@@ -69,5 +70,22 @@ class WorkspaceProjectionHttpClientTest {
                 .hasMessage("userId is required");
         verifyNoInteractions(this.siteApi);
         verifyNoInteractions(this.objectMapper);
+    }
+
+    @Test
+    void givenValidUser_whenGetWorkspaceSites_thenReturnMappedJsonNode() {
+        //given
+        final WorkspaceSitesPageDTO givenDto = Mockito.mock(WorkspaceSitesPageDTO.class);
+        final JsonNode givenJson = new ObjectMapper().valueToTree(Map.of("total", 1));
+        when(this.siteApi.getSites(null, null)).thenReturn(givenDto);
+        when(this.objectMapper.valueToTree(givenDto)).thenReturn(givenJson);
+
+        //when
+        final JsonNode actual = this.workspaceProjectionHttpClient.getWorkspaceSites(17L);
+
+        //then
+        assertThat(actual).isEqualTo(givenJson);
+        verify(this.siteApi).getSites(null, null);
+        verify(this.objectMapper).valueToTree(givenDto);
     }
 }
