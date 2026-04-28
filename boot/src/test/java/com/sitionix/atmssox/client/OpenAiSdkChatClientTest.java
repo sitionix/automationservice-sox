@@ -17,6 +17,7 @@ import com.openai.services.blocking.ResponseService;
 import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -296,7 +297,8 @@ class OpenAiSdkChatClientTest {
     private OpenAiSdkChatClient createClient() {
         return new OpenAiSdkChatClient(
                 this.openAIClient,
-                this.openAiChatProperties
+                this.openAiChatProperties,
+                new OpenAiNativeToolAdapter(new ObjectMapper())
         );
     }
 }
