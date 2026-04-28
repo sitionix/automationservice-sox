@@ -16,6 +16,11 @@ import com.openai.models.responses.ToolChoiceOptions;
 import com.openai.services.blocking.ResponseService;
 import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
+import com.sitionix.atmssox.domain.client.OpenAiNativeToolResult;
+import com.sitionix.atmssox.domain.client.OpenAiToolChatRequest;
+import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
+import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
+import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -246,6 +251,35 @@ class OpenAiSdkChatClientTest {
                     assertThat(actual.getHttpStatus()).isEqualTo(503);
                     assertThat(actual.getUpstreamMessage()).isEqualTo(" ");
                 });
+    }
+
+    @Test
+    void givenToolRequestWithToolResults_whenExecuteWithTools_thenReturnToolChatResponse() {
+        //given
+        final Response response = this.getResponseWithText("tool-mode-output");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
+        final OpenAiSdkChatClient client = this.createClient();
+        final CapabilityDefinition definition = new CapabilityDefinition(
+                "GET_WORKSPACE_SITES",
+                "desc",
+                List.of("site"),
+                CapabilityInputSchemaBuilder.objectSchema().build(),
+                "out"
+        );
+        final OpenAiToolChatRequest request = new OpenAiToolChatRequest(
+                "instruction",
+                "input",
+                "prev_1",
+                List.of(definition),
+                List.of(new OpenAiNativeToolResult("call_1", "{\"ok\":true}"))
+        );
+
+        //when
+        final OpenAiToolChatResponse actual = client.executeWithTools(request);
+
+        //then
+        assertThat(actual.outputText()).isEqualTo("tool-mode-output");
+        verify(this.responseService).create(any(ResponseCreateParams.class));
     }
 
     private Response getResponseWithText(final String text) {
