@@ -96,8 +96,6 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         );
 
         final UserAgentExecutionContext contextPrompt = this.conversationContextBuilder.build(
-                agentId,
-                conversation.getId(),
                 agent.getInstruction(),
                 activeRules,
                 snapshot.map(ConversationContextSnapshot::getSummary).orElse(""),

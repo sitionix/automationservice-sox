@@ -8,7 +8,6 @@ import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,16 +31,12 @@ public class CapabilityToolLoopService {
     private final ConcreteCapabilityExecutionService concreteCapabilityExecutionService;
     private final AutomationCapabilitiesProperties capabilitiesProperties;
 
-    public String execute(final UUID agentId,
-                          final UUID conversationId,
-                          final String instruction,
+    public String execute(final String instruction,
                           final String input) {
         final String runtimeInstruction = this.buildRuntimeInstruction(instruction);
         final LoopState state = new LoopState(List.of(this.discoveryCapabilityToolService.getDefinition()));
         log.info(
-                "[CAPABILITY] initial tool setup agentId={} conversationId={} toolsCount={} toolNames={}",
-                agentId,
-                conversationId,
+                "[CAPABILITY] initial tool setup toolsCount={} toolNames={}",
                 state.activeTools.size(),
                 state.activeTools.stream().map(CapabilityDefinition::name).toList()
         );
@@ -52,9 +47,7 @@ public class CapabilityToolLoopService {
             );
             state.previousResponseId = response.responseId();
             log.info(
-                    "[CAPABILITY] model response received agentId={} conversationId={} hasToolCalls={} toolCallNames={}",
-                    agentId,
-                    conversationId,
+                    "[CAPABILITY] model response received hasToolCalls={} toolCallNames={}",
                     response.toolCalls() != null && !response.toolCalls().isEmpty(),
                     response.toolCalls() == null ? List.of() : response.toolCalls().stream().map(OpenAiNativeToolCall::name).toList()
             );

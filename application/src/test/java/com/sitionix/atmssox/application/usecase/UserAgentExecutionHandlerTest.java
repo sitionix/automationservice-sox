@@ -55,16 +55,11 @@ class UserAgentExecutionHandlerTest {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
         final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "  Keep answers concise.  ",
                 "  Explain SOLID.  "
         );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "Keep answers concise.",
+        when(this.capabilityToolLoopService.execute("Keep answers concise.",
                 "Explain SOLID."
         )).thenReturn("answer");
 
@@ -75,8 +70,6 @@ class UserAgentExecutionHandlerTest {
         assertThat(actual).isEqualTo("answer");
         verify(this.automationCapabilitiesProperties).isEnabled();
         verify(this.capabilityToolLoopService).execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "Keep answers concise.",
                 "Explain SOLID."
         );
@@ -87,8 +80,6 @@ class UserAgentExecutionHandlerTest {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
         final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "  Keep answers concise.  ",
                 "  Explain SOLID.  "
         );
@@ -115,8 +106,6 @@ class UserAgentExecutionHandlerTest {
         //given
         final Agent givenAgent = this.getAgent("Instruction");
         final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "Instruction",
                 "   "
         );
@@ -133,16 +122,11 @@ class UserAgentExecutionHandlerTest {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
         final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "  Keep answers concise.  ",
                 "  Explain SOLID.  "
         );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "Keep answers concise.",
+        when(this.capabilityToolLoopService.execute("Keep answers concise.",
                 "Explain SOLID."
         ))
                 .thenThrow(new RuntimeException("tool loop fail"));
@@ -155,8 +139,6 @@ class UserAgentExecutionHandlerTest {
         assertThat(actual).isEqualTo("fallback");
         verify(this.automationCapabilitiesProperties).isEnabled();
         verify(this.capabilityToolLoopService).execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "Keep answers concise.",
                 "Explain SOLID."
         );

@@ -63,8 +63,6 @@ class CapabilityToolLoopServiceTest {
 
         //when
         final String actual = this.capabilityToolLoopService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "inst",
                 "input"
         );
@@ -86,8 +84,6 @@ class CapabilityToolLoopServiceTest {
 
         //when
         this.capabilityToolLoopService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "Keep answers concise.",
                 "які в мене є сайти?"
         );
@@ -126,8 +122,6 @@ class CapabilityToolLoopServiceTest {
 
         //when
         final String actual = this.capabilityToolLoopService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
                 "inst",
                 "input"
         );

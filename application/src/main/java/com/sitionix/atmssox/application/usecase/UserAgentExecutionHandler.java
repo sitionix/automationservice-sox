@@ -39,7 +39,7 @@ public class UserAgentExecutionHandler implements AgentExecutionHandler<UserAgen
             return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
         }
         try {
-            return this.capabilityToolLoopService.execute(context.agentId(), context.conversationId(), instruction, input);
+            return this.capabilityToolLoopService.execute(instruction, input);
         } catch (RuntimeException exception) {
             log.warn("[CAPABILITY] tool loop failed, fallback to plain chat execution", exception);
             return this.openAiChatClient.execute(new OpenAiChatRequest(instruction, input));
