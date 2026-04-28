@@ -11,6 +11,10 @@
 
     <artifactId>boot</artifactId>
 
+    <properties>
+        <wagssox.api.version>0.0.2</wagssox.api.version>
+    </properties>
+
     <dependencies>
         <!-- MODULE -->
         <dependency>
@@ -60,6 +64,16 @@
             <groupId>com.openai</groupId>
             <artifactId>openai-java</artifactId>
             <version>4.32.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.afesox</groupId>
+            <artifactId>app-afesox-wagssox-client-stable</artifactId>
+            <version>${wagssox.api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>6.1.13</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>

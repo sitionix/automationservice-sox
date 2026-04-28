@@ -1,11 +1,13 @@
 package com.sitionix.atmssox.api.handler;
 
 import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
+import com.sitionix.atmssox.domain.exception.ClientResponseException;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -34,7 +36,7 @@ class RestExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        this.restExceptionHandler = new RestExceptionHandler();
+        this.restExceptionHandler = new RestExceptionHandler(new ObjectMapper());
     }
 
     @Test
@@ -215,6 +217,57 @@ class RestExceptionHandlerTest {
 
         //then
         assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, "Malformed request body"));
+    }
+
+    @Test
+    void givenClientResponseExceptionWithValidUpstreamBody_whenHandleClientResponseException_thenReturnUpstreamErrorAsIs() {
+        //given
+        final ClientResponseException given = new ClientResponseException(
+                HttpStatus.NOT_FOUND.value(),
+                "{\"code\":404,\"title\":\"Not Found\",\"details\":\"Site overview not found\"}",
+                null,
+                new RuntimeException("upstream")
+        );
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.NOT_FOUND.value(), "Not Found", "Site overview not found"));
+    }
+
+    @Test
+    void givenClientResponseExceptionWithInvalidBody_whenHandleClientResponseException_thenReturnFallbackErrorByStatus() {
+        //given
+        final ClientResponseException given = new ClientResponseException(
+                HttpStatus.BAD_REQUEST.value(),
+                "not-json",
+                null,
+                new RuntimeException("upstream")
+        );
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase()));
+    }
+
+    @Test
+    void givenClientResponseExceptionWithUnknownStatus_whenHandleClientResponseException_thenReturnBadGateway() {
+        //given
+        final ClientResponseException given = new ClientResponseException(
+                999,
+                "{\"code\":999,\"title\":\"Unknown\",\"details\":\"Unknown\"}",
+                null,
+                new RuntimeException("upstream")
+        );
+
+        //when
+        final ResponseEntity<ErrorDTO> actual = this.restExceptionHandler.handle(given);
+
+        //then
+        assertThat(actual).isEqualTo(this.expectedError(HttpStatus.BAD_GATEWAY, "Invalid upstream response status"));
     }
 
     private ResponseEntity<ErrorDTO> expectedError(final HttpStatus status, final String details) {
