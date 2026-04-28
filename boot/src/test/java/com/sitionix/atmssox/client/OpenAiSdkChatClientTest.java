@@ -17,6 +17,7 @@ import com.openai.services.blocking.ResponseService;
 import com.sitionix.atmssox.config.OpenAiChatProperties;
 import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +55,7 @@ class OpenAiSdkChatClientTest {
         //given
         final Response response = this.getResponseWithText("  Hello from assistant.  ");
         when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         final String actual = client.execute(DEFAULT_REQUEST);
@@ -70,7 +71,7 @@ class OpenAiSdkChatClientTest {
         //given
         final Response response = this.getResponseWithText("   ");
         when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -83,7 +84,7 @@ class OpenAiSdkChatClientTest {
     void givenMissingApiKey_whenExecute_thenThrowOpenAiExecutionException() {
         //given
         this.openAiChatProperties.setApiKey(" ");
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -96,7 +97,7 @@ class OpenAiSdkChatClientTest {
     void givenMissingModel_whenExecute_thenThrowOpenAiExecutionException() {
         //given
         this.openAiChatProperties.setModel(" ");
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -109,7 +110,7 @@ class OpenAiSdkChatClientTest {
     void givenUnexpectedSdkFailure_whenExecute_thenWrapAsOpenAiExecutionException() {
         //given
         when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(new RuntimeException("boom"));
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -132,7 +133,7 @@ class OpenAiSdkChatClientTest {
                                 .build())
                         .build()
         );
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -161,7 +162,7 @@ class OpenAiSdkChatClientTest {
                                 .build())
                         .build()
         );
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -185,7 +186,7 @@ class OpenAiSdkChatClientTest {
         when(serviceException.code()).thenReturn(Optional.empty());
         when(serviceException.getMessage()).thenReturn("raw service message");
         when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -210,7 +211,7 @@ class OpenAiSdkChatClientTest {
         when(serviceException.body()).thenReturn(JsonValue.from("not-a-json-object"));
         when(serviceException.getMessage()).thenReturn("provider transport failure");
         when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -234,7 +235,7 @@ class OpenAiSdkChatClientTest {
         when(serviceException.code()).thenReturn(Optional.empty());
         when(serviceException.getMessage()).thenReturn(" ");
         when(this.responseService.create(any(ResponseCreateParams.class))).thenThrow(serviceException);
-        final OpenAiSdkChatClient client = new OpenAiSdkChatClient(this.openAIClient, this.openAiChatProperties);
+        final OpenAiSdkChatClient client = this.createClient();
 
         //when
         //then
@@ -291,5 +292,13 @@ class OpenAiSdkChatClientTest {
                 .topLogprobs(Optional.empty())
                 .truncation(Optional.empty())
                 .build();
+    }
+
+    private OpenAiSdkChatClient createClient() {
+        return new OpenAiSdkChatClient(
+                this.openAIClient,
+                this.openAiChatProperties,
+                new OpenAiNativeToolAdapter(new ObjectMapper())
+        );
     }
 }
