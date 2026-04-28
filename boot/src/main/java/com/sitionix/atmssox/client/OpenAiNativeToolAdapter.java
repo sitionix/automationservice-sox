@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.core.JsonValue;
 import com.openai.models.responses.FunctionTool;
@@ -8,8 +7,8 @@ import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseInputItem;
 import com.openai.models.responses.Tool;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolCall;
-import com.sitionix.atmssox.domain.client.OpenAiNativeToolDefinition;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolResult;
+import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,17 +23,8 @@ public class OpenAiNativeToolAdapter {
 
     private final ObjectMapper objectMapper;
 
-    public List<Tool> toTools(final List<OpenAiNativeToolDefinition> definitions) {
-        return definitions.stream().map(definition -> Tool.ofFunction(
-                FunctionTool.builder()
-                        .name(definition.name())
-                        .description(definition.description())
-                        .strict(definition.strict())
-                        .parameters(FunctionTool.Parameters.builder()
-                                .additionalProperties(this.toJsonMap(definition.inputSchema()))
-                                .build())
-                        .build()
-        )).toList();
+    public List<Tool> toTools(final List<CapabilityDefinition> definitions) {
+        return definitions.stream().map(this::toTool).toList();
     }
 
     public List<ResponseInputItem> toToolResultInput(final List<OpenAiNativeToolResult> toolResults) {
@@ -65,12 +55,25 @@ public class OpenAiNativeToolAdapter {
         return calls;
     }
 
-    private Map<String, JsonValue> toJsonMap(final JsonNode jsonNode) {
+    private Map<String, JsonValue> toJsonMap(final Object inputSchema) {
         @SuppressWarnings("unchecked")
-        final Map<String, Object> map = jsonNode == null ? Map.of() : this.objectMapper.convertValue(jsonNode, Map.class);
+        final Map<String, Object> map = inputSchema == null ? Map.of() : this.objectMapper.convertValue(inputSchema, Map.class);
         return map.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 entry -> JsonValue.from(entry.getValue())
         ));
+    }
+
+    private Tool toTool(final CapabilityDefinition definition) {
+        return Tool.ofFunction(
+                FunctionTool.builder()
+                        .name(definition.name())
+                        .description(definition.description())
+                        .strict(true)
+                        .parameters(FunctionTool.Parameters.builder()
+                                .additionalProperties(this.toJsonMap(definition.inputSchema()))
+                                .build())
+                        .build()
+        );
     }
 }

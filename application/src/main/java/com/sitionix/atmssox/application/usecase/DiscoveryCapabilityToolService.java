@@ -1,11 +1,10 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolCall;
-import com.sitionix.atmssox.domain.client.OpenAiNativeToolDefinition;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolResult;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,18 +18,17 @@ public class DiscoveryCapabilityToolService {
     private final CapabilityToolPayloadCodec payloadCodec;
     private final ObjectMapper objectMapper;
 
-    public OpenAiNativeToolDefinition getDefinition() {
-        return new OpenAiNativeToolDefinition(
+    public CapabilityDefinition getDefinition() {
+        return new CapabilityDefinition(
                 TOOL_NAME,
                 "Discover backend capabilities relevant to the user's current intent.",
-                this.objectMapper.valueToTree(
-                        CapabilityInputSchemaBuilder.objectSchema()
-                                .property("userIntent", "string", null, "Short description of what the user wants to accomplish.")
-                                .required("userIntent")
-                                .additionalProperties(false)
-                                .build()
-                ),
-                true
+                List.of("capability", "discovery", "tooling"),
+                CapabilityInputSchemaBuilder.objectSchema()
+                        .property("userIntent", "string", null, "Short description of what the user wants to accomplish.")
+                        .required("userIntent")
+                        .additionalProperties(false)
+                        .build(),
+                "List of concrete capability definitions relevant to the current user intent."
         );
     }
 

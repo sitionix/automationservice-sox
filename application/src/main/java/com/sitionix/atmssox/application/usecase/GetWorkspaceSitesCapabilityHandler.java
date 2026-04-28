@@ -35,4 +35,9 @@ public class GetWorkspaceSitesCapabilityHandler implements CapabilityHandler<Wor
         final JsonNode payload = this.workspaceProjectionClient.getWorkspaceSites();
         return new CapabilityExecutionResult(CapabilityName.GET_WORKSPACE_SITES, payload);
     }
+
+    @Override
+    public Class<WorkspaceSitesArg> argType() {
+        return WorkspaceSitesArg.class;
+    }
 }

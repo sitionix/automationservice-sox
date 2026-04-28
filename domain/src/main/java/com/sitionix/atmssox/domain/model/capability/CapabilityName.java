@@ -29,4 +29,11 @@ public enum CapabilityName {
         }
         return this.handler.execute(command);
     }
+
+    public Class<Object> argType() {
+        if (this.handler == null) {
+            throw new IllegalStateException("No handler configured for capability: " + this.name());
+        }
+        return this.handler.argType();
+    }
 }

@@ -2,7 +2,6 @@ package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolCall;
-import com.sitionix.atmssox.domain.client.OpenAiNativeToolDefinition;
 import com.sitionix.atmssox.domain.client.OpenAiNativeToolResult;
 import com.sitionix.atmssox.domain.client.OpenAiToolChatRequest;
 import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
@@ -20,7 +19,6 @@ public class CapabilityToolLoopService {
 
     private final OpenAiChatClient openAiChatClient;
     private final CapabilityRouterService capabilityRouterService;
-    private final CapabilityToolDefinitionAdapter capabilityToolDefinitionAdapter;
     private final DiscoveryCapabilityToolService discoveryCapabilityToolService;
     private final ConcreteCapabilityExecutionService concreteCapabilityExecutionService;
     private final AutomationCapabilitiesProperties capabilitiesProperties;
@@ -58,7 +56,7 @@ public class CapabilityToolLoopService {
                 final String userIntent = this.discoveryCapabilityToolService.extractUserIntent(toolCall);
                 final List<CapabilityDefinition> selected = this.capabilityRouterService.discover(userIntent);
                 log.info("[CAPABILITY] router selected capabilities={}", selected.stream().map(CapabilityDefinition::name).toList());
-                state.activeTools = selected.stream().map(this.capabilityToolDefinitionAdapter::toNativeTool).toList();
+                state.activeTools = selected;
                 stepResults.add(this.discoveryCapabilityToolService.buildDiscoveryResult(toolCall, selected));
                 continue;
             }
@@ -78,10 +76,10 @@ public class CapabilityToolLoopService {
         private int discoveryCalls;
         private int capabilityCalls;
         private String previousResponseId;
-        private List<OpenAiNativeToolDefinition> activeTools;
+        private List<CapabilityDefinition> activeTools;
         private List<OpenAiNativeToolResult> toolResults;
 
-        private LoopState(final List<OpenAiNativeToolDefinition> initialTools) {
+        private LoopState(final List<CapabilityDefinition> initialTools) {
             this.discoveryCalls = 0;
             this.capabilityCalls = 0;
             this.previousResponseId = null;
