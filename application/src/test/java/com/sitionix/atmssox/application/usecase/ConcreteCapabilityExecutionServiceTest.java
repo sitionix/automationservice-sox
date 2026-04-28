@@ -9,7 +9,6 @@ import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

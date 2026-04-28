@@ -23,7 +23,7 @@ public class ConcreteCapabilityExecutionService {
     public OpenAiNativeToolResult execute(final OpenAiNativeToolCall toolCall) {
         try {
             final CapabilityName capabilityName = CapabilityName.valueOf(toolCall.name());
-            log.info("[CAPABILITY] executing capability={}", capabilityName.name());
+            log.info("[CAPABILITY] executing capability capability={}", capabilityName.name());
             final Object parsedArg = this.objectMapper.treeToValue(
                     this.payloadCodec.parseArgs(toolCall.argumentsJson()),
                     capabilityName.argType()
@@ -37,7 +37,7 @@ public class ConcreteCapabilityExecutionService {
             log.info("[CAPABILITY] capability executed capability={} success=true", capabilityName.name());
             return new OpenAiNativeToolResult(toolCall.callId(), this.payloadCodec.serializeJsonNode(result.payload()));
         } catch (Exception exception) {
-            log.warn("[CAPABILITY] capability failed capability={} reason={}", toolCall.name(), exception.getMessage());
+            log.warn("[CAPABILITY] capability failed capability={} error={}", toolCall.name(), exception.getMessage());
             return new OpenAiNativeToolResult(toolCall.callId(), this.payloadCodec.serializeError("Capability call failed"));
         }
     }

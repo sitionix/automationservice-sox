@@ -4,7 +4,6 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
-
 import java.util.List;
 import java.util.stream.Collectors;
 

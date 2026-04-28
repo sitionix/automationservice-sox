@@ -106,6 +106,11 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 agent,
                 contextPrompt
         );
+        log.info(
+                "[CAPABILITY] final assistant response ready agentId={} conversationId={}",
+                agentId,
+                conversation.getId()
+        );
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));
         log.debug(

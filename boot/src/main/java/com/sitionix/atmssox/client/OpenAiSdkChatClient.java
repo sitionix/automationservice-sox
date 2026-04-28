@@ -86,10 +86,12 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
             }
 
             final Response response = this.openAIClient.responses().create(builder.build());
+            final String outputText = this.nativeToolAdapter.extractOutputText(response);
+            final var toolCalls = this.nativeToolAdapter.extractToolCalls(response);
             return new OpenAiToolChatResponse(
                     response.id(),
-                    this.nativeToolAdapter.extractOutputText(response),
-                    this.nativeToolAdapter.extractToolCalls(response)
+                    outputText,
+                    toolCalls
             );
         } catch (OpenAiExecutionException exception) {
             throw exception;

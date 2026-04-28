@@ -40,15 +40,23 @@ public class CapabilityRouterService {
         final List<CapabilityDefinition> candidates = Arrays.stream(CapabilityName.values())
                 .map(CapabilityName::definition)
                 .toList();
+        log.info(
+                "[CAPABILITY] router started userIntentLength={} candidatesCount={} candidateNames={}",
+                userIntent == null ? 0 : userIntent.length(),
+                candidates.size(),
+                candidates.stream().map(CapabilityDefinition::name).toList()
+        );
         final List<CapabilityCatalogItem> compactCatalog = candidates.stream()
                 .map(definition -> new CapabilityCatalogItem(definition.name(), definition.description(), definition.tags()))
                 .toList();
         final String input = this.serializeRouterInput(new CapabilityRouterRequest(userIntent, compactCatalog));
         try {
             final String raw = this.openAiChatClient.execute(new OpenAiChatRequest(ROUTER_INSTRUCTION, input));
-            return this.parseSelectedCapabilities(raw, candidates);
+            final List<CapabilityDefinition> selectedCapabilities = this.parseSelectedCapabilities(raw, candidates);
+            log.info("[CAPABILITY] router selected capabilities={}", selectedCapabilities.stream().map(CapabilityDefinition::name).toList());
+            return selectedCapabilities;
         } catch (RuntimeException exception) {
-            log.warn("[CAPABILITY] capability router failed", exception);
+            log.warn("[CAPABILITY] router failed error={}", exception.getMessage());
             return List.of();
         }
     }
@@ -58,7 +66,7 @@ public class CapabilityRouterService {
         try {
             routerResponse = this.objectMapper.readValue(raw, CapabilityRouterResponse.class);
         } catch (Exception exception) {
-            log.warn("[CAPABILITY] invalid router response");
+            log.warn("[CAPABILITY] router invalid response");
             return List.of();
         }
         if (routerResponse.capabilities() == null) {

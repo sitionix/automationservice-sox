@@ -54,30 +54,38 @@ class UserAgentExecutionHandlerTest {
     void givenValidAgentAndPrompt_whenExecute_thenExecuteCapabilityToolLoopServiceWithNormalizedInput() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute("Keep answers concise.", "Explain SOLID.")).thenReturn("answer");
+        when(this.capabilityToolLoopService.execute("Keep answers concise.",
+                "Explain SOLID."
+        )).thenReturn("answer");
 
         //when
         final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
 
         //then
-        final ArgumentCaptor<String> instructionCaptor = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<String> inputCaptor = ArgumentCaptor.forClass(String.class);
         assertThat(actual).isEqualTo("answer");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.capabilityToolLoopService).execute(instructionCaptor.capture(), inputCaptor.capture());
-        assertThat(instructionCaptor.getValue()).isEqualTo("Keep answers concise.");
-        assertThat(inputCaptor.getValue()).isEqualTo("Explain SOLID.");
+        verify(this.capabilityToolLoopService).execute(
+                "Keep answers concise.",
+                "Explain SOLID."
+        );
     }
 
     @Test
     void givenCapabilitiesDisabled_whenExecute_thenFallbackToPlainOpenAiExecution() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(false);
         when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("answer");
+        final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
 
         //when
         final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
@@ -85,14 +93,22 @@ class UserAgentExecutionHandlerTest {
         //then
         assertThat(actual).isEqualTo("answer");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
+        verify(this.openAiChatClient).execute(requestCaptor.capture());
+        final OpenAiChatRequest actualRequest = requestCaptor.getValue();
+        assertThat(actualRequest.instruction()).isEqualTo("Keep answers concise.");
+        assertThat(actualRequest.instruction())
+                .doesNotContain("You can use backend platform capabilities through tools.");
+        assertThat(actualRequest.input()).isEqualTo("Explain SOLID.");
     }
 
     @Test
     void givenBlankPrompt_whenExecute_thenThrowAgentValidationException() {
         //given
         final Agent givenAgent = this.getAgent("Instruction");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("Instruction", "   ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                "Instruction",
+                "   "
+        );
 
         //when
         //then
@@ -105,9 +121,14 @@ class UserAgentExecutionHandlerTest {
     void givenCapabilityLoopFails_whenExecute_thenFallbackToPlainOpenAiExecution() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute("Keep answers concise.", "Explain SOLID."))
+        when(this.capabilityToolLoopService.execute("Keep answers concise.",
+                "Explain SOLID."
+        ))
                 .thenThrow(new RuntimeException("tool loop fail"));
         when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("fallback");
 
@@ -117,7 +138,10 @@ class UserAgentExecutionHandlerTest {
         //then
         assertThat(actual).isEqualTo("fallback");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.capabilityToolLoopService).execute("Keep answers concise.", "Explain SOLID.");
+        verify(this.capabilityToolLoopService).execute(
+                "Keep answers concise.",
+                "Explain SOLID."
+        );
         verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
     }
 

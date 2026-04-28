@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -280,6 +281,44 @@ class OpenAiSdkChatClientTest {
         //then
         assertThat(actual.outputText()).isEqualTo("tool-mode-output");
         verify(this.responseService).create(any(ResponseCreateParams.class));
+    }
+
+    @Test
+    void givenToolRequestWithCapabilityInstruction_whenExecuteWithTools_thenCreateRequestWithInstructionAndDiscoverTool() {
+        //given
+        final Response response = this.getResponseWithText("tool-mode-output");
+        when(this.responseService.create(any(ResponseCreateParams.class))).thenReturn(response);
+        final OpenAiSdkChatClient client = this.createClient();
+        final CapabilityDefinition definition = new CapabilityDefinition(
+                "DISCOVER_CAPABILITIES",
+                "discover",
+                List.of("capability"),
+                CapabilityInputSchemaBuilder.objectSchema()
+                        .property("userIntent", "string", null, "intent")
+                        .required("userIntent")
+                        .additionalProperties(false)
+                        .build(),
+                "out"
+        );
+        final OpenAiToolChatRequest request = new OpenAiToolChatRequest(
+                "You can use backend platform capabilities through tools.",
+                "які в мене є сайти?",
+                null,
+                List.of(definition),
+                List.of()
+        );
+        final ArgumentCaptor<ResponseCreateParams> paramsCaptor = ArgumentCaptor.forClass(ResponseCreateParams.class);
+
+        //when
+        client.executeWithTools(request);
+
+        //then
+        verify(this.responseService).create(paramsCaptor.capture());
+        final ResponseCreateParams actualParams = paramsCaptor.getValue();
+        assertThat(actualParams.instructions()).contains("You can use backend platform capabilities through tools.");
+        assertThat(actualParams.tools()).isPresent();
+        assertThat(actualParams.tools().orElse(List.of())).hasSize(1);
+        assertThat(actualParams.tools().orElse(List.of()).get(0).function().orElseThrow().name()).isEqualTo("DISCOVER_CAPABILITIES");
     }
 
     @Test

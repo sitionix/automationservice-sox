@@ -17,20 +17,40 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CapabilityToolLoopService {
 
+    private static final String CAPABILITY_RUNTIME_INSTRUCTION = """
+            You can use backend platform capabilities through tools.
+
+            When the user asks about their Sitionix platform data or state, such as sites, workspace, domains, analytics, services, or account information, use DISCOVER_CAPABILITIES before answering.
+
+            Do not say you lack access to platform data before trying available capabilities.
+            """.strip();
+
     private final OpenAiChatClient openAiChatClient;
     private final CapabilityRouterService capabilityRouterService;
     private final DiscoveryCapabilityToolService discoveryCapabilityToolService;
     private final ConcreteCapabilityExecutionService concreteCapabilityExecutionService;
     private final AutomationCapabilitiesProperties capabilitiesProperties;
 
-    public String execute(final String instruction, final String input) {
+    public String execute(final String instruction,
+                          final String input) {
+        final String runtimeInstruction = this.buildRuntimeInstruction(instruction);
         final LoopState state = new LoopState(List.of(this.discoveryCapabilityToolService.getDefinition()));
+        log.info(
+                "[CAPABILITY] initial tool setup toolsCount={} toolNames={}",
+                state.activeTools.size(),
+                state.activeTools.stream().map(CapabilityDefinition::name).toList()
+        );
 
         while (true) {
             final OpenAiToolChatResponse response = this.openAiChatClient.executeWithTools(
-                    new OpenAiToolChatRequest(instruction, input, state.previousResponseId, state.activeTools, state.toolResults)
+                    new OpenAiToolChatRequest(runtimeInstruction, input, state.previousResponseId, state.activeTools, state.toolResults)
             );
             state.previousResponseId = response.responseId();
+            log.info(
+                    "[CAPABILITY] model response received hasToolCalls={} toolCallNames={}",
+                    response.toolCalls() != null && !response.toolCalls().isEmpty(),
+                    response.toolCalls() == null ? List.of() : response.toolCalls().stream().map(OpenAiNativeToolCall::name).toList()
+            );
             if (response.toolCalls() == null || response.toolCalls().isEmpty()) {
                 return response.outputText();
             }
@@ -40,6 +60,13 @@ public class CapabilityToolLoopService {
                 return response.outputText();
             }
         }
+    }
+
+    private String buildRuntimeInstruction(final String instruction) {
+        if (instruction == null || instruction.isBlank()) {
+            return CAPABILITY_RUNTIME_INSTRUCTION;
+        }
+        return instruction.trim() + "\n\n" + CAPABILITY_RUNTIME_INSTRUCTION;
     }
 
     private boolean handleToolCalls(final List<OpenAiNativeToolCall> toolCalls,
@@ -52,11 +79,19 @@ public class CapabilityToolLoopService {
                     return false;
                 }
                 state.discoveryCalls++;
-                log.info("[CAPABILITY] discovery requested");
                 final String userIntent = this.discoveryCapabilityToolService.extractUserIntent(toolCall);
+                log.info(
+                        "[CAPABILITY] discovery requested userIntentPresent={}",
+                        userIntent != null && !userIntent.isBlank()
+                );
                 final List<CapabilityDefinition> selected = this.capabilityRouterService.discover(userIntent);
                 log.info("[CAPABILITY] router selected capabilities={}", selected.stream().map(CapabilityDefinition::name).toList());
                 state.activeTools = selected;
+                log.info(
+                        "[CAPABILITY] concrete tools injected toolsCount={} toolNames={}",
+                        state.activeTools.size(),
+                        state.activeTools.stream().map(CapabilityDefinition::name).toList()
+                );
                 stepResults.add(this.discoveryCapabilityToolService.buildDiscoveryResult(toolCall, selected));
                 continue;
             }

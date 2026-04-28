@@ -8,9 +8,11 @@ import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -60,12 +62,39 @@ class CapabilityToolLoopServiceTest {
                 .thenReturn(new OpenAiToolChatResponse("r1", "final", List.of()));
 
         //when
-        final String actual = this.capabilityToolLoopService.execute("inst", "input");
+        final String actual = this.capabilityToolLoopService.execute(
+                "inst",
+                "input"
+        );
 
         //then
         assertThat(actual).isEqualTo("final");
         verify(this.discoveryCapabilityToolService).getDefinition();
         verify(this.openAiChatClient).executeWithTools(any(OpenAiToolChatRequest.class));
+    }
+
+    @Test
+    void givenCapabilitiesLoopRequest_whenExecute_thenInjectRuntimeCapabilityInstructionAndDiscoveryTool() {
+        //given
+        final CapabilityDefinition discoverDefinition = this.getDefinition("DISCOVER_CAPABILITIES");
+        when(this.discoveryCapabilityToolService.getDefinition()).thenReturn(discoverDefinition);
+        when(this.openAiChatClient.executeWithTools(any(OpenAiToolChatRequest.class)))
+                .thenReturn(new OpenAiToolChatResponse("r1", "final", List.of()));
+        final ArgumentCaptor<OpenAiToolChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiToolChatRequest.class);
+
+        //when
+        this.capabilityToolLoopService.execute(
+                "Keep answers concise.",
+                "які в мене є сайти?"
+        );
+
+        //then
+        verify(this.openAiChatClient).executeWithTools(requestCaptor.capture());
+        final OpenAiToolChatRequest actualRequest = requestCaptor.getValue();
+        assertThat(actualRequest.tools()).extracting(CapabilityDefinition::name).containsExactly("DISCOVER_CAPABILITIES");
+        assertThat(actualRequest.instruction()).contains("You can use backend platform capabilities through tools.");
+        assertThat(actualRequest.instruction()).contains("use DISCOVER_CAPABILITIES before answering");
+        assertThat(actualRequest.instruction()).contains("Do not say you lack access to platform data");
     }
 
     @Test
@@ -92,7 +121,10 @@ class CapabilityToolLoopServiceTest {
                 .thenReturn(new OpenAiToolChatResponse("r3", "done", List.of()));
 
         //when
-        final String actual = this.capabilityToolLoopService.execute("inst", "input");
+        final String actual = this.capabilityToolLoopService.execute(
+                "inst",
+                "input"
+        );
 
         //then
         assertThat(actual).isEqualTo("done");

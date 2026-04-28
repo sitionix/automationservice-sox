@@ -5,3 +5,7 @@ forge:
         - "/actuator/health"
         - "/actuator/health/readiness"
         - "/actuator/health/liveness"
+logging:
+  level:
+    com.sitionix.atmssox.application.usecase: INFO
+    com.sitionix.atmssox.application.capability: INFO

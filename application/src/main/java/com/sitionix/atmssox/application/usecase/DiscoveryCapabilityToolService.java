@@ -19,9 +19,15 @@ public class DiscoveryCapabilityToolService {
     private final ObjectMapper objectMapper;
 
     public CapabilityDefinition getDefinition() {
-        return new CapabilityDefinition(
+        final CapabilityDefinition definition = new CapabilityDefinition(
                 TOOL_NAME,
-                "Discover backend capabilities relevant to the user's current intent.",
+                """
+                Discover backend platform capabilities relevant to the current user request.
+
+                Use this first when the user asks about platform data, workspace state, sites, domains, analytics, services, account state, or anything that may require backend data or actions.
+
+                The tool returns relevant capabilities that can be used in the next step.
+                """.strip(),
                 List.of("capability", "discovery", "tooling"),
                 CapabilityInputSchemaBuilder.objectSchema()
                         .property("userIntent", "string", null, "Short description of what the user wants to accomplish.")
@@ -30,6 +36,7 @@ public class DiscoveryCapabilityToolService {
                         .build(),
                 "List of concrete capability definitions relevant to the current user intent."
         );
+        return definition;
     }
 
     public boolean isDiscoveryCall(final OpenAiNativeToolCall toolCall) {
