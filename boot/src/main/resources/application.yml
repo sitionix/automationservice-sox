@@ -35,6 +35,9 @@ management:
 forge:
   security:
     service-id: sitionixAutomation
+    targets:
+      sitionixWorkspace:
+        host: workspaceaggregationservice-sox
     dev:
       jwt-secret: ${FORGE_SECURITY_DEV_JWT_SECRET:dev-internal-auth-secret}
       issuer: ${FORGE_SECURITY_DEV_ISSUER:sitionix-internal}

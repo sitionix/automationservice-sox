@@ -57,6 +57,11 @@
         </dependency>
         <dependency>
             <groupId>com.sitionix.forge</groupId>
+            <artifactId>forge-security-client</artifactId>
+            <version>${forge.security.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sitionix.forge</groupId>
             <artifactId>forge-security-server</artifactId>
             <version>${forge.security.version}</version>
         </dependency>
