@@ -71,7 +71,19 @@
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRepositoryImpl.java,
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRuleRepositoryImpl.java,
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationContextSnapshotRepositoryImpl.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationMessageRepositoryImpl.java
+            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationMessageRepositoryImpl.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/client/WorkspaceProjectionClient.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/exception/ClientResponseException.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityDefinition.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityExecutionCommand.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityExecutionResult.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityInputSchema.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityInputSchemaBuilder.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityName.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/CapabilityProperty.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/SiteOverviewArg.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/model/capability/WorkspaceSitesArg.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/usecase/CapabilityHandler.java
         </sonar.coverage.exclusions>
     </properties>
 
