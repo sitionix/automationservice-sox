@@ -4,12 +4,10 @@ import com.app_afesox.wagssox.client.api.SiteApi;
 import com.app_afesox.wagssox.client.invoker.ApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 class WagssoxApiConfigTest {
 
@@ -17,8 +15,7 @@ class WagssoxApiConfigTest {
 
     @BeforeEach
     void setUp() {
-        final RestTemplateBuilder givenRestTemplateBuilder = Mockito.mock(RestTemplateBuilder.class);
-        when(givenRestTemplateBuilder.build()).thenReturn(new RestTemplate());
+        final RestTemplateBuilder givenRestTemplateBuilder = new RestTemplateBuilder();
         this.wagssoxApiConfig = new WagssoxApiConfig(givenRestTemplateBuilder);
     }
 
@@ -45,5 +42,16 @@ class WagssoxApiConfigTest {
         //then
         assertThat(actual).isNotNull();
         assertThat(actual.getApiClient()).isEqualTo(givenApiClient);
+    }
+
+    @Test
+    void givenNoInput_whenCreateRestTemplate_thenReturnNonNullTemplate() {
+        //given
+
+        //when
+        final RestTemplate actual = this.wagssoxApiConfig.wagssoxRestTemplate();
+
+        //then
+        assertThat(actual).isNotNull();
     }
 }
