@@ -6,7 +6,7 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
-import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemas;
+import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.model.capability.SiteOverviewArg;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
@@ -27,7 +27,11 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
                 CapabilityName.GET_SITE_OVERVIEW.name(),
                 "Returns overview information for a specific site.",
                 List.of("site", "overview", "workspace", "status"),
-                CapabilityInputSchemas.requiredSiteId(),
+                CapabilityInputSchemaBuilder.objectSchema()
+                        .property("siteId", "string", "uuid", "Site identifier")
+                        .required("siteId")
+                        .additionalProperties(false)
+                        .build(),
                 "Site overview with identity, status, domain/publication-related metadata if available."
         );
     }
@@ -37,7 +41,7 @@ public class GetSiteOverviewCapabilityHandler implements CapabilityHandler<SiteO
         if (command == null || command.argNode() == null || command.argNode().siteId() == null) {
             throw new AgentValidationException("Site identifier is required");
         }
-        final JsonNode payload = this.workspaceProjectionClient.getSiteOverview(command.userId(), command.argNode().siteId());
+        final JsonNode payload = this.workspaceProjectionClient.getSiteOverview(command.argNode().siteId());
         return new CapabilityExecutionResult(CapabilityName.GET_SITE_OVERVIEW, payload);
     }
 

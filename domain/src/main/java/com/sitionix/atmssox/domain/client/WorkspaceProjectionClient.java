@@ -9,13 +9,12 @@ import java.util.UUID;
 public interface WorkspaceProjectionClient {
 
     /**
-     * Loads site overview for a given user and site.
+     * Loads site overview for a site.
      *
-     * @param userId authenticated user identifier.
      * @param siteId site identifier.
      * @return site overview payload.
      */
-    JsonNode getSiteOverview(Long userId, UUID siteId);
+    JsonNode getSiteOverview(UUID siteId);
 
     /**
      * Loads workspace sites page.

@@ -5,7 +5,7 @@ import com.sitionix.atmssox.domain.client.WorkspaceProjectionClient;
 import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
-import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemas;
+import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.model.capability.WorkspaceSitesArg;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
@@ -25,7 +25,9 @@ public class GetWorkspaceSitesCapabilityHandler implements CapabilityHandler<Wor
                 CapabilityName.GET_WORKSPACE_SITES.name(),
                 "Returns the current user's workspace sites with identifiers, names, statuses, domains and basic metadata.",
                 List.of("site", "sites", "workspace", "list", "status"),
-                CapabilityInputSchemas.emptyObject(),
+                CapabilityInputSchemaBuilder.objectSchema()
+                        .additionalProperties(false)
+                        .build(),
                 "List of workspace sites with site identifiers and metadata that can be used by other site capabilities."
         );
     }

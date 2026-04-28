@@ -148,14 +148,14 @@ class GetSiteOverviewCapabilityHandlerTest {
         );
         final ObjectMapper objectMapper = new ObjectMapper();
         final JsonNode givenPayload = objectMapper.valueToTree(Map.of("siteId", givenSiteId.toString()));
-        when(this.workspaceProjectionClient.getSiteOverview(17L, givenSiteId)).thenReturn(givenPayload);
+        when(this.workspaceProjectionClient.getSiteOverview(givenSiteId)).thenReturn(givenPayload);
 
         //when
         final CapabilityExecutionResult actual = this.getSiteOverviewCapabilityHandler.execute(givenCommand);
 
         //then
         assertThat(actual).isEqualTo(new CapabilityExecutionResult(CapabilityName.GET_SITE_OVERVIEW, givenPayload));
-        verify(this.workspaceProjectionClient).getSiteOverview(17L, givenSiteId);
+        verify(this.workspaceProjectionClient).getSiteOverview(givenSiteId);
     }
 
     @Test
@@ -169,12 +169,12 @@ class GetSiteOverviewCapabilityHandlerTest {
                 new SiteOverviewArg(givenSiteId)
         );
         final IllegalStateException givenException = new IllegalStateException("downstream failure");
-        when(this.workspaceProjectionClient.getSiteOverview(17L, givenSiteId)).thenThrow(givenException);
+        when(this.workspaceProjectionClient.getSiteOverview(givenSiteId)).thenThrow(givenException);
 
         //when
         //then
         assertThatThrownBy(() -> this.getSiteOverviewCapabilityHandler.execute(givenCommand))
                 .isSameAs(givenException);
-        verify(this.workspaceProjectionClient).getSiteOverview(17L, givenSiteId);
+        verify(this.workspaceProjectionClient).getSiteOverview(givenSiteId);
     }
 }

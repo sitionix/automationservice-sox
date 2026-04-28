@@ -6,7 +6,6 @@ import com.app_afesox.wagssox.client.dto.WorkspaceSitesPageDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitionix.atmssox.domain.client.WorkspaceProjectionClient;
-import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,8 +19,7 @@ public class WorkspaceProjectionHttpClient implements WorkspaceProjectionClient 
     private final DownstreamClientCallExecutor clientCallExecutor;
 
     @Override
-    public JsonNode getSiteOverview(final Long userId, final UUID siteId) {
-        this.validateUserId(userId);
+    public JsonNode getSiteOverview(final UUID siteId) {
         return this.clientCallExecutor.execute(() -> {
             final SiteOverviewDTO response = this.siteApi.getSiteOverview(siteId);
             return this.objectMapper.valueToTree(response);
@@ -36,9 +34,4 @@ public class WorkspaceProjectionHttpClient implements WorkspaceProjectionClient 
         });
     }
 
-    private void validateUserId(final Long userId) {
-        if (userId == null || userId <= 0) {
-            throw new AgentValidationException("userId is required");
-        }
-    }
 }
