@@ -301,7 +301,7 @@ class OpenAiSdkChatClientTest {
                 "out"
         );
         final OpenAiToolChatRequest request = new OpenAiToolChatRequest(
-                "You have access to backend platform capabilities through tools.",
+                "You can use backend platform capabilities through tools.",
                 "які в мене є сайти?",
                 null,
                 List.of(definition),
@@ -315,7 +315,7 @@ class OpenAiSdkChatClientTest {
         //then
         verify(this.responseService).create(paramsCaptor.capture());
         final ResponseCreateParams actualParams = paramsCaptor.getValue();
-        assertThat(actualParams.instructions()).contains("You have access to backend platform capabilities through tools.");
+        assertThat(actualParams.instructions()).contains("You can use backend platform capabilities through tools.");
         assertThat(actualParams.tools()).isPresent();
         assertThat(actualParams.tools().orElse(List.of())).hasSize(1);
         assertThat(actualParams.tools().orElse(List.of()).get(0).function().orElseThrow().name()).isEqualTo("DISCOVER_CAPABILITIES");

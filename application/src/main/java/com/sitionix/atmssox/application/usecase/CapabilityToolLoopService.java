@@ -19,13 +19,11 @@ import org.springframework.stereotype.Service;
 public class CapabilityToolLoopService {
 
     private static final String CAPABILITY_RUNTIME_INSTRUCTION = """
-            You have access to backend platform capabilities through tools.
+            You can use backend platform capabilities through tools.
 
-            If the user asks about their platform data, workspace, sites, domains, analytics, services, account state, or any information that may require backend data, you must call DISCOVER_CAPABILITIES before answering.
+            When the user asks about their Sitionix platform data or state, such as sites, workspace, domains, analytics, services, or account information, use DISCOVER_CAPABILITIES before answering.
 
-            Do not claim that you lack access to platform data before trying DISCOVER_CAPABILITIES.
-
-            If DISCOVER_CAPABILITIES returns no relevant capabilities, then answer normally and explain what information is missing if needed.
+            Do not say you lack access to platform data before trying available capabilities.
             """.strip();
 
     private final OpenAiChatClient openAiChatClient;
@@ -40,14 +38,6 @@ public class CapabilityToolLoopService {
                           final String input) {
         final String runtimeInstruction = this.buildRuntimeInstruction(instruction);
         final LoopState state = new LoopState(List.of(this.discoveryCapabilityToolService.getDefinition()));
-        final String normalizedInstruction = runtimeInstruction.toLowerCase();
-        final boolean capabilityInstructionPresent = normalizedInstruction.contains("capab")
-                || normalizedInstruction.contains("tool")
-                || normalizedInstruction.contains("backend")
-                || normalizedInstruction.contains("platform")
-                || normalizedInstruction.contains("workspace")
-                || normalizedInstruction.contains("domain")
-                || normalizedInstruction.contains("site");
         log.info(
                 "[CAPABILITY] initial tool setup agentId={} conversationId={} toolsCount={} toolNames={}",
                 agentId,
@@ -55,7 +45,6 @@ public class CapabilityToolLoopService {
                 state.activeTools.size(),
                 state.activeTools.stream().map(CapabilityDefinition::name).toList()
         );
-        log.info("[CAPABILITY_DIAG] capability instruction present={}", capabilityInstructionPresent);
 
         while (true) {
             final OpenAiToolChatResponse response = this.openAiChatClient.executeWithTools(

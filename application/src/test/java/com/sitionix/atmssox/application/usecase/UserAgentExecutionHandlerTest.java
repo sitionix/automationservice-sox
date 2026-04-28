@@ -106,7 +106,7 @@ class UserAgentExecutionHandlerTest {
         final OpenAiChatRequest actualRequest = requestCaptor.getValue();
         assertThat(actualRequest.instruction()).isEqualTo("Keep answers concise.");
         assertThat(actualRequest.instruction())
-                .doesNotContain("You have access to backend platform capabilities through tools.");
+                .doesNotContain("You can use backend platform capabilities through tools.");
         assertThat(actualRequest.input()).isEqualTo("Explain SOLID.");
     }
 

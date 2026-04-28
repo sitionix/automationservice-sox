@@ -96,9 +96,9 @@ class CapabilityToolLoopServiceTest {
         verify(this.openAiChatClient).executeWithTools(requestCaptor.capture());
         final OpenAiToolChatRequest actualRequest = requestCaptor.getValue();
         assertThat(actualRequest.tools()).extracting(CapabilityDefinition::name).containsExactly("DISCOVER_CAPABILITIES");
-        assertThat(actualRequest.instruction()).contains("You have access to backend platform capabilities through tools.");
-        assertThat(actualRequest.instruction()).contains("you must call DISCOVER_CAPABILITIES before answering");
-        assertThat(actualRequest.instruction()).contains("Do not claim that you lack access to platform data");
+        assertThat(actualRequest.instruction()).contains("You can use backend platform capabilities through tools.");
+        assertThat(actualRequest.instruction()).contains("use DISCOVER_CAPABILITIES before answering");
+        assertThat(actualRequest.instruction()).contains("Do not say you lack access to platform data");
     }
 
     @Test

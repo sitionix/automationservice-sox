@@ -7,10 +7,8 @@ import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
 import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DiscoveryCapabilityToolService {
@@ -38,7 +36,6 @@ public class DiscoveryCapabilityToolService {
                         .build(),
                 "List of concrete capability definitions relevant to the current user intent."
         );
-        log.info("[CAPABILITY_DIAG] discover tool schema={}", definition.inputSchema());
         return definition;
     }
 
