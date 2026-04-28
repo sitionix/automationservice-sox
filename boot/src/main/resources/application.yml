@@ -56,6 +56,13 @@ openai:
     org-id: ${OPENAI_ORG_ID:}
     project-id: ${OPENAI_PROJECT_ID:}
 automation:
+  capabilities:
+    enabled: true
+    discovery:
+      max-selected-capabilities: 5
+    execution:
+      max-discovery-calls-per-message: 1
+      max-capability-calls-per-message: 2
   async:
     rule-suggestion-analyzer:
       thread-name-prefix: "rule-suggestion-analyzer-"
