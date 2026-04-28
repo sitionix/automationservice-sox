@@ -31,7 +31,15 @@ class DiscoveryCapabilityToolServiceTest {
 
         //then
         assertThat(actual.name()).isEqualTo(DiscoveryCapabilityToolService.TOOL_NAME);
+        assertThat(actual.description()).contains("backend platform capabilities");
+        assertThat(actual.description()).contains("workspace state");
+        assertThat(actual.description()).contains("sites");
+        assertThat(actual.description()).contains("domains");
+        assertThat(actual.description()).contains("analytics");
+        assertThat(actual.description()).contains("services");
+        assertThat(actual.description()).contains("account state");
         assertThat(actual.inputSchema().required()).containsExactly("userIntent");
+        assertThat(actual.inputSchema().additionalProperties()).isFalse();
     }
 
     @Test

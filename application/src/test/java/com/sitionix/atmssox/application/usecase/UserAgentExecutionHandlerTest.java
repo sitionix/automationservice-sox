@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -93,6 +94,7 @@ class UserAgentExecutionHandlerTest {
         );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(false);
         when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("answer");
+        final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
 
         //when
         final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
@@ -100,7 +102,12 @@ class UserAgentExecutionHandlerTest {
         //then
         assertThat(actual).isEqualTo("answer");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
+        verify(this.openAiChatClient).execute(requestCaptor.capture());
+        final OpenAiChatRequest actualRequest = requestCaptor.getValue();
+        assertThat(actualRequest.instruction()).isEqualTo("Keep answers concise.");
+        assertThat(actualRequest.instruction())
+                .doesNotContain("You have access to backend platform capabilities through tools.");
+        assertThat(actualRequest.input()).isEqualTo("Explain SOLID.");
     }
 
     @Test

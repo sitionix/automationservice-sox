@@ -12,9 +12,11 @@ import com.sitionix.atmssox.domain.client.OpenAiToolChatRequest;
 import com.sitionix.atmssox.domain.client.OpenAiToolChatResponse;
 import com.sitionix.atmssox.domain.exception.OpenAiExecutionException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OpenAiSdkChatClient implements OpenAiChatClient {
@@ -85,11 +87,28 @@ public class OpenAiSdkChatClient implements OpenAiChatClient {
                 builder.tools(this.nativeToolAdapter.toTools(request.tools()));
             }
 
+            log.info(
+                    "[CAPABILITY_DIAG] request toolsCount={} toolNames={} toolChoice={} model={}",
+                    request.tools() == null ? 0 : request.tools().size(),
+                    request.tools() == null ? java.util.List.of() : request.tools().stream().map(tool -> tool.name()).toList(),
+                    ToolChoiceOptions.AUTO,
+                    this.openAiChatProperties.getModel()
+            );
             final Response response = this.openAIClient.responses().create(builder.build());
+            final String outputText = this.nativeToolAdapter.extractOutputText(response);
+            final var toolCalls = this.nativeToolAdapter.extractToolCalls(response);
+            log.info(
+                    "[CAPABILITY_DIAG] response finishReason={} hasContent={} contentLength={} toolCallsCount={} toolCallNames={}",
+                    response.status(),
+                    StringUtils.hasText(outputText),
+                    outputText == null ? 0 : outputText.length(),
+                    toolCalls.size(),
+                    toolCalls.stream().map(call -> call.name()).toList()
+            );
             return new OpenAiToolChatResponse(
                     response.id(),
-                    this.nativeToolAdapter.extractOutputText(response),
-                    this.nativeToolAdapter.extractToolCalls(response)
+                    outputText,
+                    toolCalls
             );
         } catch (OpenAiExecutionException exception) {
             throw exception;
