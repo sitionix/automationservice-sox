@@ -20,10 +20,17 @@ public class ConcreteCapabilityExecutionService {
     private final CapabilityToolPayloadCodec payloadCodec;
     private final AuthenticatedUserProvider authenticatedUserProvider;
 
-    public OpenAiNativeToolResult execute(final OpenAiNativeToolCall toolCall) {
+    public OpenAiNativeToolResult execute(final UUID agentId,
+                                          final UUID conversationId,
+                                          final OpenAiNativeToolCall toolCall) {
         try {
             final CapabilityName capabilityName = CapabilityName.valueOf(toolCall.name());
-            log.info("[CAPABILITY] executing capability={}", capabilityName.name());
+            log.info(
+                    "[CAPABILITY] executing capability agentId={} conversationId={} capability={}",
+                    agentId,
+                    conversationId,
+                    capabilityName.name()
+            );
             final Object parsedArg = this.objectMapper.treeToValue(
                     this.payloadCodec.parseArgs(toolCall.argumentsJson()),
                     capabilityName.argType()
@@ -34,10 +41,21 @@ public class ConcreteCapabilityExecutionService {
                     UUID.randomUUID(),
                     parsedArg
             ));
-            log.info("[CAPABILITY] capability executed capability={} success=true", capabilityName.name());
+            log.info(
+                    "[CAPABILITY] capability executed agentId={} conversationId={} capability={} success=true",
+                    agentId,
+                    conversationId,
+                    capabilityName.name()
+            );
             return new OpenAiNativeToolResult(toolCall.callId(), this.payloadCodec.serializeJsonNode(result.payload()));
         } catch (Exception exception) {
-            log.warn("[CAPABILITY] capability failed capability={} reason={}", toolCall.name(), exception.getMessage());
+            log.warn(
+                    "[CAPABILITY] capability failed agentId={} conversationId={} capability={} error={}",
+                    agentId,
+                    conversationId,
+                    toolCall.name(),
+                    exception.getMessage()
+            );
             return new OpenAiNativeToolResult(toolCall.callId(), this.payloadCodec.serializeError("Capability call failed"));
         }
     }

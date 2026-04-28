@@ -4,8 +4,8 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
-
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -13,7 +13,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConversationContextBuilder {
 
-    public UserAgentExecutionContext build(final String agentInstruction,
+    public UserAgentExecutionContext build(final UUID agentId,
+                                           final UUID conversationId,
+                                           final String agentInstruction,
                                            final List<AgentRule> activeRules,
                                            final String summary,
                                            final List<ConversationMessage> lastMessages,
@@ -50,7 +52,7 @@ public class ConversationContextBuilder {
         }
         inputBuilder.append("Respond as AGENT to the latest USER message.");
 
-        return new UserAgentExecutionContext(systemBuilder.toString(), inputBuilder.toString());
+        return new UserAgentExecutionContext(agentId, conversationId, systemBuilder.toString(), inputBuilder.toString());
     }
 
     private boolean shouldAppendCurrentMessage(final List<ConversationMessage> lastMessages,

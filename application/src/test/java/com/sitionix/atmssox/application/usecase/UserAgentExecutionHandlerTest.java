@@ -12,7 +12,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -54,28 +53,44 @@ class UserAgentExecutionHandlerTest {
     void givenValidAgentAndPrompt_whenExecute_thenExecuteCapabilityToolLoopServiceWithNormalizedInput() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute("Keep answers concise.", "Explain SOLID.")).thenReturn("answer");
+        when(this.capabilityToolLoopService.execute(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "Keep answers concise.",
+                "Explain SOLID."
+        )).thenReturn("answer");
 
         //when
         final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
 
         //then
-        final ArgumentCaptor<String> instructionCaptor = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<String> inputCaptor = ArgumentCaptor.forClass(String.class);
         assertThat(actual).isEqualTo("answer");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.capabilityToolLoopService).execute(instructionCaptor.capture(), inputCaptor.capture());
-        assertThat(instructionCaptor.getValue()).isEqualTo("Keep answers concise.");
-        assertThat(inputCaptor.getValue()).isEqualTo("Explain SOLID.");
+        verify(this.capabilityToolLoopService).execute(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "Keep answers concise.",
+                "Explain SOLID."
+        );
     }
 
     @Test
     void givenCapabilitiesDisabled_whenExecute_thenFallbackToPlainOpenAiExecution() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(false);
         when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("answer");
 
@@ -92,7 +107,12 @@ class UserAgentExecutionHandlerTest {
     void givenBlankPrompt_whenExecute_thenThrowAgentValidationException() {
         //given
         final Agent givenAgent = this.getAgent("Instruction");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("Instruction", "   ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "Instruction",
+                "   "
+        );
 
         //when
         //then
@@ -105,9 +125,19 @@ class UserAgentExecutionHandlerTest {
     void givenCapabilityLoopFails_whenExecute_thenFallbackToPlainOpenAiExecution() {
         //given
         final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
-        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "  Keep answers concise.  ",
+                "  Explain SOLID.  "
+        );
         when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(true);
-        when(this.capabilityToolLoopService.execute("Keep answers concise.", "Explain SOLID."))
+        when(this.capabilityToolLoopService.execute(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "Keep answers concise.",
+                "Explain SOLID."
+        ))
                 .thenThrow(new RuntimeException("tool loop fail"));
         when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("fallback");
 
@@ -117,7 +147,12 @@ class UserAgentExecutionHandlerTest {
         //then
         assertThat(actual).isEqualTo("fallback");
         verify(this.automationCapabilitiesProperties).isEnabled();
-        verify(this.capabilityToolLoopService).execute("Keep answers concise.", "Explain SOLID.");
+        verify(this.capabilityToolLoopService).execute(
+                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
+                "Keep answers concise.",
+                "Explain SOLID."
+        );
         verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
     }
 

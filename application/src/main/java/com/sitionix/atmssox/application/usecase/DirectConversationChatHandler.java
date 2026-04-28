@@ -96,6 +96,8 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         );
 
         final UserAgentExecutionContext contextPrompt = this.conversationContextBuilder.build(
+                agentId,
+                conversation.getId(),
                 agent.getInstruction(),
                 activeRules,
                 snapshot.map(ConversationContextSnapshot::getSummary).orElse(""),
@@ -105,6 +107,11 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
         final String replyContent = this.agentExecutionService.execute(
                 agent,
                 contextPrompt
+        );
+        log.info(
+                "[CAPABILITY] final assistant response ready agentId={} conversationId={}",
+                agentId,
+                conversation.getId()
         );
 
         final ConversationMessage reply = this.conversationMessageRepository.save(this.buildAgentMessage(conversation.getId(), agentId, replyContent));

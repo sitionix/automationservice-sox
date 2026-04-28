@@ -42,6 +42,8 @@ class ConversationContextBuilderTest {
         final AgentRule rule = this.getAgentRule("Tone", "Always keep answers explicit.");
         final List<ConversationMessage> given = List.of(userMessage, agentMessage);
         final UserAgentExecutionContext expected = new UserAgentExecutionContext(
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84ca"),
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                 """
                 Follow architecture guidance.
 
@@ -61,6 +63,8 @@ class ConversationContextBuilderTest {
 
         //when
         final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84ca"),
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                 "Follow architecture guidance.",
                 List.of(rule),
                 "Project Alpha uses Spring Boot and Kafka.",
@@ -84,6 +88,8 @@ class ConversationContextBuilderTest {
                 Instant.parse("2026-04-21T10:00:00Z")
         );
         final UserAgentExecutionContext expected = new UserAgentExecutionContext(
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84ca"),
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                 "Instruction",
                 """
                 Messages:
@@ -94,6 +100,8 @@ class ConversationContextBuilderTest {
 
         //when
         final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84ca"),
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                 "Instruction",
                 List.of(),
                 "",
