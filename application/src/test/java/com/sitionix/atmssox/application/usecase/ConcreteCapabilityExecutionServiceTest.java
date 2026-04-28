@@ -9,7 +9,6 @@ import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
 import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,11 +60,7 @@ class ConcreteCapabilityExecutionServiceTest {
                 .thenReturn(new CapabilityExecutionResult(CapabilityName.GET_WORKSPACE_SITES, payload));
 
         //when
-        final OpenAiNativeToolResult actual = this.concreteCapabilityExecutionService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                givenToolCall
-        );
+        final OpenAiNativeToolResult actual = this.concreteCapabilityExecutionService.execute(givenToolCall);
 
         //then
         assertThat(actual.callId()).isEqualTo("c1");
@@ -81,11 +76,7 @@ class ConcreteCapabilityExecutionServiceTest {
         final OpenAiNativeToolCall givenToolCall = new OpenAiNativeToolCall("c1", "UNKNOWN", "{}");
 
         //when
-        final OpenAiNativeToolResult actual = this.concreteCapabilityExecutionService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                givenToolCall
-        );
+        final OpenAiNativeToolResult actual = this.concreteCapabilityExecutionService.execute(givenToolCall);
 
         //then
         assertThat(actual.callId()).isEqualTo("c1");

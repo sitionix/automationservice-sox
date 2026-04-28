@@ -62,7 +62,7 @@ public class CapabilityToolLoopService {
                 return response.outputText();
             }
 
-            final boolean shouldContinue = this.handleToolCalls(agentId, conversationId, response.toolCalls(), state);
+            final boolean shouldContinue = this.handleToolCalls(response.toolCalls(), state);
             if (!shouldContinue) {
                 return response.outputText();
             }
@@ -76,9 +76,7 @@ public class CapabilityToolLoopService {
         return instruction.trim() + "\n\n" + CAPABILITY_RUNTIME_INSTRUCTION;
     }
 
-    private boolean handleToolCalls(final UUID agentId,
-                                    final UUID conversationId,
-                                    final List<OpenAiNativeToolCall> toolCalls,
+    private boolean handleToolCalls(final List<OpenAiNativeToolCall> toolCalls,
                                     final LoopState state) {
         final List<OpenAiNativeToolResult> stepResults = new ArrayList<>();
         for (final OpenAiNativeToolCall toolCall : toolCalls) {
@@ -90,18 +88,14 @@ public class CapabilityToolLoopService {
                 state.discoveryCalls++;
                 final String userIntent = this.discoveryCapabilityToolService.extractUserIntent(toolCall);
                 log.info(
-                        "[CAPABILITY] discovery requested agentId={} conversationId={} userIntentPresent={}",
-                        agentId,
-                        conversationId,
+                        "[CAPABILITY] discovery requested userIntentPresent={}",
                         userIntent != null && !userIntent.isBlank()
                 );
-                final List<CapabilityDefinition> selected = this.capabilityRouterService.discover(agentId, conversationId, userIntent);
+                final List<CapabilityDefinition> selected = this.capabilityRouterService.discover(userIntent);
                 log.info("[CAPABILITY] router selected capabilities={}", selected.stream().map(CapabilityDefinition::name).toList());
                 state.activeTools = selected;
                 log.info(
-                        "[CAPABILITY] concrete tools injected agentId={} conversationId={} toolsCount={} toolNames={}",
-                        agentId,
-                        conversationId,
+                        "[CAPABILITY] concrete tools injected toolsCount={} toolNames={}",
                         state.activeTools.size(),
                         state.activeTools.stream().map(CapabilityDefinition::name).toList()
                 );
@@ -114,7 +108,7 @@ public class CapabilityToolLoopService {
                 return false;
             }
             state.capabilityCalls++;
-            stepResults.add(this.concreteCapabilityExecutionService.execute(agentId, conversationId, toolCall));
+            stepResults.add(this.concreteCapabilityExecutionService.execute(toolCall));
         }
         state.toolResults = stepResults;
         return true;

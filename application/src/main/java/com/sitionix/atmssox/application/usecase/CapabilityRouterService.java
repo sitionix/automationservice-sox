@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,7 @@ public class CapabilityRouterService {
     private final AutomationCapabilitiesProperties capabilitiesProperties;
     private final ObjectMapper objectMapper;
 
-    public List<CapabilityDefinition> discover(final UUID agentId, final UUID conversationId, final String userIntent) {
+    public List<CapabilityDefinition> discover(final String userIntent) {
         final List<CapabilityDefinition> candidates = Arrays.stream(CapabilityName.values())
                 .map(CapabilityName::definition)
                 .toList();
@@ -57,12 +56,7 @@ public class CapabilityRouterService {
             log.info("[CAPABILITY] router selected capabilities={}", selectedCapabilities.stream().map(CapabilityDefinition::name).toList());
             return selectedCapabilities;
         } catch (RuntimeException exception) {
-            log.warn(
-                    "[CAPABILITY] router failed error={} agentId={} conversationId={}",
-                    exception.getMessage(),
-                    agentId,
-                    conversationId
-            );
+            log.warn("[CAPABILITY] router failed error={}", exception.getMessage());
             return List.of();
         }
     }

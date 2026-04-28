@@ -112,19 +112,11 @@ class CapabilityToolLoopServiceTest {
         when(this.discoveryCapabilityToolService.getDefinition()).thenReturn(discoverDefinition);
         when(this.discoveryCapabilityToolService.isDiscoveryCall(discoveryCall)).thenReturn(true);
         when(this.discoveryCapabilityToolService.extractUserIntent(discoveryCall)).thenReturn("intent");
-        when(this.capabilityRouterService.discover(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "intent"
-        )).thenReturn(List.of(capabilityDefinition));
+        when(this.capabilityRouterService.discover("intent")).thenReturn(List.of(capabilityDefinition));
         when(this.discoveryCapabilityToolService.buildDiscoveryResult(discoveryCall, List.of(capabilityDefinition)))
                 .thenReturn(new OpenAiNativeToolResult("d1", "{\"capabilities\":[]}"));
         when(this.discoveryCapabilityToolService.isDiscoveryCall(capabilityCall)).thenReturn(false);
-        when(this.concreteCapabilityExecutionService.execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                capabilityCall
-        ))
+        when(this.concreteCapabilityExecutionService.execute(capabilityCall))
                 .thenReturn(new OpenAiNativeToolResult("c1", "{\"ok\":true}"));
 
         when(this.openAiChatClient.executeWithTools(any(OpenAiToolChatRequest.class)))
@@ -142,16 +134,8 @@ class CapabilityToolLoopServiceTest {
 
         //then
         assertThat(actual).isEqualTo("done");
-        verify(this.capabilityRouterService).discover(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "intent"
-        );
-        verify(this.concreteCapabilityExecutionService).execute(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                capabilityCall
-        );
+        verify(this.capabilityRouterService).discover("intent");
+        verify(this.concreteCapabilityExecutionService).execute(capabilityCall);
     }
 
     private CapabilityDefinition getDefinition(final String name) {

@@ -8,7 +8,6 @@ import com.sitionix.atmssox.domain.model.capability.CapabilityInputSchemaBuilder
 import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,11 +64,7 @@ class CapabilityRouterServiceTest {
         );
 
         //when
-        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "analyze sites"
-        );
+        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover("analyze sites");
 
         //then
         assertThat(actual).hasSize(2);
@@ -83,11 +78,7 @@ class CapabilityRouterServiceTest {
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class))).thenReturn("not-json");
 
         //when
-        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "analyze sites"
-        );
+        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover("analyze sites");
 
         //then
         assertThat(actual).isEmpty();
@@ -99,11 +90,7 @@ class CapabilityRouterServiceTest {
         when(this.openAiChatClient.execute(any(OpenAiChatRequest.class))).thenThrow(new RuntimeException("boom"));
 
         //when
-        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover(
-                UUID.fromString("49d7c30a-9ea5-4ff5-a66e-ae5373fc214c"),
-                UUID.fromString("f4cc43fd-f2a3-4d8d-a3d6-56f26fbe84cb"),
-                "analyze sites"
-        );
+        final List<CapabilityDefinition> actual = this.capabilityRouterService.discover("analyze sites");
 
         //then
         assertThat(actual).isEmpty();
