@@ -1,5 +1,7 @@
 package com.sitionix.atmssox.application.usecase;
 
+import com.sitionix.atmssox.domain.client.OpenAiChatClient;
+import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
@@ -31,14 +33,21 @@ class UserAgentExecutionHandlerTest {
     @Mock
     private AutomationCapabilitiesProperties automationCapabilitiesProperties;
 
+    @Mock
+    private OpenAiChatClient openAiChatClient;
+
     @BeforeEach
     void setUp() {
-        this.userAgentExecutionHandler = new UserAgentExecutionHandler(this.capabilityToolLoopService, this.automationCapabilitiesProperties);
+        this.userAgentExecutionHandler = new UserAgentExecutionHandler(
+                this.capabilityToolLoopService,
+                this.automationCapabilitiesProperties,
+                this.openAiChatClient
+        );
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.capabilityToolLoopService, this.automationCapabilitiesProperties);
+        verifyNoMoreInteractions(this.capabilityToolLoopService, this.automationCapabilitiesProperties, this.openAiChatClient);
     }
 
     @Test
@@ -60,6 +69,23 @@ class UserAgentExecutionHandlerTest {
         verify(this.capabilityToolLoopService).execute(instructionCaptor.capture(), inputCaptor.capture());
         assertThat(instructionCaptor.getValue()).isEqualTo("Keep answers concise.");
         assertThat(inputCaptor.getValue()).isEqualTo("Explain SOLID.");
+    }
+
+    @Test
+    void givenCapabilitiesDisabled_whenExecute_thenFallbackToPlainOpenAiExecution() {
+        //given
+        final Agent givenAgent = this.getAgent("  Keep answers concise.  ");
+        final UserAgentExecutionContext givenContext = new UserAgentExecutionContext("  Keep answers concise.  ", "  Explain SOLID.  ");
+        when(this.automationCapabilitiesProperties.isEnabled()).thenReturn(false);
+        when(this.openAiChatClient.execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."))).thenReturn("answer");
+
+        //when
+        final String actual = this.userAgentExecutionHandler.execute(givenAgent, givenContext);
+
+        //then
+        assertThat(actual).isEqualTo("answer");
+        verify(this.automationCapabilitiesProperties).isEnabled();
+        verify(this.openAiChatClient).execute(new OpenAiChatRequest("Keep answers concise.", "Explain SOLID."));
     }
 
     @Test
