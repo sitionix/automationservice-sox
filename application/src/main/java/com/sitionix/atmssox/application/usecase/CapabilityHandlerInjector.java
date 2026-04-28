@@ -1,6 +1,6 @@
 package com.sitionix.atmssox.application.usecase;
 
-import com.sitionix.atmssox.domain.model.CapabilityName;
+import com.sitionix.atmssox.domain.model.capability.CapabilityName;
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;

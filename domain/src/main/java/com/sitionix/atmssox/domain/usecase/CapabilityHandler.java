@@ -1,13 +1,13 @@
 package com.sitionix.atmssox.domain.usecase;
 
-import com.sitionix.atmssox.domain.model.CapabilityDefinition;
-import com.sitionix.atmssox.domain.model.CapabilityExecutionCommand;
-import com.sitionix.atmssox.domain.model.CapabilityExecutionResult;
+import com.sitionix.atmssox.domain.model.capability.CapabilityDefinition;
+import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionCommand;
+import com.sitionix.atmssox.domain.model.capability.CapabilityExecutionResult;
 
 /**
  * Defines one executable capability.
  */
-public interface CapabilityHandler {
+public interface CapabilityHandler<H> {
 
     /**
      * Describes capability metadata for tool registration/discovery.
@@ -22,5 +22,5 @@ public interface CapabilityHandler {
      * @param command capability execution command.
      * @return execution result payload.
      */
-    CapabilityExecutionResult execute(CapabilityExecutionCommand command);
+    CapabilityExecutionResult execute(CapabilityExecutionCommand<H> command);
 }

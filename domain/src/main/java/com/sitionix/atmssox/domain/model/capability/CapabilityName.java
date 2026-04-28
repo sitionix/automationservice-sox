@@ -1,4 +1,4 @@
-package com.sitionix.atmssox.domain.model;
+package com.sitionix.atmssox.domain.model.capability;
 
 import com.sitionix.atmssox.domain.usecase.CapabilityHandler;
 import lombok.Getter;
@@ -13,7 +13,7 @@ public enum CapabilityName {
     private final String bindingKey;
 
     @Setter
-    private CapabilityHandler handler;
+    private CapabilityHandler<Object> handler;
 
     public CapabilityDefinition definition() {
         if (this.handler == null) {
@@ -22,7 +22,7 @@ public enum CapabilityName {
         return this.handler.definition();
     }
 
-    public CapabilityExecutionResult execute(final CapabilityExecutionCommand command) {
+    public CapabilityExecutionResult execute(final CapabilityExecutionCommand<Object> command) {
         if (this.handler == null) {
             throw new IllegalStateException("No handler configured for capability: " + this.name());
         }

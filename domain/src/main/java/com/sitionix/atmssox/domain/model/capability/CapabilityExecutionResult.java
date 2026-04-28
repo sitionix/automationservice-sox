@@ -1,4 +1,4 @@
-package com.sitionix.atmssox.domain.model;
+package com.sitionix.atmssox.domain.model.capability;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
