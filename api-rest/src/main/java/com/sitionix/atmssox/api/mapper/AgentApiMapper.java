@@ -40,12 +40,14 @@ public interface AgentApiMapper {
 
     ChatAgentCommand asChatAgentCommand(ChatAgentRequestDTO src);
 
+    @Mapping(target = "assistantMessage", source = "reply")
     ChatAgentResponseDTO asChatAgentResponseDto(ChatAgentResponse src);
 
-    @Mapping(target = "state", source = "status")
+    @Mapping(target = "status", source = "status")
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
 
-    @Mapping(target = "state", source = "status")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "error", source = "failure")
     ChatExecutionDTO asChatExecutionDto(ChatExecution src);
 
     default ExecutionStatusDTO map(final com.sitionix.atmssox.domain.model.ChatExecutionStatus status) {
@@ -53,9 +55,9 @@ public interface AgentApiMapper {
             return null;
         }
         return switch (status) {
-            case QUEUED -> ExecutionStatusDTO.QUEUED;
+            case QUEUED -> ExecutionStatusDTO.ACCEPTED;
             case IN_PROGRESS -> ExecutionStatusDTO.IN_PROGRESS;
-            case COMPLETED -> ExecutionStatusDTO.COMPLETED;
+            case COMPLETED -> ExecutionStatusDTO.SUCCEEDED;
             case FAILED -> ExecutionStatusDTO.FAILED;
         };
     }
@@ -65,9 +67,9 @@ public interface AgentApiMapper {
             return null;
         }
         return ChatExecutionFailureDTO.builder()
-                .failureClass(ChatExecutionFailureDTO.FailureClassEnum.fromValue(failure.getFailureClass().name()))
-                .reason(failure.getReason())
-                .retryable(failure.isRetryable())
+                .code(failure.getFailureClass() == null ? null : failure.getFailureClass().name())
+                .message(failure.getReason())
+                .details(java.util.Map.of("retryable", failure.isRetryable()))
                 .build();
     }
 

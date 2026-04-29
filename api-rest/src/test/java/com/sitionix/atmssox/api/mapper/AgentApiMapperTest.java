@@ -285,7 +285,7 @@ class AgentApiMapperTest {
         //then
         assertThat(actual.getExecutionId()).isEqualTo(given.getExecutionId());
         assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
-        assertThat(actual.getState()).isEqualTo(ExecutionStatusDTO.QUEUED);
+        assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.ACCEPTED);
     }
 
     @Test
@@ -308,11 +308,11 @@ class AgentApiMapperTest {
         final ChatExecutionDTO actual = this.agentApiMapper.asChatExecutionDto(given);
 
         //then
-        assertThat(actual.getState()).isEqualTo(ExecutionStatusDTO.FAILED);
-        assertThat(actual.getFailure()).isEqualTo(ChatExecutionFailureDTO.builder()
-                .failureClass(ChatExecutionFailureDTO.FailureClassEnum.EXECUTION_ERROR)
-                .reason("Execution failed")
-                .retryable(true)
+        assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.FAILED);
+        assertThat(actual.getError()).isEqualTo(ChatExecutionFailureDTO.builder()
+                .code("EXECUTION_ERROR")
+                .message("Execution failed")
+                .details(java.util.Map.of("retryable", true))
                 .build());
     }
 
@@ -331,9 +331,9 @@ class AgentApiMapperTest {
 
         //then
         assertThat(actual).isEqualTo(List.of(
-                ExecutionStatusDTO.QUEUED,
+                ExecutionStatusDTO.ACCEPTED,
                 ExecutionStatusDTO.IN_PROGRESS,
-                ExecutionStatusDTO.COMPLETED,
+                ExecutionStatusDTO.SUCCEEDED,
                 ExecutionStatusDTO.FAILED
         ));
     }
@@ -552,7 +552,7 @@ class AgentApiMapperTest {
     private ChatAgentResponseDTO getChatAgentResponseDto(final UUID conversationId) {
         return ChatAgentResponseDTO.builder()
                 .conversationId(conversationId)
-                .reply(AgentConversationMessageDTO.builder()
+                .assistantMessage(AgentConversationMessageDTO.builder()
                         .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))
                         .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
                         .authorId("agent-1")
