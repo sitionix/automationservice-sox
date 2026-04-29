@@ -2,6 +2,7 @@ package com.sitionix.atmssox.api.handler;
 
 import com.app_afesox.atmssox.api_first.dto.ErrorDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sitionix.atmssox.domain.exception.AgentAccessDeniedException;
 import com.sitionix.atmssox.domain.exception.AuthenticationRequiredException;
 import com.sitionix.atmssox.domain.exception.AgentChatNotAllowedException;
 import com.sitionix.atmssox.domain.exception.AgentLifecycleTransitionException;
@@ -50,6 +51,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(AgentNotFoundException.class)
     public ResponseEntity<ErrorDTO> handleNotFound(final AgentNotFoundException exception) {
         return this.asErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(AgentAccessDeniedException.class)
+    public ResponseEntity<ErrorDTO> handleAccessDenied(final AgentAccessDeniedException exception) {
+        return this.asErrorResponse(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     @ExceptionHandler(AuthenticationRequiredException.class)
