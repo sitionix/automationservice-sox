@@ -42,8 +42,10 @@ public interface AgentApiMapper {
 
     ChatAgentResponseDTO asChatAgentResponseDto(ChatAgentResponse src);
 
+    @Mapping(target = "state", source = "status")
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
 
+    @Mapping(target = "state", source = "status")
     ChatExecutionDTO asChatExecutionDto(ChatExecution src);
 
     default ExecutionStatusDTO map(final com.sitionix.atmssox.domain.model.ChatExecutionStatus status) {
