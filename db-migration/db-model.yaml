@@ -82,3 +82,19 @@ tables:
       last_message_id_until: uuid
       created_at: timestamptz
       updated_at: timestamptz
+  chat_executions:
+    columns:
+      execution_id: uuid
+      agent_id: uuid
+      conversation_id: uuid
+      user_id: bigint
+      status: varchar(32)
+      request_message: text
+      idempotency_key: varchar(255)
+      assistant_message_id: uuid
+      failure_class: varchar(64)
+      failure_reason: text
+      failure_retryable: boolean
+      created_at: timestamptz
+      started_at: timestamptz
+      completed_at: timestamptz

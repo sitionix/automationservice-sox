@@ -1,17 +1,23 @@
 package com.sitionix.atmssox.api.mapper;
 
-import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO1;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ExecutionStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
+import com.sitionix.atmssox.domain.model.ChatExecution;
+import com.sitionix.atmssox.domain.model.ChatExecutionFailure;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
@@ -36,7 +42,26 @@ public interface AgentApiMapper {
 
     ChatAgentResponseDTO asChatAgentResponseDto(ChatAgentResponse src);
 
-    AgentConversationDTO asAgentConversationDto(Conversation src);
+    SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
+
+    ChatExecutionDTO asChatExecutionDto(ChatExecution src);
+
+    default ExecutionStatusDTO map(final com.sitionix.atmssox.domain.model.ChatExecutionStatus status) {
+        return status == null ? null : ExecutionStatusDTO.fromValue(status.name());
+    }
+
+    default ChatExecutionFailureDTO asChatExecutionFailureDto(final ChatExecutionFailure failure) {
+        if (failure == null) {
+            return null;
+        }
+        return ChatExecutionFailureDTO.builder()
+                .failureClass(ChatExecutionFailureDTO.FailureClassEnum.fromValue(failure.getFailureClass().name()))
+                .reason(failure.getReason())
+                .retryable(failure.isRetryable())
+                .build();
+    }
+
+    AgentConversationDTO1 asAgentConversationDto(Conversation src);
 
     AgentConversationMessageDTO asAgentConversationMessageDto(ConversationMessage src);
 
@@ -44,7 +69,7 @@ public interface AgentApiMapper {
 
     List<AgentDTO> asAgentDtos(List<Agent> src);
 
-    List<AgentConversationDTO> asAgentConversationDtos(List<Conversation> src);
+    List<AgentConversationDTO1> asAgentConversationDtos(List<Conversation> src);
 
     List<AgentConversationMessageDTO> asAgentConversationMessageDtos(List<ConversationMessage> src);
 
