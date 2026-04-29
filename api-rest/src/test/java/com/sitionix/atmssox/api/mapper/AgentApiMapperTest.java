@@ -316,6 +316,28 @@ class AgentApiMapperTest {
                 .build());
     }
 
+    @Test
+    void givenAllInternalExecutionStatuses_whenMap_thenReturnCanonicalExternalStatuses() {
+        //given
+        final List<ChatExecutionStatus> given = List.of(
+                ChatExecutionStatus.QUEUED,
+                ChatExecutionStatus.IN_PROGRESS,
+                ChatExecutionStatus.COMPLETED,
+                ChatExecutionStatus.FAILED
+        );
+
+        //when
+        final List<ExecutionStatusDTO> actual = given.stream().map(this.agentApiMapper::map).toList();
+
+        //then
+        assertThat(actual).isEqualTo(List.of(
+                ExecutionStatusDTO.QUEUED,
+                ExecutionStatusDTO.IN_PROGRESS,
+                ExecutionStatusDTO.COMPLETED,
+                ExecutionStatusDTO.FAILED
+        ));
+    }
+
     private CreateAgentRequestDTO getCreateAgentRequestDto(final String description) {
         return CreateAgentRequestDTO.builder()
                 .name("My agent")

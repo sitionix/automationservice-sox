@@ -49,7 +49,15 @@ public interface AgentApiMapper {
     ChatExecutionDTO asChatExecutionDto(ChatExecution src);
 
     default ExecutionStatusDTO map(final com.sitionix.atmssox.domain.model.ChatExecutionStatus status) {
-        return status == null ? null : ExecutionStatusDTO.fromValue(status.name());
+        if (status == null) {
+            return null;
+        }
+        return switch (status) {
+            case QUEUED -> ExecutionStatusDTO.QUEUED;
+            case IN_PROGRESS -> ExecutionStatusDTO.IN_PROGRESS;
+            case COMPLETED -> ExecutionStatusDTO.COMPLETED;
+            case FAILED -> ExecutionStatusDTO.FAILED;
+        };
     }
 
     default ChatExecutionFailureDTO asChatExecutionFailureDto(final ChatExecutionFailure failure) {

@@ -169,6 +169,42 @@ class SubmitAgentChatExecutionImplTest {
     }
 
     @Test
+    void givenExistingIdempotencyForAnotherConversation_whenExecute_thenThrowValidationConflict() {
+        //given
+        final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
+        final UUID conversationId = UUID.fromString("27acb3bb-2f98-4db8-9fd2-f62d10256c29");
+        final UUID anotherConversationId = UUID.fromString("b2656439-c7fe-40a9-ab08-59bddce0f915");
+        final ChatAgentCommand command = ChatAgentCommand.builder().conversationId(conversationId).message("hello").build();
+        final ChatExecution existing = ChatExecution.builder()
+                .executionId(UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e"))
+                .agentId(agentId)
+                .conversationId(anotherConversationId)
+                .userId(17L)
+                .status(ChatExecutionStatus.QUEUED)
+                .requestMessage("hello")
+                .idempotencyKey("KEY")
+                .idempotencyReplayed(false)
+                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
+                .build();
+
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId))
+                .thenReturn(Optional.of(this.getConversation(conversationId, 17L)));
+        when(this.chatExecutionRepository.findByUserIdAndAgentIdAndIdempotencyKey(17L, agentId, "KEY"))
+                .thenReturn(Optional.of(existing));
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.submitAgentChatExecution.execute(agentId, command, " KEY "))
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("Idempotency key conflict");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId);
+        verify(this.chatExecutionRepository).findByUserIdAndAgentIdAndIdempotencyKey(17L, agentId, "KEY");
+        verifyNoInteractions(this.chatExecutionAsyncProcessor, this.conversationParticipantRepository);
+    }
+
+    @Test
     void givenBlankMessage_whenExecute_thenThrowValidationException() {
         //given
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
