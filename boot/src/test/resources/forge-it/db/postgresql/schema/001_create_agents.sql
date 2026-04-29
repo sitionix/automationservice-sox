@@ -116,3 +116,20 @@ CREATE TABLE conversation_context_snapshots (
 
 CREATE UNIQUE INDEX uq_conversation_context_snapshots_conversation_id
     ON conversation_context_snapshots (conversation_id);
+
+CREATE TABLE chat_executions (
+    execution_id UUID PRIMARY KEY,
+    agent_id UUID NOT NULL,
+    conversation_id UUID NOT NULL REFERENCES conversations(conversation_id),
+    user_id BIGINT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    request_message TEXT NOT NULL,
+    idempotency_key VARCHAR(255),
+    assistant_message_id UUID,
+    failure_class VARCHAR(64),
+    failure_reason TEXT,
+    failure_retryable BOOLEAN,
+    created_at TIMESTAMPTZ NOT NULL,
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ
+);
