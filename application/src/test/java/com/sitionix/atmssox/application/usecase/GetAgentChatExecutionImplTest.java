@@ -144,4 +144,32 @@ class GetAgentChatExecutionImplTest {
         verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(this.conversationMessageRepository);
     }
+
+    @Test
+    void givenExecutionWithoutAssistantMessageId_whenExecute_thenReturnExecutionWithoutMessageLookup() {
+        //given
+        final UUID agentId = UUID.fromString("f7359dfa-5866-476d-96dd-c2c9ab70eb67");
+        final UUID executionId = UUID.fromString("37072f09-1c6b-4607-9349-1d00f048130c");
+        final UUID conversationId = UUID.fromString("34fd7804-c7fb-45f7-862d-02667ec8ced4");
+        final ChatExecution execution = ChatExecution.builder()
+                .executionId(executionId)
+                .agentId(agentId)
+                .conversationId(conversationId)
+                .userId(17L)
+                .status(ChatExecutionStatus.IN_PROGRESS)
+                .assistantMessageId(null)
+                .build();
+
+        when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+
+        //when
+        final ChatExecution actual = this.getAgentChatExecution.execute(agentId, executionId, conversationId);
+
+        //then
+        assertThat(actual).isEqualTo(execution);
+        verify(this.chatExecutionRepository).findByAgentIdAndExecutionId(agentId, executionId);
+        verify(this.authenticatedUserProvider).getUserId();
+        verifyNoInteractions(this.conversationMessageRepository);
+    }
 }

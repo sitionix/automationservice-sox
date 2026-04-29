@@ -1,9 +1,15 @@
 package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
+import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentRuleStatus;
+import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatExecutionFailureClass;
 import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
+import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationParticipant;
+import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
 import com.sitionix.atmssox.domain.repository.ChatExecutionRepository;
@@ -13,6 +19,7 @@ import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,6 +150,115 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
         );
+    }
+
+    @Test
+    void givenUnexpectedExecutionFailure_whenProcess_thenPersistRetryableExecutionError() {
+        //given
+        final UUID executionId = UUID.fromString("0fcef53d-2f54-4a12-8741-d4abf09ebaf3");
+        final ChatExecution queued = this.getExecution(executionId, ChatExecutionStatus.QUEUED, null);
+        final ChatExecution inProgress = this.getExecution(executionId, ChatExecutionStatus.IN_PROGRESS, null);
+        final Conversation conversation = this.getConversation(queued.getConversationId(), queued.getUserId());
+        final Agent agent = this.getAgent(queued.getAgentId(), queued.getUserId());
+
+        when(this.chatExecutionRepository.findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED)).thenReturn(Optional.of(queued));
+        when(this.chatExecutionRepository.save(any(ChatExecution.class))).thenReturn(inProgress);
+        when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId()))
+                .thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
+        when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(agent));
+        when(this.agentExecutionService.execute(any(), any())).thenThrow(new IllegalStateException("gateway timeout"));
+
+        //when
+        this.processor.process(executionId);
+
+        //then
+        final ArgumentCaptor<ChatExecution> executionCaptor = ArgumentCaptor.forClass(ChatExecution.class);
+        verify(this.chatExecutionRepository, times(2)).save(executionCaptor.capture());
+        final ChatExecution failedExecution = executionCaptor.getAllValues().get(1);
+        assertThat(failedExecution.getStatus()).isEqualTo(ChatExecutionStatus.FAILED);
+        assertThat(failedExecution.getFailure()).isNotNull();
+        assertThat(failedExecution.getFailure().getFailureClass()).isEqualTo(ChatExecutionFailureClass.EXECUTION_ERROR);
+        assertThat(failedExecution.getFailure().getReason()).isEqualTo("Execution failed");
+        assertThat(failedExecution.getFailure().isRetryable()).isTrue();
+        verify(this.chatExecutionRepository).findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED);
+        verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId());
+        verify(this.conversationParticipantRepository).findAllByConversationId(conversation.getId());
+        verify(this.agentRepository).findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId());
+        verify(this.conversationMessageRepository).save(any());
+        verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversation.getId(), 0);
+        verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                queued.getAgentId(),
+                queued.getUserId(),
+                AgentRuleStatus.ACTIVE,
+                null
+        );
+        verify(this.conversationContextSnapshotRepository).findByConversationId(conversation.getId());
+        verify(this.conversationContextBuilder).build(any(), any(), any(), any(), any());
+        verify(this.agentExecutionService).execute(any(), any());
+        verify(this.contextOptimizerProperties).getLastMessagesLimit();
+    }
+
+    @Test
+    void givenInactiveAgentConversation_whenProcess_thenPersistNonRetryableLifecycleFailure() {
+        //given
+        final UUID executionId = UUID.fromString("d2297bea-f56c-4e0e-a517-b5ddbec31482");
+        final ChatExecution queued = this.getExecution(executionId, ChatExecutionStatus.QUEUED, null);
+        final ChatExecution inProgress = this.getExecution(executionId, ChatExecutionStatus.IN_PROGRESS, null);
+        final Conversation conversation = this.getConversation(queued.getConversationId(), queued.getUserId());
+        final Agent inactiveAgent = this.getAgent(queued.getAgentId(), queued.getUserId()).toBuilder()
+                .status(AgentStatus.DRAFT)
+                .build();
+
+        when(this.chatExecutionRepository.findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED)).thenReturn(Optional.of(queued));
+        when(this.chatExecutionRepository.save(any(ChatExecution.class))).thenReturn(inProgress);
+        when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId()))
+                .thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
+        when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(inactiveAgent));
+
+        //when
+        this.processor.process(executionId);
+
+        //then
+        final ArgumentCaptor<ChatExecution> executionCaptor = ArgumentCaptor.forClass(ChatExecution.class);
+        verify(this.chatExecutionRepository, times(2)).save(executionCaptor.capture());
+        final ChatExecution failedExecution = executionCaptor.getAllValues().get(1);
+        assertThat(failedExecution.getStatus()).isEqualTo(ChatExecutionStatus.FAILED);
+        assertThat(failedExecution.getFailure()).isNotNull();
+        assertThat(failedExecution.getFailure().getFailureClass()).isEqualTo(ChatExecutionFailureClass.INVALID_LIFECYCLE_STATE);
+        assertThat(failedExecution.getFailure().getReason()).isEqualTo("Only ACTIVE agent can execute chat");
+        assertThat(failedExecution.getFailure().isRetryable()).isFalse();
+        verify(this.chatExecutionRepository).findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED);
+        verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId());
+        verify(this.conversationParticipantRepository).findAllByConversationId(conversation.getId());
+        verify(this.agentRepository).findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId());
+        verifyNoInteractions(
+                this.conversationMessageRepository,
+                this.agentRuleRepository,
+                this.conversationContextSnapshotRepository,
+                this.conversationContextBuilder,
+                this.contextOptimizerProperties,
+                this.agentExecutionService,
+                this.postChatWorkflowDispatcher
+        );
+    }
+
+    private Conversation getConversation(final UUID conversationId, final Long userId) {
+        return Conversation.builder()
+                .id(conversationId)
+                .userId(userId)
+                .type(ConversationType.DIRECT)
+                .build();
+    }
+
+    private Agent getAgent(final UUID agentId, final Long userId) {
+        return Agent.builder()
+                .id(agentId)
+                .userId(userId)
+                .status(AgentStatus.ACTIVE)
+                .instruction("instruction")
+                .build();
     }
 
     private ChatExecution getExecution(final UUID executionId, final ChatExecutionStatus status, final Instant startedAt) {
