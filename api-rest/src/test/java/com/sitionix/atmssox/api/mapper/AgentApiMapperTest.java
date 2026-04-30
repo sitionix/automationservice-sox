@@ -277,12 +277,14 @@ class AgentApiMapperTest {
     @Test
     void givenChatExecution_whenAsSubmitChatExecutionResponseDto_thenReturnExecutionEnvelope() {
         //given
-        final ChatExecution given = ChatExecution.builder()
-                .executionId(UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"))
-                .conversationId(UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"))
-                .status(ChatExecutionStatus.QUEUED)
-                .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
-                .build();
+        final ChatExecution given = this.getChatExecution(
+                UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"),
+                UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"),
+                null,
+                ChatExecutionStatus.QUEUED,
+                null,
+                Instant.parse("2026-04-29T10:00:00Z")
+        );
 
         //when
         final SubmitChatExecutionResponseDTO actual = this.agentApiMapper.asSubmitChatExecutionResponseDto(given);
@@ -296,18 +298,14 @@ class AgentApiMapperTest {
     @Test
     void givenChatExecutionWithFailure_whenAsChatExecutionDto_thenReturnMappedExecutionAndFailure() {
         //given
-        final ChatExecution given = ChatExecution.builder()
-                .executionId(UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"))
-                .conversationId(UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"))
-                .agentId(UUID.fromString("6e4e32f8-2f48-4600-9a73-bb026f98dbf4"))
-                .status(ChatExecutionStatus.FAILED)
-                .failure(ChatExecutionFailure.builder()
-                        .failureClass(ChatExecutionFailureClass.EXECUTION_ERROR)
-                        .reason("Execution failed")
-                        .retryable(true)
-                        .build())
-                .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
-                .build();
+        final ChatExecution given = this.getChatExecution(
+                UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"),
+                UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"),
+                UUID.fromString("6e4e32f8-2f48-4600-9a73-bb026f98dbf4"),
+                ChatExecutionStatus.FAILED,
+                this.getChatExecutionFailure(ChatExecutionFailureClass.EXECUTION_ERROR, "Execution failed", true),
+                Instant.parse("2026-04-29T10:00:00Z")
+        );
 
         //when
         final ChatExecutionDTO actual = this.agentApiMapper.asChatExecutionDto(given);
@@ -582,6 +580,36 @@ class AgentApiMapperTest {
                 .authorId(authorId)
                 .content(content)
                 .createdAt(createdAt)
+                .build();
+    }
+
+    private ChatExecution getChatExecution(
+            final UUID executionId,
+            final UUID conversationId,
+            final UUID agentId,
+            final ChatExecutionStatus status,
+            final ChatExecutionFailure failure,
+            final Instant createdAt
+    ) {
+        return ChatExecution.builder()
+                .executionId(executionId)
+                .conversationId(conversationId)
+                .agentId(agentId)
+                .status(status)
+                .failure(failure)
+                .createdAt(createdAt)
+                .build();
+    }
+
+    private ChatExecutionFailure getChatExecutionFailure(
+            final ChatExecutionFailureClass failureClass,
+            final String reason,
+            final boolean retryable
+    ) {
+        return ChatExecutionFailure.builder()
+                .failureClass(failureClass)
+                .reason(reason)
+                .retryable(retryable)
                 .build();
     }
 
