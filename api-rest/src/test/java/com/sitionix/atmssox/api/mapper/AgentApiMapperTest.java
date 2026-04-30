@@ -47,10 +47,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentApiMapperTest {
 
     private AgentApiMapper agentApiMapper;
+    private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentApiMapper = new AgentApiMapperImpl();
+        this.agentApiMapper = new AgentApiMapperImpl(
+                new ChatExecutionStatusApiMapperImpl(),
+                new ChatExecutionFailureApiMapperImpl()
+        );
+        this.chatExecutionStatusApiMapper = new ChatExecutionStatusApiMapperImpl();
     }
 
     @Test
@@ -327,7 +332,7 @@ class AgentApiMapperTest {
         );
 
         //when
-        final List<ExecutionStatusDTO> actual = given.stream().map(this.agentApiMapper::map).toList();
+        final List<ExecutionStatusDTO> actual = given.stream().map(this.chatExecutionStatusApiMapper::map).toList();
 
         //then
         assertThat(actual).isEqualTo(List.of(
