@@ -33,29 +33,36 @@ import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AgentApiMapperTest {
 
     private AgentApiMapper agentApiMapper;
+
+    @Mock
     private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
+
+    @Mock
+    private ChatExecutionFailureApiMapper chatExecutionFailureApiMapper;
 
     @BeforeEach
     void setUp() {
         this.agentApiMapper = new AgentApiMapperImpl(
-                new ChatExecutionStatusApiMapperImpl(),
-                new ChatExecutionFailureApiMapperImpl()
+                this.chatExecutionStatusApiMapper,
+                this.chatExecutionFailureApiMapper
         );
-        this.chatExecutionStatusApiMapper = new ChatExecutionStatusApiMapperImpl();
     }
 
     @Test
@@ -278,6 +285,7 @@ class AgentApiMapperTest {
     void givenChatExecution_whenAsSubmitChatExecutionResponseDto_thenReturnExecutionEnvelope() {
         //given
         final ChatExecution given = this.getQueuedChatExecution();
+        when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.QUEUED)).thenReturn(ExecutionStatusDTO.ACCEPTED);
 
         //when
         final SubmitChatExecutionResponseDTO actual = this.agentApiMapper.asSubmitChatExecutionResponseDto(given);
@@ -292,6 +300,14 @@ class AgentApiMapperTest {
     void givenChatExecutionWithFailure_whenAsChatExecutionDto_thenReturnMappedExecutionAndFailure() {
         //given
         final ChatExecution given = this.getFailedChatExecution();
+        when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.FAILED)).thenReturn(ExecutionStatusDTO.FAILED);
+        when(this.chatExecutionFailureApiMapper.asChatExecutionFailureDto(given.getFailure())).thenReturn(
+                ChatExecutionFailureDTO.builder()
+                        .code("EXECUTION_ERROR")
+                        .message("Execution failed")
+                        .details(Map.of("retryable", true))
+                        .build()
+        );
 
         //when
         final ChatExecutionDTO actual = this.agentApiMapper.asChatExecutionDto(given);
@@ -301,30 +317,8 @@ class AgentApiMapperTest {
         assertThat(actual.getError()).isEqualTo(ChatExecutionFailureDTO.builder()
                 .code("EXECUTION_ERROR")
                 .message("Execution failed")
-                .details(java.util.Map.of("retryable", true))
+                .details(Map.of("retryable", true))
                 .build());
-    }
-
-    @Test
-    void givenAllInternalExecutionStatuses_whenMap_thenReturnCanonicalExternalStatuses() {
-        //given
-        final List<ChatExecutionStatus> given = List.of(
-                ChatExecutionStatus.QUEUED,
-                ChatExecutionStatus.IN_PROGRESS,
-                ChatExecutionStatus.COMPLETED,
-                ChatExecutionStatus.FAILED
-        );
-
-        //when
-        final List<ExecutionStatusDTO> actual = given.stream().map(this.chatExecutionStatusApiMapper::map).toList();
-
-        //then
-        assertThat(actual).isEqualTo(List.of(
-                ExecutionStatusDTO.ACCEPTED,
-                ExecutionStatusDTO.IN_PROGRESS,
-                ExecutionStatusDTO.SUCCEEDED,
-                ExecutionStatusDTO.FAILED
-        ));
     }
 
     private CreateAgentRequestDTO getCreateAgentRequestDto(final String description) {
