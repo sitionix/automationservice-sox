@@ -1,7 +1,11 @@
 package com.sitionix.atmssox.domain.model;
 
 import java.util.Arrays;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@Getter
+@RequiredArgsConstructor
 public enum ChatExecutionFailureClass {
     OWNERSHIP_VIOLATION(1L),
     CONVERSATION_NOT_FOUND(2L),
@@ -10,14 +14,6 @@ public enum ChatExecutionFailureClass {
     EXECUTION_ERROR(5L);
 
     private final Long id;
-
-    ChatExecutionFailureClass(final Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
 
     public static ChatExecutionFailureClass fromId(final Long id) {
         return Arrays.stream(values())

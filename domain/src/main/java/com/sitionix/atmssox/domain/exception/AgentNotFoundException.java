@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AgentNotFoundException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AgentNotFoundException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AgentNotFoundException extends RuntimeException {}

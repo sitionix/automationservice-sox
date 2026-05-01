@@ -3,7 +3,9 @@ package com.sitionix.atmssox.domain.exception;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 
+@Getter
 public class ClientResponseException extends RuntimeException {
 
     private final int statusCode;
@@ -20,15 +22,4 @@ public class ClientResponseException extends RuntimeException {
         this.responseHeaders = responseHeaders == null ? Collections.emptyMap() : responseHeaders;
     }
 
-    public int getStatusCode() {
-        return this.statusCode;
-    }
-
-    public String getResponseBody() {
-        return this.responseBody;
-    }
-
-    public Map<String, List<String>> getResponseHeaders() {
-        return this.responseHeaders;
-    }
 }

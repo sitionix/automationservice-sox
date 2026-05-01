@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AgentAccessDeniedException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AgentAccessDeniedException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AgentAccessDeniedException extends RuntimeException {}

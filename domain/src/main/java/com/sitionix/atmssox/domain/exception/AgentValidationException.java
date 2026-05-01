@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AgentValidationException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AgentValidationException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AgentValidationException extends RuntimeException {}

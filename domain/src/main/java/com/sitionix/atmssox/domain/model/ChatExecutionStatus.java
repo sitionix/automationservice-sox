@@ -1,7 +1,11 @@
 package com.sitionix.atmssox.domain.model;
 
 import java.util.Arrays;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@Getter
+@RequiredArgsConstructor
 public enum ChatExecutionStatus {
     QUEUED(1L),
     IN_PROGRESS(2L),
@@ -9,14 +13,6 @@ public enum ChatExecutionStatus {
     FAILED(4L);
 
     private final Long id;
-
-    ChatExecutionStatus(final Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
 
     public static ChatExecutionStatus fromId(final Long id) {
         return Arrays.stream(values())
