@@ -116,13 +116,14 @@ class GetAgentChatExecutionImplTest {
                 ChatExecutionStatus.QUEUED,
                 null
         );
+        final UUID mismatchedConversationId = UUID.fromString("13ed4ba2-c41f-4754-b3f3-f80b0d49c1e1");
 
         when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
-        assertThatThrownBy(() -> this.getAgentChatExecution.execute(agentId, executionId, UUID.fromString("13ed4ba2-c41f-4754-b3f3-f80b0d49c1e1")))
+        assertThatThrownBy(() -> this.getAgentChatExecution.execute(agentId, executionId, mismatchedConversationId))
                 .isInstanceOf(AgentLifecycleTransitionException.class)
                 .hasMessage("Conversation consistency check failed");
         verify(this.chatExecutionRepository).findByAgentIdAndExecutionId(agentId, executionId);

@@ -13,7 +13,6 @@ import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationContextSnapshot;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
-import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
@@ -56,7 +55,6 @@ public class ChatExecutionAsyncProcessor {
         this.process(executionId);
     }
 
-    @Transactional
     public void process(final UUID executionId) {
         final ChatExecution queuedExecution = this.chatExecutionRepository.findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED)
                 .orElse(null);
@@ -81,7 +79,7 @@ public class ChatExecutionAsyncProcessor {
                 throw new AgentChatNotAllowedException("Conversation type is not supported by direct handler");
             }
 
-            final List<ConversationParticipant> participants = this.conversationParticipantRepository.findAllByConversationId(conversation.getId());
+            this.conversationParticipantRepository.findAllByConversationId(conversation.getId());
             final Agent agent = this.agentRepository.findVisibleByIdAndUserId(execution.getAgentId(), execution.getUserId())
                     .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
             if (agent.getStatus() != AgentStatus.ACTIVE) {

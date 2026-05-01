@@ -6,12 +6,8 @@ import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionEntity;
-import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
-import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
-import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
@@ -124,7 +120,7 @@ class ChatSubmitFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
                 .count();
-        assertThat(executionCount).isEqualTo(0L);
+        assertThat(executionCount).isZero();
     }
 
     @Test
@@ -158,7 +154,7 @@ class ChatSubmitFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
                 .count();
-        assertThat(executionCount).isEqualTo(0L);
+        assertThat(executionCount).isZero();
     }
 
     @Test
@@ -193,7 +189,7 @@ class ChatSubmitFlowIT {
                 .stream()
                 .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
                 .count();
-        assertThat(executionCount).isEqualTo(0L);
+        assertThat(executionCount).isZero();
     }
 
     @Test
@@ -337,9 +333,11 @@ class ChatSubmitFlowIT {
                 .assertDefault();
     }
 
-    @Test
-    @DisplayName("Should return bad request when submit chat with null message")
-    void givenNullMessage_whenSubmitChat_thenReturnBadRequest() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @ValueSource(strings = {"\t\t", "\n\n"})
+    @DisplayName("Should return bad request when submit chat with null or whitespace control message")
+    void givenNullOrWhitespaceControlMessage_whenSubmitChat_thenReturnBadRequest(final String message) {
         //given
         this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
         final UUID agentId = this.testManager.postgresql().get(AgentEntity.class).getAll().stream()
@@ -352,43 +350,7 @@ class ChatSubmitFlowIT {
                 .ping(ControllerEndpoint.chatAgent())
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .expectStatus(HttpStatus.BAD_REQUEST)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(null)));
-    }
-
-    @Test
-    @DisplayName("Should return bad request when submit chat with tab-only message")
-    void givenTabOnlyMessage_whenSubmitChat_thenReturnBadRequest() {
-        //given
-        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
-        final UUID agentId = this.testManager.postgresql().get(AgentEntity.class).getAll().stream()
-                .max(Comparator.comparing(AgentEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Agent not found"))
-                .getAgentId();
-
-        //when
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.chatAgent())
-                .withPathParameters(PathParams.create().add("agentId", agentId))
-                .expectStatus(HttpStatus.BAD_REQUEST)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage("\t\t")));
-    }
-
-    @Test
-    @DisplayName("Should return bad request when submit chat with newline-only message")
-    void givenNewlineOnlyMessage_whenSubmitChat_thenReturnBadRequest() {
-        //given
-        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
-        final UUID agentId = this.testManager.postgresql().get(AgentEntity.class).getAll().stream()
-                .max(Comparator.comparing(AgentEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Agent not found"))
-                .getAgentId();
-
-        //when
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.chatAgent())
-                .withPathParameters(PathParams.create().add("agentId", agentId))
-                .expectStatus(HttpStatus.BAD_REQUEST)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage("\n\n")));
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(message)));
     }
 
     @Test
