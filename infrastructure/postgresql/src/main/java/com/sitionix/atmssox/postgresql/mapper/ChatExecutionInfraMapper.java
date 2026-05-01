@@ -27,20 +27,13 @@ public interface ChatExecutionInfraMapper {
 
     @Mapping(target = "idempotencyReplayed", constant = "false")
     @Mapping(target = "assistantMessage", ignore = true)
-    @Mapping(target = "failure", source = ".", qualifiedByName = "toFailure")
+    @Mapping(target = "failure", expression = "java(src.getFailureClass() == null ? null : asChatExecutionFailure(src))")
     ChatExecution asChatExecution(ChatExecutionEntity src);
 
-    @Named("toFailure")
-    default ChatExecutionFailure toFailure(final ChatExecutionEntity src) {
-        if (src.getFailureClass() == null) {
-            return null;
-        }
-        return ChatExecutionFailure.builder()
-                .failureClass(ChatExecutionFailureClass.fromId(src.getFailureClass().getId()))
-                .reason(src.getFailureReason())
-                .retryable(Boolean.TRUE.equals(src.getFailureRetryable()))
-                .build();
-    }
+    @Mapping(target = "failureClass", source = "failureClass")
+    @Mapping(target = "reason", source = "failureReason")
+    @Mapping(target = "retryable", source = "failureRetryable", qualifiedByName = "toPrimitiveRetryable")
+    ChatExecutionFailure asChatExecutionFailure(ChatExecutionEntity src);
 
     @Named("toFailureClass")
     default ChatExecutionFailureClass toFailureClass(final ChatExecutionFailure src) {
@@ -55,5 +48,10 @@ public interface ChatExecutionInfraMapper {
     @Named("toFailureRetryable")
     default Boolean toFailureRetryable(final ChatExecutionFailure src) {
         return src == null ? null : src.isRetryable();
+    }
+
+    @Named("toPrimitiveRetryable")
+    default boolean toPrimitiveRetryable(final Boolean retryable) {
+        return Boolean.TRUE.equals(retryable);
     }
 }
