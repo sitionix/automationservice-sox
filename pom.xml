@@ -71,8 +71,12 @@
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/mapper/AgentRuleStatusInfraMapper.java,
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRepositoryImpl.java,
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRuleRepositoryImpl.java,
+            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ChatExecutionRepositoryImpl.java,
+            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationRepositoryImpl.java,
             infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationContextSnapshotRepositoryImpl.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationMessageRepositoryImpl.java
+            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationMessageRepositoryImpl.java,
+            api-rest/src/main/java/com/sitionix/atmssox/api/handler/RestExceptionHandler.java,
+            domain/src/main/java/com/sitionix/atmssox/domain/exception/AgentAccessDeniedException.java
         </sonar.coverage.exclusions>
     </properties>
 
