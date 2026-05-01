@@ -9,27 +9,45 @@ import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionFailureC
 import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionStatusEntity;
 import java.time.Instant;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ChatExecutionInfraMapperTest {
 
     private ChatExecutionInfraMapper mapper;
 
+    @Mock
+    private ChatExecutionStatusInfraMapper chatExecutionStatusInfraMapper;
+
+    @Mock
+    private ChatExecutionFailureClassInfraMapper chatExecutionFailureClassInfraMapper;
+
     @BeforeEach
     void setUp() {
-        this.mapper = new ChatExecutionInfraMapperImpl(
-                new ChatExecutionStatusInfraMapperImpl(),
-                new ChatExecutionFailureClassInfraMapperImpl()
-        );
+        this.mapper = new ChatExecutionInfraMapperImpl(this.chatExecutionStatusInfraMapper, this.chatExecutionFailureClassInfraMapper);
+    }
+
+    @AfterEach
+    void tearDown() {
+        verifyNoMoreInteractions(this.chatExecutionStatusInfraMapper, this.chatExecutionFailureClassInfraMapper);
     }
 
     @Test
     void givenChatExecutionWithoutFailure_whenAsChatExecutionEntity_thenMapNullableFailureFieldsAsNull() {
         //given
         final ChatExecution source = this.getChatExecution(null);
+        final ChatExecutionStatusEntity statusEntity = ChatExecutionStatusEntity.builder().id(1L).description("QUEUED").build();
+        when(this.chatExecutionStatusInfraMapper.asStatusEntity(ChatExecutionStatus.QUEUED)).thenReturn(statusEntity);
 
         //when
         final ChatExecutionEntity actual = this.mapper.asChatExecutionEntity(source);
@@ -39,13 +57,15 @@ class ChatExecutionInfraMapperTest {
         assertThat(actual.getAgentId()).isEqualTo(source.getAgentId());
         assertThat(actual.getConversationId()).isEqualTo(source.getConversationId());
         assertThat(actual.getUserId()).isEqualTo(source.getUserId());
-        assertThat(actual.getStatus().getId()).isEqualTo(source.getStatus().getId());
+        assertThat(actual.getStatus()).isEqualTo(statusEntity);
         assertThat(actual.getRequestMessage()).isEqualTo(source.getRequestMessage());
         assertThat(actual.getIdempotencyKey()).isEqualTo(source.getIdempotencyKey());
         assertThat(actual.getAssistantMessageId()).isEqualTo(source.getAssistantMessageId());
         assertThat(actual.getFailureClass()).isNull();
         assertThat(actual.getFailureReason()).isNull();
         assertThat(actual.getFailureRetryable()).isNull();
+        verify(this.chatExecutionStatusInfraMapper).asStatusEntity(ChatExecutionStatus.QUEUED);
+        verify(this.chatExecutionFailureClassInfraMapper).asFailureClassEntity(null);
     }
 
     @Test
@@ -57,20 +77,31 @@ class ChatExecutionInfraMapperTest {
                 .retryable(false)
                 .build();
         final ChatExecution source = this.getChatExecution(failure);
+        final ChatExecutionStatusEntity statusEntity = ChatExecutionStatusEntity.builder().id(1L).description("QUEUED").build();
+        final ChatExecutionFailureClassEntity failureClassEntity = ChatExecutionFailureClassEntity.builder()
+                .id(1L)
+                .description("OWNERSHIP_VIOLATION")
+                .build();
+        when(this.chatExecutionStatusInfraMapper.asStatusEntity(ChatExecutionStatus.QUEUED)).thenReturn(statusEntity);
+        when(this.chatExecutionFailureClassInfraMapper.asFailureClassEntity(ChatExecutionFailureClass.OWNERSHIP_VIOLATION))
+                .thenReturn(failureClassEntity);
 
         //when
         final ChatExecutionEntity actual = this.mapper.asChatExecutionEntity(source);
 
         //then
-        assertThat(actual.getFailureClass().getId()).isEqualTo(1L);
+        assertThat(actual.getFailureClass()).isEqualTo(failureClassEntity);
         assertThat(actual.getFailureReason()).isEqualTo("Access denied");
         assertThat(actual.getFailureRetryable()).isFalse();
+        verify(this.chatExecutionStatusInfraMapper).asStatusEntity(ChatExecutionStatus.QUEUED);
+        verify(this.chatExecutionFailureClassInfraMapper).asFailureClassEntity(ChatExecutionFailureClass.OWNERSHIP_VIOLATION);
     }
 
     @Test
     void givenChatExecutionEntityWithoutFailureClass_whenAsChatExecution_thenKeepFailureNullAndIdempotencyReplayedFalse() {
         //given
         final ChatExecutionEntity source = this.getChatExecutionEntity(null, null, null);
+        when(this.chatExecutionStatusInfraMapper.asStatus(source.getStatus())).thenReturn(ChatExecutionStatus.FAILED);
 
         //when
         final ChatExecution actual = this.mapper.asChatExecution(source);
@@ -79,16 +110,20 @@ class ChatExecutionInfraMapperTest {
         assertThat(actual.getFailure()).isNull();
         assertThat(actual.isIdempotencyReplayed()).isFalse();
         assertThat(actual.getAssistantMessage()).isNull();
+        verify(this.chatExecutionStatusInfraMapper).asStatus(source.getStatus());
     }
 
     @Test
     void givenChatExecutionEntityWithFailureFields_whenAsChatExecution_thenMapFailure() {
         //given
-        final ChatExecutionFailureClassEntity failureClass = ChatExecutionFailureClassEntity.builder()
+        final ChatExecutionFailureClassEntity failureClassEntity = ChatExecutionFailureClassEntity.builder()
                 .id(5L)
                 .description("EXECUTION_ERROR")
                 .build();
-        final ChatExecutionEntity source = this.getChatExecutionEntity(failureClass, "Boom", Boolean.TRUE);
+        final ChatExecutionEntity source = this.getChatExecutionEntity(failureClassEntity, "Boom", Boolean.TRUE);
+        when(this.chatExecutionStatusInfraMapper.asStatus(source.getStatus())).thenReturn(ChatExecutionStatus.FAILED);
+        when(this.chatExecutionFailureClassInfraMapper.asFailureClass(failureClassEntity))
+                .thenReturn(ChatExecutionFailureClass.EXECUTION_ERROR);
 
         //when
         final ChatExecution actual = this.mapper.asChatExecution(source);
@@ -98,16 +133,21 @@ class ChatExecutionInfraMapperTest {
         assertThat(actual.getFailure().getFailureClass()).isEqualTo(ChatExecutionFailureClass.EXECUTION_ERROR);
         assertThat(actual.getFailure().getReason()).isEqualTo("Boom");
         assertThat(actual.getFailure().isRetryable()).isTrue();
+        verify(this.chatExecutionStatusInfraMapper).asStatus(source.getStatus());
+        verify(this.chatExecutionFailureClassInfraMapper).asFailureClass(failureClassEntity);
     }
 
     @Test
     void givenNullRetryableFlag_whenAsChatExecution_thenMapFailureRetryableAsFalse() {
         //given
-        final ChatExecutionFailureClassEntity failureClass = ChatExecutionFailureClassEntity.builder()
+        final ChatExecutionFailureClassEntity failureClassEntity = ChatExecutionFailureClassEntity.builder()
                 .id(2L)
                 .description("CONVERSATION_NOT_FOUND")
                 .build();
-        final ChatExecutionEntity source = this.getChatExecutionEntity(failureClass, "Missing", null);
+        final ChatExecutionEntity source = this.getChatExecutionEntity(failureClassEntity, "Missing", null);
+        when(this.chatExecutionStatusInfraMapper.asStatus(source.getStatus())).thenReturn(ChatExecutionStatus.FAILED);
+        when(this.chatExecutionFailureClassInfraMapper.asFailureClass(failureClassEntity))
+                .thenReturn(ChatExecutionFailureClass.CONVERSATION_NOT_FOUND);
 
         //when
         final ChatExecution actual = this.mapper.asChatExecution(source);
@@ -115,6 +155,8 @@ class ChatExecutionInfraMapperTest {
         //then
         assertThat(actual.getFailure()).isNotNull();
         assertThat(actual.getFailure().isRetryable()).isFalse();
+        verify(this.chatExecutionStatusInfraMapper).asStatus(source.getStatus());
+        verify(this.chatExecutionFailureClassInfraMapper).asFailureClass(failureClassEntity);
     }
 
     private ChatExecution getChatExecution(final ChatExecutionFailure failure) {
