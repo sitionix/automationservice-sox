@@ -1,6 +1,5 @@
 package com.sitionix.atmssox.postgresql.jpa;
 
-import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionEntity;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,5 +13,5 @@ public interface ChatExecutionJpaRepository extends JpaRepository<ChatExecutionE
 
     Optional<ChatExecutionEntity> findByUserIdAndAgentIdAndIdempotencyKey(Long userId, UUID agentId, String idempotencyKey);
 
-    Optional<ChatExecutionEntity> findByExecutionIdAndStatus(UUID executionId, ChatExecutionStatus status);
+    Optional<ChatExecutionEntity> findByExecutionIdAndStatusId(UUID executionId, Long statusId);
 }

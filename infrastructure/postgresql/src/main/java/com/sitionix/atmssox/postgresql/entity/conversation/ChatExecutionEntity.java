@@ -1,13 +1,12 @@
 package com.sitionix.atmssox.postgresql.entity.conversation;
 
-import com.sitionix.atmssox.domain.model.ChatExecutionFailureClass;
-import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -42,9 +41,9 @@ public class ChatExecutionEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 32)
-    private ChatExecutionStatus status;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
+    private ChatExecutionStatusEntity status;
 
     @Column(name = "request_message", nullable = false, columnDefinition = "TEXT")
     private String requestMessage;
@@ -55,9 +54,9 @@ public class ChatExecutionEntity {
     @Column(name = "assistant_message_id")
     private UUID assistantMessageId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "failure_class", length = 64)
-    private ChatExecutionFailureClass failureClass;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "failure_class_id", referencedColumnName = "id")
+    private ChatExecutionFailureClassEntity failureClass;
 
     @Column(name = "failure_reason", columnDefinition = "TEXT")
     private String failureReason;

@@ -1,9 +1,28 @@
 package com.sitionix.atmssox.domain.model;
 
+import java.util.Arrays;
+
 public enum ChatExecutionFailureClass {
-    OWNERSHIP_VIOLATION,
-    CONVERSATION_NOT_FOUND,
-    INVALID_LIFECYCLE_STATE,
-    IDEMPOTENCY_CONFLICT,
-    EXECUTION_ERROR
+    OWNERSHIP_VIOLATION(1L),
+    CONVERSATION_NOT_FOUND(2L),
+    INVALID_LIFECYCLE_STATE(3L),
+    IDEMPOTENCY_CONFLICT(4L),
+    EXECUTION_ERROR(5L);
+
+    private final Long id;
+
+    ChatExecutionFailureClass(final Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public static ChatExecutionFailureClass fromId(final Long id) {
+        return Arrays.stream(values())
+                .filter(value -> value.id.equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown ChatExecutionFailureClass id: " + id));
+    }
 }

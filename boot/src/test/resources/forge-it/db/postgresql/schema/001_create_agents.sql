@@ -117,16 +117,39 @@ CREATE TABLE conversation_context_snapshots (
 CREATE UNIQUE INDEX uq_conversation_context_snapshots_conversation_id
     ON conversation_context_snapshots (conversation_id);
 
+CREATE TABLE chat_execution_statuses (
+    id BIGINT PRIMARY KEY,
+    description VARCHAR(64) NOT NULL
+);
+
+INSERT INTO chat_execution_statuses (id, description)
+VALUES (1, 'QUEUED'),
+       (2, 'IN_PROGRESS'),
+       (3, 'COMPLETED'),
+       (4, 'FAILED');
+
+CREATE TABLE chat_execution_failure_classes (
+    id BIGINT PRIMARY KEY,
+    description VARCHAR(64) NOT NULL
+);
+
+INSERT INTO chat_execution_failure_classes (id, description)
+VALUES (1, 'OWNERSHIP_VIOLATION'),
+       (2, 'CONVERSATION_NOT_FOUND'),
+       (3, 'INVALID_LIFECYCLE_STATE'),
+       (4, 'IDEMPOTENCY_CONFLICT'),
+       (5, 'EXECUTION_ERROR');
+
 CREATE TABLE chat_executions (
     execution_id UUID PRIMARY KEY,
     agent_id UUID NOT NULL,
     conversation_id UUID NOT NULL REFERENCES conversations(conversation_id),
     user_id BIGINT NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    status_id BIGINT NOT NULL REFERENCES chat_execution_statuses(id),
     request_message TEXT NOT NULL,
     idempotency_key VARCHAR(255),
     assistant_message_id UUID,
-    failure_class VARCHAR(64),
+    failure_class_id BIGINT REFERENCES chat_execution_failure_classes(id),
     failure_reason TEXT,
     failure_retryable BOOLEAN,
     created_at TIMESTAMPTZ NOT NULL,

@@ -88,13 +88,21 @@ tables:
       agent_id: uuid
       conversation_id: uuid
       user_id: bigint
-      status: varchar(32)
+      status_id: bigint
       request_message: text
       idempotency_key: varchar(255)
       assistant_message_id: uuid
-      failure_class: varchar(64)
+      failure_class_id: bigint
       failure_reason: text
       failure_retryable: boolean
       created_at: timestamptz
       started_at: timestamptz
       completed_at: timestamptz
+  chat_execution_statuses:
+    columns:
+      id: bigint
+      description: varchar(64)
+  chat_execution_failure_classes:
+    columns:
+      id: bigint
+      description: varchar(64)

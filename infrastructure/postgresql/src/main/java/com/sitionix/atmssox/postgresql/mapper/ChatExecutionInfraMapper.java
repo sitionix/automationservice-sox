@@ -9,7 +9,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
+@Mapper(
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        uses = {
+                ChatExecutionStatusInfraMapper.class,
+                ChatExecutionFailureClassInfraMapper.class
+        }
+)
 public interface ChatExecutionInfraMapper {
 
     @Mapping(target = "executionId", source = "executionId")
@@ -29,7 +36,7 @@ public interface ChatExecutionInfraMapper {
             return null;
         }
         return ChatExecutionFailure.builder()
-                .failureClass(src.getFailureClass())
+                .failureClass(ChatExecutionFailureClass.fromId(src.getFailureClass().getId()))
                 .reason(src.getFailureReason())
                 .retryable(Boolean.TRUE.equals(src.getFailureRetryable()))
                 .build();

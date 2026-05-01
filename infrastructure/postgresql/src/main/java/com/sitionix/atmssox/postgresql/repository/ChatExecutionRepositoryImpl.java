@@ -48,7 +48,7 @@ public class ChatExecutionRepositoryImpl implements ChatExecutionRepository {
 
     @Override
     public Optional<ChatExecution> findByExecutionIdAndStatus(final UUID executionId, final ChatExecutionStatus status) {
-        return this.chatExecutionJpaRepository.findByExecutionIdAndStatus(executionId, status)
+        return this.chatExecutionJpaRepository.findByExecutionIdAndStatusId(executionId, status.getId())
                 .map(this.chatExecutionInfraMapper::asChatExecution);
     }
 }
