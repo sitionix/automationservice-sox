@@ -36,16 +36,11 @@ class SubmitAgentChatExecutionImplTest {
 
     private SubmitAgentChatExecutionImpl submitAgentChatExecution;
 
-    @Mock
-    private ConversationRepository conversationRepository;
-    @Mock
-    private ConversationParticipantRepository conversationParticipantRepository;
-    @Mock
-    private ChatExecutionRepository chatExecutionRepository;
-    @Mock
-    private AuthenticatedUserProvider authenticatedUserProvider;
-    @Mock
-    private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
+    @Mock private ConversationRepository conversationRepository;
+    @Mock private ConversationParticipantRepository conversationParticipantRepository;
+    @Mock private ChatExecutionRepository chatExecutionRepository;
+    @Mock private AuthenticatedUserProvider authenticatedUserProvider;
+    @Mock private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
 
     @BeforeEach
     void setUp() {
@@ -75,17 +70,17 @@ class SubmitAgentChatExecutionImplTest {
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
         final UUID conversationId = UUID.fromString("27acb3bb-2f98-4db8-9fd2-f62d10256c29");
         final UUID executionId = UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e");
-        final ChatAgentCommand command = ChatAgentCommand.builder().message("  hello world  ").build();
+        final ChatAgentCommand command = this.getChatAgentCommand(null, "  hello world  ");
         final Conversation createdConversation = this.getConversation(conversationId, 17L);
-        final ChatExecution savedExecution = ChatExecution.builder()
-                .executionId(executionId)
-                .agentId(agentId)
-                .conversationId(conversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.QUEUED)
-                .requestMessage("hello world")
-                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
-                .build();
+        final ChatExecution savedExecution = this.getQueuedChatExecution(
+                executionId,
+                agentId,
+                conversationId,
+                17L,
+                "hello world",
+                "2026-04-29T00:00:00Z",
+                "KEY"
+        );
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(createdConversation);
@@ -113,18 +108,16 @@ class SubmitAgentChatExecutionImplTest {
         //given
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
         final UUID conversationId = UUID.fromString("27acb3bb-2f98-4db8-9fd2-f62d10256c29");
-        final ChatAgentCommand command = ChatAgentCommand.builder().conversationId(conversationId).message("hello").build();
-        final ChatExecution existing = ChatExecution.builder()
-                .executionId(UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e"))
-                .agentId(agentId)
-                .conversationId(conversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.QUEUED)
-                .requestMessage("hello")
-                .idempotencyKey("KEY")
-                .idempotencyReplayed(false)
-                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
-                .build();
+        final ChatAgentCommand command = this.getChatAgentCommand(conversationId, "hello");
+        final ChatExecution existing = this.getQueuedChatExecution(
+                UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e"),
+                agentId,
+                conversationId,
+                17L,
+                "hello",
+                "2026-04-29T00:00:00Z",
+                "KEY"
+        );
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId))
@@ -149,7 +142,7 @@ class SubmitAgentChatExecutionImplTest {
         //given
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
         final UUID conversationId = UUID.fromString("27acb3bb-2f98-4db8-9fd2-f62d10256c29");
-        final ChatAgentCommand command = ChatAgentCommand.builder().conversationId(conversationId).message("hello").build();
+        final ChatAgentCommand command = this.getChatAgentCommand(conversationId, "hello");
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId))
@@ -174,18 +167,16 @@ class SubmitAgentChatExecutionImplTest {
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
         final UUID conversationId = UUID.fromString("27acb3bb-2f98-4db8-9fd2-f62d10256c29");
         final UUID anotherConversationId = UUID.fromString("b2656439-c7fe-40a9-ab08-59bddce0f915");
-        final ChatAgentCommand command = ChatAgentCommand.builder().conversationId(conversationId).message("hello").build();
-        final ChatExecution existing = ChatExecution.builder()
-                .executionId(UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e"))
-                .agentId(agentId)
-                .conversationId(anotherConversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.QUEUED)
-                .requestMessage("hello")
-                .idempotencyKey("KEY")
-                .idempotencyReplayed(false)
-                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
-                .build();
+        final ChatAgentCommand command = this.getChatAgentCommand(conversationId, "hello");
+        final ChatExecution existing = this.getQueuedChatExecution(
+                UUID.fromString("66fbb67c-ef6f-4cde-b5bc-f4955de0181e"),
+                agentId,
+                anotherConversationId,
+                17L,
+                "hello",
+                "2026-04-29T00:00:00Z",
+                "KEY"
+        );
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId))
@@ -208,7 +199,7 @@ class SubmitAgentChatExecutionImplTest {
     void givenBlankMessage_whenExecute_thenThrowValidationException() {
         //given
         final UUID agentId = UUID.fromString("f5dbbe40-6399-4aa8-8ee4-20ce8fd3724d");
-        final ChatAgentCommand command = ChatAgentCommand.builder().message(" ").build();
+        final ChatAgentCommand command = this.getChatAgentCommand(null, " ");
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
@@ -231,6 +222,35 @@ class SubmitAgentChatExecutionImplTest {
                 .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-29T00:00:00Z"))
                 .lastMessageAt(Instant.parse("2026-04-29T00:00:00Z"))
+                .build();
+    }
+
+    private ChatAgentCommand getChatAgentCommand(final UUID conversationId, final String message) {
+        return ChatAgentCommand.builder()
+                .conversationId(conversationId)
+                .message(message)
+                .build();
+    }
+
+    private ChatExecution getQueuedChatExecution(
+            final UUID executionId,
+            final UUID agentId,
+            final UUID conversationId,
+            final Long userId,
+            final String requestMessage,
+            final String createdAt,
+            final String idempotencyKey
+    ) {
+        return ChatExecution.builder()
+                .executionId(executionId)
+                .agentId(agentId)
+                .conversationId(conversationId)
+                .userId(userId)
+                .status(ChatExecutionStatus.QUEUED)
+                .requestMessage(requestMessage)
+                .idempotencyKey(idempotencyKey)
+                .idempotencyReplayed(false)
+                .createdAt(Instant.parse(createdAt))
                 .build();
     }
 }
