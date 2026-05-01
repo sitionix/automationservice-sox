@@ -1,13 +1,13 @@
 package com.sitionix.atmssox.api.mapper;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
-import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO1;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
@@ -236,10 +236,10 @@ class AgentApiMapperTest {
         //given
         final UUID conversationId = UUID.fromString("81111111-1111-1111-1111-111111111111");
         final ChatAgentResponse given = this.getChatAgentResponse(conversationId);
-        final ChatAgentResponseDTO expected = this.getChatAgentResponseDto(conversationId);
+        final ChatAgentExecutionDTO expected = this.getChatAgentResponseDto(conversationId);
 
         //when
-        final ChatAgentResponseDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
+        final ChatAgentExecutionDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -450,10 +450,10 @@ class AgentApiMapperTest {
             final OffsetDateTime updatedAt
     ) {
         return AgentConversationsResponseDTO.builder()
-                .items(List.of(AgentConversationDTO1.builder()
+                .items(List.of(AgentConversationDTO.builder()
                         .id(id)
                         .title(title)
-                        .type(AgentConversationDTO1.TypeEnum.DIRECT)
+                        .type(AgentConversationDTO.TypeEnum.DIRECT)
                         .createdAt(createdAt)
                         .updatedAt(updatedAt)
                         .lastMessageAt(updatedAt)
@@ -532,8 +532,8 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private ChatAgentResponseDTO getChatAgentResponseDto(final UUID conversationId) {
-        return ChatAgentResponseDTO.builder()
+    private ChatAgentExecutionDTO getChatAgentResponseDto(final UUID conversationId) {
+        return ChatAgentExecutionDTO.builder()
                 .conversationId(conversationId)
                 .assistantMessage(AgentConversationMessageDTO.builder()
                         .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))

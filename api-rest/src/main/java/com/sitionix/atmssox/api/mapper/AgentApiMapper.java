@@ -1,6 +1,6 @@
 package com.sitionix.atmssox.api.mapper;
 
-import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO1;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
@@ -8,7 +8,7 @@ import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
@@ -42,7 +42,7 @@ public interface AgentApiMapper {
     ChatAgentCommand asChatAgentCommand(ChatAgentRequestDTO src);
 
     @Mapping(target = "assistantMessage", source = "reply")
-    ChatAgentResponseDTO asChatAgentResponseDto(ChatAgentResponse src);
+    ChatAgentExecutionDTO asChatAgentResponseDto(ChatAgentResponse src);
 
     @Mapping(target = "status", source = "status")
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
@@ -51,7 +51,7 @@ public interface AgentApiMapper {
     @Mapping(target = "error", source = "failure")
     ChatExecutionDTO asChatExecutionDto(ChatExecution src);
 
-    AgentConversationDTO1 asAgentConversationDto(Conversation src);
+    AgentConversationDTO asAgentConversationDto(Conversation src);
 
     AgentConversationMessageDTO asAgentConversationMessageDto(ConversationMessage src);
 
@@ -59,7 +59,7 @@ public interface AgentApiMapper {
 
     List<AgentDTO> asAgentDtos(List<Agent> src);
 
-    List<AgentConversationDTO1> asAgentConversationDtos(List<Conversation> src);
+    List<AgentConversationDTO> asAgentConversationDtos(List<Conversation> src);
 
     List<AgentConversationMessageDTO> asAgentConversationMessageDtos(List<ConversationMessage> src);
 
