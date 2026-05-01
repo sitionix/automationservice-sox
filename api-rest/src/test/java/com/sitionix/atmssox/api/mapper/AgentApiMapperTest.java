@@ -51,11 +51,8 @@ class AgentApiMapperTest {
 
     private AgentApiMapper agentApiMapper;
 
-    @Mock
-    private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
-
-    @Mock
-    private ChatExecutionFailureApiMapper chatExecutionFailureApiMapper;
+    @Mock private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
+    @Mock private ChatExecutionFailureApiMapper chatExecutionFailureApiMapper;
 
     @BeforeEach
     void setUp() {
@@ -300,25 +297,24 @@ class AgentApiMapperTest {
     void givenChatExecutionWithFailure_whenAsChatExecutionDto_thenReturnMappedExecutionAndFailure() {
         //given
         final ChatExecution given = this.getFailedChatExecution();
+        final ChatExecutionFailureDTO chatExecutionFailureDto = this.getChatExecutionFailureDto();
         when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.FAILED)).thenReturn(ExecutionStatusDTO.FAILED);
-        when(this.chatExecutionFailureApiMapper.asChatExecutionFailureDto(given.getFailure())).thenReturn(
-                ChatExecutionFailureDTO.builder()
-                        .code("EXECUTION_ERROR")
-                        .message("Execution failed")
-                        .details(Map.of("retryable", true))
-                        .build()
-        );
+        when(this.chatExecutionFailureApiMapper.asChatExecutionFailureDto(given.getFailure())).thenReturn(chatExecutionFailureDto);
 
         //when
         final ChatExecutionDTO actual = this.agentApiMapper.asChatExecutionDto(given);
 
         //then
         assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.FAILED);
-        assertThat(actual.getError()).isEqualTo(ChatExecutionFailureDTO.builder()
+        assertThat(actual.getError()).isEqualTo(chatExecutionFailureDto);
+    }
+
+    private ChatExecutionFailureDTO getChatExecutionFailureDto() {
+        return ChatExecutionFailureDTO.builder()
                 .code("EXECUTION_ERROR")
                 .message("Execution failed")
                 .details(Map.of("retryable", true))
-                .build());
+                .build();
     }
 
     private CreateAgentRequestDTO getCreateAgentRequestDto(final String description) {

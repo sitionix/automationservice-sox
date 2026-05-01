@@ -32,12 +32,9 @@ class GetAgentChatExecutionImplTest {
 
     private GetAgentChatExecutionImpl getAgentChatExecution;
 
-    @Mock
-    private ChatExecutionRepository chatExecutionRepository;
-    @Mock
-    private ConversationMessageRepository conversationMessageRepository;
-    @Mock
-    private AuthenticatedUserProvider authenticatedUserProvider;
+    @Mock private ChatExecutionRepository chatExecutionRepository;
+    @Mock private ConversationMessageRepository conversationMessageRepository;
+    @Mock private AuthenticatedUserProvider authenticatedUserProvider;
 
     @BeforeEach
     void setUp() {
@@ -60,22 +57,8 @@ class GetAgentChatExecutionImplTest {
         final UUID executionId = UUID.fromString("6354b6f8-1db3-459b-8526-c651df9d1f2d");
         final UUID conversationId = UUID.fromString("fd5f50f4-9f80-4483-8d8e-f97ef96fc764");
         final UUID assistantMessageId = UUID.fromString("4d8a1ef9-c46f-4d6a-a828-540f73d2ec16");
-        final ChatExecution execution = ChatExecution.builder()
-                .executionId(executionId)
-                .agentId(agentId)
-                .conversationId(conversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.COMPLETED)
-                .assistantMessageId(assistantMessageId)
-                .build();
-        final ConversationMessage assistantMessage = ConversationMessage.builder()
-                .id(assistantMessageId)
-                .conversationId(conversationId)
-                .authorType(ConversationParticipantType.AGENT)
-                .authorId(agentId.toString())
-                .content("done")
-                .createdAt(Instant.parse("2026-04-29T00:10:00Z"))
-                .build();
+        final ChatExecution execution = this.getChatExecution(executionId, agentId, conversationId, 17L, ChatExecutionStatus.COMPLETED, assistantMessageId);
+        final ConversationMessage assistantMessage = this.getAssistantMessage(assistantMessageId, conversationId, agentId);
 
         when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -97,13 +80,14 @@ class GetAgentChatExecutionImplTest {
         //given
         final UUID agentId = UUID.fromString("e84df5fd-2992-4945-80c1-2d7bfbf1e84a");
         final UUID executionId = UUID.fromString("6354b6f8-1db3-459b-8526-c651df9d1f2d");
-        final ChatExecution execution = ChatExecution.builder()
-                .executionId(executionId)
-                .agentId(agentId)
-                .conversationId(UUID.fromString("fd5f50f4-9f80-4483-8d8e-f97ef96fc764"))
-                .userId(99L)
-                .status(ChatExecutionStatus.QUEUED)
-                .build();
+        final ChatExecution execution = this.getChatExecution(
+                executionId,
+                agentId,
+                UUID.fromString("fd5f50f4-9f80-4483-8d8e-f97ef96fc764"),
+                99L,
+                ChatExecutionStatus.QUEUED,
+                null
+        );
 
         when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -124,13 +108,14 @@ class GetAgentChatExecutionImplTest {
         final UUID agentId = UUID.fromString("e84df5fd-2992-4945-80c1-2d7bfbf1e84a");
         final UUID executionId = UUID.fromString("6354b6f8-1db3-459b-8526-c651df9d1f2d");
         final UUID conversationId = UUID.fromString("fd5f50f4-9f80-4483-8d8e-f97ef96fc764");
-        final ChatExecution execution = ChatExecution.builder()
-                .executionId(executionId)
-                .agentId(agentId)
-                .conversationId(conversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.QUEUED)
-                .build();
+        final ChatExecution execution = this.getChatExecution(
+                executionId,
+                agentId,
+                conversationId,
+                17L,
+                ChatExecutionStatus.QUEUED,
+                null
+        );
 
         when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -151,14 +136,14 @@ class GetAgentChatExecutionImplTest {
         final UUID agentId = UUID.fromString("f7359dfa-5866-476d-96dd-c2c9ab70eb67");
         final UUID executionId = UUID.fromString("37072f09-1c6b-4607-9349-1d00f048130c");
         final UUID conversationId = UUID.fromString("34fd7804-c7fb-45f7-862d-02667ec8ced4");
-        final ChatExecution execution = ChatExecution.builder()
-                .executionId(executionId)
-                .agentId(agentId)
-                .conversationId(conversationId)
-                .userId(17L)
-                .status(ChatExecutionStatus.IN_PROGRESS)
-                .assistantMessageId(null)
-                .build();
+        final ChatExecution execution = this.getChatExecution(
+                executionId,
+                agentId,
+                conversationId,
+                17L,
+                ChatExecutionStatus.IN_PROGRESS,
+                null
+        );
 
         when(this.chatExecutionRepository.findByAgentIdAndExecutionId(agentId, executionId)).thenReturn(Optional.of(execution));
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
@@ -171,5 +156,38 @@ class GetAgentChatExecutionImplTest {
         verify(this.chatExecutionRepository).findByAgentIdAndExecutionId(agentId, executionId);
         verify(this.authenticatedUserProvider).getUserId();
         verifyNoInteractions(this.conversationMessageRepository);
+    }
+
+    private ChatExecution getChatExecution(
+            final UUID executionId,
+            final UUID agentId,
+            final UUID conversationId,
+            final Long userId,
+            final ChatExecutionStatus status,
+            final UUID assistantMessageId
+    ) {
+        return ChatExecution.builder()
+                .executionId(executionId)
+                .agentId(agentId)
+                .conversationId(conversationId)
+                .userId(userId)
+                .status(status)
+                .assistantMessageId(assistantMessageId)
+                .build();
+    }
+
+    private ConversationMessage getAssistantMessage(
+            final UUID messageId,
+            final UUID conversationId,
+            final UUID agentId
+    ) {
+        return ConversationMessage.builder()
+                .id(messageId)
+                .conversationId(conversationId)
+                .authorType(ConversationParticipantType.AGENT)
+                .authorId(agentId.toString())
+                .content("done")
+                .createdAt(Instant.parse("2026-04-29T00:10:00Z"))
+                .build();
     }
 }

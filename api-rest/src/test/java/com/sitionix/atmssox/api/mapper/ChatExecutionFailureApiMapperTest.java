@@ -21,20 +21,29 @@ class ChatExecutionFailureApiMapperTest {
     @Test
     void givenChatExecutionFailure_whenAsChatExecutionFailureDto_thenReturnMappedDto() {
         //given
-        final ChatExecutionFailure given = ChatExecutionFailure.builder()
-                .failureClass(ChatExecutionFailureClass.EXECUTION_ERROR)
-                .reason("Execution failed")
-                .retryable(true)
-                .build();
+        final ChatExecutionFailure given = this.getChatExecutionFailure();
+        final ChatExecutionFailureDTO expected = this.getChatExecutionFailureDto();
 
         //when
         final ChatExecutionFailureDTO actual = this.mapper.asChatExecutionFailureDto(given);
 
         //then
-        assertThat(actual).isEqualTo(ChatExecutionFailureDTO.builder()
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    private ChatExecutionFailure getChatExecutionFailure() {
+        return ChatExecutionFailure.builder()
+                .failureClass(ChatExecutionFailureClass.EXECUTION_ERROR)
+                .reason("Execution failed")
+                .retryable(true)
+                .build();
+    }
+
+    private ChatExecutionFailureDTO getChatExecutionFailureDto() {
+        return ChatExecutionFailureDTO.builder()
                 .code("EXECUTION_ERROR")
                 .message("Execution failed")
                 .details(Map.of("retryable", true))
-                .build());
+                .build();
     }
 }
