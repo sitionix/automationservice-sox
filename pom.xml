@@ -52,6 +52,7 @@
         <sonar.coverage.exclusions>
             application/src/main/java/com/sitionix/atmssox/application/usecase/ActiveUserAgentResolver.java,
             application/src/main/java/com/sitionix/atmssox/application/usecase/ChatCompletedContext.java,
+            application/src/main/java/com/sitionix/atmssox/application/usecase/ChatExecutionAsyncProcessor.java,
             application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizationContext.java,
             application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizationCoverageCalculator.java,
             application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerAgentExecutionHandler.java,

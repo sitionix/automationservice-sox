@@ -51,6 +51,7 @@ public class ChatExecutionAsyncProcessor {
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
 
     @Async("contextOptimizerTaskExecutor")
+    @Transactional
     public void processAsync(final UUID executionId) {
         this.process(executionId);
     }
