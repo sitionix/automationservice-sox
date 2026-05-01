@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AuthenticationRequiredException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AuthenticationRequiredException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AuthenticationRequiredException extends RuntimeException {}

@@ -44,6 +44,18 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     @Override
+    public Optional<Conversation> findActiveByIdAndAgentId(final UUID conversationId, final UUID agentId) {
+        return this.conversationJpaRepository
+                .findActiveByIdAndAgent(
+                        conversationId,
+                        ConversationStatus.ACTIVE,
+                        ConversationParticipantType.AGENT,
+                        agentId.toString()
+                )
+                .map(this::toDomain);
+    }
+
+    @Override
     public List<Conversation> findAllActiveByUserIdAndAgentId(final Long userId, final UUID agentId) {
         return this.conversationJpaRepository
                 .findAllActiveByUserIdAndAgent(

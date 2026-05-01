@@ -37,6 +37,8 @@ public interface ConversationRepository {
      */
     Optional<Conversation> findActiveByIdAndUserIdAndAgentId(UUID conversationId, Long userId, UUID agentId);
 
+    Optional<Conversation> findActiveByIdAndAgentId(UUID conversationId, UUID agentId);
+
     /**
      * Loads all active conversations for one user-agent context.
      *

@@ -7,13 +7,21 @@ import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ExecutionStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
+import com.sitionix.atmssox.domain.model.ChatExecution;
+import com.sitionix.atmssox.domain.model.ChatExecutionFailure;
+import com.sitionix.atmssox.domain.model.ChatExecutionFailureClass;
+import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
@@ -25,24 +33,33 @@ import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AgentApiMapperTest {
 
     private AgentApiMapper agentApiMapper;
 
+    @Mock private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
+    @Mock private ChatExecutionFailureApiMapper chatExecutionFailureApiMapper;
+
     @BeforeEach
     void setUp() {
-        this.agentApiMapper = new AgentApiMapperImpl();
+        this.agentApiMapper = new AgentApiMapperImpl(
+                this.chatExecutionStatusApiMapper,
+                this.chatExecutionFailureApiMapper
+        );
     }
 
     @Test
@@ -216,10 +233,10 @@ class AgentApiMapperTest {
         //given
         final UUID conversationId = UUID.fromString("81111111-1111-1111-1111-111111111111");
         final ChatAgentResponse given = this.getChatAgentResponse(conversationId);
-        final ChatAgentResponseDTO expected = this.getChatAgentResponseDto(conversationId);
+        final ChatAgentExecutionDTO expected = this.getChatAgentResponseDto(conversationId);
 
         //when
-        final ChatAgentResponseDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
+        final ChatAgentExecutionDTO actual = this.agentApiMapper.asChatAgentResponseDto(given);
 
         //then
         assertThat(actual).isEqualTo(expected);
@@ -259,6 +276,45 @@ class AgentApiMapperTest {
 
         //then
         assertThat(actual).isEqualTo(OffsetDateTime.parse("2026-01-15T12:13:14Z"));
+    }
+
+    @Test
+    void givenChatExecution_whenAsSubmitChatExecutionResponseDto_thenReturnExecutionEnvelope() {
+        //given
+        final ChatExecution given = this.getQueuedChatExecution();
+        when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.QUEUED)).thenReturn(ExecutionStatusDTO.ACCEPTED);
+
+        //when
+        final SubmitChatExecutionResponseDTO actual = this.agentApiMapper.asSubmitChatExecutionResponseDto(given);
+
+        //then
+        assertThat(actual.getExecutionId()).isEqualTo(given.getExecutionId());
+        assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
+        assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.ACCEPTED);
+    }
+
+    @Test
+    void givenChatExecutionWithFailure_whenAsChatExecutionDto_thenReturnMappedExecutionAndFailure() {
+        //given
+        final ChatExecution given = this.getFailedChatExecution();
+        final ChatExecutionFailureDTO chatExecutionFailureDto = this.getChatExecutionFailureDto();
+        when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.FAILED)).thenReturn(ExecutionStatusDTO.FAILED);
+        when(this.chatExecutionFailureApiMapper.asChatExecutionFailureDto(given.getFailure())).thenReturn(chatExecutionFailureDto);
+
+        //when
+        final ChatExecutionDTO actual = this.agentApiMapper.asChatExecutionDto(given);
+
+        //then
+        assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.FAILED);
+        assertThat(actual.getError()).isEqualTo(chatExecutionFailureDto);
+    }
+
+    private ChatExecutionFailureDTO getChatExecutionFailureDto() {
+        return ChatExecutionFailureDTO.builder()
+                .code("EXECUTION_ERROR")
+                .message("Execution failed")
+                .details(Map.of("retryable", true))
+                .build();
     }
 
     private CreateAgentRequestDTO getCreateAgentRequestDto(final String description) {
@@ -472,10 +528,10 @@ class AgentApiMapperTest {
                 .build();
     }
 
-    private ChatAgentResponseDTO getChatAgentResponseDto(final UUID conversationId) {
-        return ChatAgentResponseDTO.builder()
+    private ChatAgentExecutionDTO getChatAgentResponseDto(final UUID conversationId) {
+        return ChatAgentExecutionDTO.builder()
                 .conversationId(conversationId)
-                .reply(AgentConversationMessageDTO.builder()
+                .assistantMessage(AgentConversationMessageDTO.builder()
                         .id(UUID.fromString("71111111-1111-1111-1111-111111111111"))
                         .authorType(AgentConversationMessageDTO.AuthorTypeEnum.AGENT)
                         .authorId("agent-1")
@@ -500,6 +556,34 @@ class AgentApiMapperTest {
                 .authorId(authorId)
                 .content(content)
                 .createdAt(createdAt)
+                .build();
+    }
+
+    private ChatExecution getQueuedChatExecution() {
+        return ChatExecution.builder()
+                .executionId(UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"))
+                .conversationId(UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"))
+                .status(ChatExecutionStatus.QUEUED)
+                .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
+                .build();
+    }
+
+    private ChatExecution getFailedChatExecution() {
+        return ChatExecution.builder()
+                .executionId(UUID.fromString("d8827667-03f3-4d46-ae0d-d35e43ecdf95"))
+                .conversationId(UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"))
+                .agentId(UUID.fromString("6e4e32f8-2f48-4600-9a73-bb026f98dbf4"))
+                .status(ChatExecutionStatus.FAILED)
+                .failure(this.getExecutionFailure())
+                .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
+                .build();
+    }
+
+    private ChatExecutionFailure getExecutionFailure() {
+        return ChatExecutionFailure.builder()
+                .failureClass(ChatExecutionFailureClass.EXECUTION_ERROR)
+                .reason("Execution failed")
+                .retryable(true)
                 .build();
     }
 

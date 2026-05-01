@@ -6,12 +6,13 @@ import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
 import com.sitionix.forgeit.domain.endpoint.mockmvc.MockmvcDefault;
@@ -167,15 +168,40 @@ public class ControllerEndpoint {
         );
     }
 
-    public static Endpoint<ChatAgentRequestDTO, ChatAgentResponseDTO> chatAgent() {
+    public static Endpoint<ChatAgentRequestDTO, SubmitChatExecutionResponseDTO> chatAgent() {
         return Endpoint.createContract(
                 "/api/v1/agents/{agentId}/chat",
                 HttpMethod.POST,
                 ChatAgentRequestDTO.class,
-                ChatAgentResponseDTO.class,
+                SubmitChatExecutionResponseDTO.class,
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .withRequest("chatAgentRequest.json")
+                        .expectStatus(202)
+        );
+    }
+
+    public static Endpoint<ChatAgentRequestDTO, SubmitChatExecutionResponseDTO> chatAgentByExecutionsPath() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/chat/executions",
+                HttpMethod.POST,
+                ChatAgentRequestDTO.class,
+                SubmitChatExecutionResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("chatAgentRequest.json")
+                        .expectStatus(202)
+        );
+    }
+
+    public static Endpoint<Void, ChatExecutionDTO> getAgentChatExecution() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/chat/executions/{executionId}",
+                HttpMethod.GET,
+                Void.class,
+                ChatExecutionDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
                         .expectStatus(200)
         );
     }

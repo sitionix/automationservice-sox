@@ -10,13 +10,14 @@ import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
@@ -27,7 +28,6 @@ import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
-import com.sitionix.atmssox.domain.usecase.ChatAgent;
 import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
@@ -35,6 +35,7 @@ import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
+import com.sitionix.atmssox.domain.usecase.GetAgentChatExecution;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
@@ -42,6 +43,7 @@ import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.RestoreAgent;
+import com.sitionix.atmssox.domain.usecase.SubmitAgentChatExecution;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +71,8 @@ public class AgentController implements AgentApi {
 
     private final ArchiveAgent archiveAgent;
 
-    private final ChatAgent chatAgent;
+    private final SubmitAgentChatExecution submitAgentChatExecution;
+    private final GetAgentChatExecution getAgentChatExecution;
 
     private final CreateAgentRule createAgentRule;
 
@@ -138,9 +141,27 @@ public class AgentController implements AgentApi {
     }
 
     @Override
-    public ResponseEntity<ChatAgentResponseDTO> chatAgent(final UUID agentId, @Valid final ChatAgentRequestDTO chatAgentRequestDTO) {
-        return ResponseEntity.ok(this.agentApiMapper.asChatAgentResponseDto(
-                this.chatAgent.execute(agentId, this.agentApiMapper.asChatAgentCommand(chatAgentRequestDTO))
+    public ResponseEntity<SubmitChatExecutionResponseDTO> submitAgentChatExecution(final UUID agentId,
+                                                                                    @Valid final ChatAgentRequestDTO chatAgentRequestDTO,
+                                                                                    final String idempotencyKey) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(this.agentApiMapper.asSubmitChatExecutionResponseDto(
+                this.submitAgentChatExecution.execute(agentId, this.agentApiMapper.asChatAgentCommand(chatAgentRequestDTO), idempotencyKey)
+        ));
+    }
+
+    @Override
+    public ResponseEntity<SubmitChatExecutionResponseDTO> submitAgentChatExecutionByExecutionsPath(final UUID agentId,
+                                                                                                    @Valid final ChatAgentRequestDTO chatAgentRequestDTO,
+                                                                                                    final String idempotencyKey) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(this.agentApiMapper.asSubmitChatExecutionResponseDto(
+                this.submitAgentChatExecution.execute(agentId, this.agentApiMapper.asChatAgentCommand(chatAgentRequestDTO), idempotencyKey)
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ChatExecutionDTO> getAgentChatExecution(final UUID agentId, final UUID executionId, final UUID conversationId) {
+        return ResponseEntity.ok(this.agentApiMapper.asChatExecutionDto(
+                this.getAgentChatExecution.execute(agentId, executionId, conversationId)
         ));
     }
 

@@ -61,4 +61,22 @@ public interface ConversationJpaRepository extends JpaRepository<ConversationEnt
                                                                   @Param("userId") Long userId,
                                                                   @Param("agentType") ConversationParticipantType agentType,
                                                                   @Param("agentRef") String agentRef);
+
+    @Query("""
+            select c
+            from ConversationEntity c
+            where c.conversationId = :conversationId
+              and c.status = :status
+              and exists (
+                  select 1
+                  from ConversationParticipantEntity p
+                  where p.conversation = c
+                    and p.participantType = :agentType
+                    and p.participantRef = :agentRef
+              )
+            """)
+    Optional<ConversationEntity> findActiveByIdAndAgent(@Param("conversationId") UUID conversationId,
+                                                         @Param("status") ConversationStatus status,
+                                                         @Param("agentType") ConversationParticipantType agentType,
+                                                         @Param("agentRef") String agentRef);
 }

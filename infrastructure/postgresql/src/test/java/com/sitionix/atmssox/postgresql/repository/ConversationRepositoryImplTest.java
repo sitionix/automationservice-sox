@@ -67,6 +67,60 @@ class ConversationRepositoryImplTest {
     }
 
     @Test
+    void givenConversationIdAndUserId_whenFindActiveByIdAndUserIdExists_thenReturnConversation() {
+        //given
+        final UUID conversationId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        final Long userId = 17L;
+        final ConversationEntity entity = this.getConversationEntity(conversationId);
+        final Optional<Conversation> expected = Optional.of(this.getConversation(conversationId));
+
+        when(this.conversationJpaRepository.findActiveByIdAndUserId(
+                conversationId,
+                ConversationStatus.ACTIVE,
+                userId
+        )).thenReturn(Optional.of(entity));
+
+        //when
+        final Optional<Conversation> actual = this.conversationRepository.findActiveByIdAndUserId(conversationId, userId);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.conversationJpaRepository).findActiveByIdAndUserId(
+                conversationId,
+                ConversationStatus.ACTIVE,
+                userId
+        );
+    }
+
+    @Test
+    void givenConversationIdAndAgentId_whenFindActiveByIdAndAgentIdExists_thenReturnConversation() {
+        //given
+        final UUID conversationId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        final UUID agentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final ConversationEntity entity = this.getConversationEntity(conversationId);
+        final Optional<Conversation> expected = Optional.of(this.getConversation(conversationId));
+
+        when(this.conversationJpaRepository.findActiveByIdAndAgent(
+                conversationId,
+                ConversationStatus.ACTIVE,
+                ConversationParticipantType.AGENT,
+                agentId.toString()
+        )).thenReturn(Optional.of(entity));
+
+        //when
+        final Optional<Conversation> actual = this.conversationRepository.findActiveByIdAndAgentId(conversationId, agentId);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.conversationJpaRepository).findActiveByIdAndAgent(
+                conversationId,
+                ConversationStatus.ACTIVE,
+                ConversationParticipantType.AGENT,
+                agentId.toString()
+        );
+    }
+
+    @Test
     void givenConversationIdUserIdAndAgentId_whenFindActiveByIdAndUserIdAndAgentIdExists_thenReturnConversation() {
         //given
         final UUID conversationId = UUID.fromString("11111111-1111-1111-1111-111111111111");

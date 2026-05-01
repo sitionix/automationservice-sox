@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AgentLifecycleTransitionException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AgentLifecycleTransitionException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AgentLifecycleTransitionException extends RuntimeException {}

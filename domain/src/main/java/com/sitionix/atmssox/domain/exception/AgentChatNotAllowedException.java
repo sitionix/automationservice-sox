@@ -1,8 +1,6 @@
 package com.sitionix.atmssox.domain.exception;
 
-public class AgentChatNotAllowedException extends RuntimeException {
+import lombok.experimental.StandardException;
 
-    public AgentChatNotAllowedException(final String message) {
-        super(message);
-    }
-}
+@StandardException
+public class AgentChatNotAllowedException extends RuntimeException {}

@@ -49,30 +49,6 @@
         <testcontainers.version>1.20.1</testcontainers.version>
         <forgeit.version>0.0.38</forgeit.version>
         <forge.security.version>0.0.7</forge.security.version>
-        <sonar.coverage.exclusions>
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ActiveUserAgentResolver.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ChatCompletedContext.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizationContext.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizationCoverageCalculator.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerAgentExecutionHandler.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerAsyncService.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerPolicy.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerPostChatWorkflow.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerProperties.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/ContextOptimizerTrigger.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/OpenAiJsonResponseParser.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/PostChatWorkflow.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/PostChatWorkflowDispatcher.java,
-            application/src/main/java/com/sitionix/atmssox/application/usecase/RuleSuggestionPostChatWorkflow.java,
-            boot/src/main/java/com/sitionix/atmssox/config/AsyncConfiguration.java,
-            boot/src/main/java/com/sitionix/atmssox/config/AsyncExecutorsProperties.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/mapper/AgentRuleAuthorTypeInfraMapper.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/mapper/AgentRuleStatusInfraMapper.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRepositoryImpl.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/AgentRuleRepositoryImpl.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationContextSnapshotRepositoryImpl.java,
-            infrastructure/postgresql/src/main/java/com/sitionix/atmssox/postgresql/repository/ConversationMessageRepositoryImpl.java
-        </sonar.coverage.exclusions>
     </properties>
 
     <dependencyManagement>
