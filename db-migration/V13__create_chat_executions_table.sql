@@ -29,7 +29,6 @@ CREATE TABLE chat_executions (
     status_id BIGINT NOT NULL,
     request_message TEXT NOT NULL,
     idempotency_key VARCHAR(255),
-    input_message_id UUID NOT NULL,
     assistant_message_id UUID,
     failure_class_id BIGINT,
     failure_reason TEXT,
@@ -44,4 +43,3 @@ CREATE TABLE chat_executions (
 
 CREATE INDEX idx_chat_executions_agent ON chat_executions (agent_id, execution_id);
 CREATE INDEX idx_chat_executions_conversation_idempotency ON chat_executions (conversation_id, idempotency_key);
-CREATE UNIQUE INDEX uq_chat_executions_input_message_id ON chat_executions (input_message_id);
