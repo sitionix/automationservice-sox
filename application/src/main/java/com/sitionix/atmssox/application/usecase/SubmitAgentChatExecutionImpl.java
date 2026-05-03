@@ -8,11 +8,13 @@ import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.ChatExecutionRepository;
+import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import com.sitionix.atmssox.domain.usecase.SubmitAgentChatExecution;
@@ -20,10 +22,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmitAgentChatExecutionImpl implements SubmitAgentChatExecution {
@@ -32,9 +37,10 @@ public class SubmitAgentChatExecutionImpl implements SubmitAgentChatExecution {
 
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository conversationParticipantRepository;
+    private final ConversationMessageRepository conversationMessageRepository;
     private final ChatExecutionRepository chatExecutionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
-    private final ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -60,6 +66,18 @@ public class SubmitAgentChatExecutionImpl implements SubmitAgentChatExecution {
         }
 
         final Instant now = Instant.now();
+        final ConversationMessage userMessage = this.conversationMessageRepository.save(ConversationMessage.builder()
+                .id(UUID.randomUUID())
+                .conversationId(conversation.getId())
+                .authorType(ConversationParticipantType.USER)
+                .authorId(String.valueOf(userId))
+                .content(message)
+                .createdAt(now)
+                .build());
+        this.conversationRepository.save(conversation.toBuilder()
+                .updatedAt(now)
+                .lastMessageAt(now)
+                .build());
         final ChatExecution execution = this.chatExecutionRepository.save(ChatExecution.builder()
                 .executionId(UUID.randomUUID())
                 .agentId(agentId)
@@ -69,10 +87,14 @@ public class SubmitAgentChatExecutionImpl implements SubmitAgentChatExecution {
                 .requestMessage(message)
                 .idempotencyKey(normalizedIdempotencyKey)
                 .idempotencyReplayed(false)
+                .inputMessageId(userMessage.getId())
                 .createdAt(now)
                 .build());
 
-        this.chatExecutionAsyncProcessor.processAsync(execution.getExecutionId());
+        log.info("[CHAT_EXECUTION] submitted executionId={} conversationId={} inputMessageId={}",
+                execution.getExecutionId(), execution.getConversationId(), execution.getInputMessageId());
+        log.info("[CHAT_EXECUTION] async dispatch requested executionId={}", execution.getExecutionId());
+        this.applicationEventPublisher.publishEvent(new ChatExecutionSubmittedEvent(execution.getExecutionId()));
         return execution;
     }
 
@@ -149,4 +171,5 @@ public class SubmitAgentChatExecutionImpl implements SubmitAgentChatExecution {
         }
         return command.getMessage().trim();
     }
+
 }

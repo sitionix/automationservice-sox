@@ -2,6 +2,7 @@ package com.sitionix.atmssox.postgresql.repository;
 
 import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
+import java.util.List;
 import com.sitionix.atmssox.domain.repository.ChatExecutionRepository;
 import com.sitionix.atmssox.postgresql.jpa.ChatExecutionJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.ChatExecutionInfraMapper;
@@ -50,5 +51,13 @@ public class ChatExecutionRepositoryImpl implements ChatExecutionRepository {
     public Optional<ChatExecution> findByExecutionIdAndStatus(final UUID executionId, final ChatExecutionStatus status) {
         return this.chatExecutionJpaRepository.findByExecutionIdAndStatusId(executionId, status.getId())
                 .map(this.chatExecutionInfraMapper::asChatExecution);
+    }
+
+    @Override
+    public List<ChatExecution> findAllByConversationIdOrderByCreatedAtAsc(final UUID conversationId) {
+        return this.chatExecutionJpaRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId)
+                .stream()
+                .map(this.chatExecutionInfraMapper::asChatExecution)
+                .toList();
     }
 }

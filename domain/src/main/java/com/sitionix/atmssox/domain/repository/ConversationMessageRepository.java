@@ -19,6 +19,8 @@ public interface ConversationMessageRepository {
      */
     ConversationMessage save(ConversationMessage message);
 
+    Optional<ConversationMessage> findById(UUID messageId);
+
     /**
      * Loads conversation messages ordered by creation time ascending.
      *

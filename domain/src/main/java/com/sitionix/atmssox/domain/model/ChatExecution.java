@@ -25,6 +25,8 @@ public class ChatExecution {
 
     boolean idempotencyReplayed;
 
+    UUID inputMessageId;
+
     UUID assistantMessageId;
 
     ConversationMessage assistantMessage;

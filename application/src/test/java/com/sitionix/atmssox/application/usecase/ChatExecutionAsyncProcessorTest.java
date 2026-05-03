@@ -8,6 +8,7 @@ import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatExecutionFailureClass;
 import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.repository.AgentRuleRepository;
@@ -52,6 +53,7 @@ class ChatExecutionAsyncProcessorTest {
     @Mock private ContextOptimizerProperties contextOptimizerProperties;
     @Mock private AgentExecutionService agentExecutionService;
     @Mock private PostChatWorkflowDispatcher postChatWorkflowDispatcher;
+    @Mock private ChatExecutionAsyncRunner chatExecutionAsyncRunner;
 
     @BeforeEach
     void setUp() {
@@ -66,13 +68,40 @@ class ChatExecutionAsyncProcessorTest {
                 this.conversationContextBuilder,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
-                this.postChatWorkflowDispatcher
+                this.postChatWorkflowDispatcher,
+                this.chatExecutionAsyncRunner
         );
     }
 
     @AfterEach
     void tearDown() {
         verifyNoMoreInteractions(
+                this.chatExecutionRepository,
+                this.conversationRepository,
+                this.conversationMessageRepository,
+                this.conversationParticipantRepository,
+                this.agentRepository,
+                this.agentRuleRepository,
+                this.conversationContextSnapshotRepository,
+                this.conversationContextBuilder,
+                this.contextOptimizerProperties,
+                this.agentExecutionService,
+                this.postChatWorkflowDispatcher,
+                this.chatExecutionAsyncRunner
+        );
+    }
+
+    @Test
+    void givenSubmittedEvent_whenOnChatExecutionSubmitted_thenDelegateToAsyncRunner() {
+        //given
+        final UUID executionId = UUID.fromString("0fcef53d-2f54-4a12-8741-d4abf09ebaf3");
+
+        //when
+        this.processor.onChatExecutionSubmitted(new ChatExecutionSubmittedEvent(executionId));
+
+        //then
+        verify(this.chatExecutionAsyncRunner).processAsync(executionId);
+        verifyNoInteractions(
                 this.chatExecutionRepository,
                 this.conversationRepository,
                 this.conversationMessageRepository,
@@ -164,6 +193,8 @@ class ChatExecutionAsyncProcessorTest {
         when(this.chatExecutionRepository.save(any(ChatExecution.class))).thenReturn(inProgress);
         when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId()))
                 .thenReturn(Optional.of(conversation));
+        when(this.conversationMessageRepository.findById(queued.getInputMessageId()))
+                .thenReturn(Optional.of(this.getUserMessage(queued.getConversationId(), queued.getUserId(), queued.getRequestMessage())));
         when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
         when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(agent));
         when(this.agentExecutionService.execute(any(), any())).thenThrow(new IllegalStateException("gateway timeout"));
@@ -182,9 +213,9 @@ class ChatExecutionAsyncProcessorTest {
         assertThat(failedExecution.getFailure().isRetryable()).isTrue();
         verify(this.chatExecutionRepository).findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED);
         verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId());
+        verify(this.conversationMessageRepository).findById(queued.getInputMessageId());
         verify(this.conversationParticipantRepository).findAllByConversationId(conversation.getId());
         verify(this.agentRepository).findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId());
-        verify(this.conversationMessageRepository).save(any());
         verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversation.getId(), 0);
         verify(this.agentRuleRepository).findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
                 queued.getAgentId(),
@@ -233,7 +264,6 @@ class ChatExecutionAsyncProcessorTest {
         verify(this.conversationParticipantRepository).findAllByConversationId(conversation.getId());
         verify(this.agentRepository).findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId());
         verifyNoInteractions(
-                this.conversationMessageRepository,
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
@@ -268,8 +298,19 @@ class ChatExecutionAsyncProcessorTest {
                 .userId(17L)
                 .status(status)
                 .requestMessage("hello")
+                .inputMessageId(UUID.fromString("96333f7d-c4db-44dc-9e04-dd6f3a0924da"))
                 .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
                 .startedAt(startedAt)
+                .build();
+    }
+
+    private ConversationMessage getUserMessage(final UUID conversationId, final Long userId, final String content) {
+        return ConversationMessage.builder()
+                .id(UUID.fromString("96333f7d-c4db-44dc-9e04-dd6f3a0924da"))
+                .conversationId(conversationId)
+                .authorId(String.valueOf(userId))
+                .content(content)
+                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
                 .build();
     }
 }

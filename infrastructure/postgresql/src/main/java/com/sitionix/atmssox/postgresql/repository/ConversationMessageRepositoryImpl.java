@@ -25,6 +25,11 @@ public class ConversationMessageRepositoryImpl implements ConversationMessageRep
     }
 
     @Override
+    public Optional<ConversationMessage> findById(final UUID messageId) {
+        return this.conversationMessageJpaRepository.findById(messageId).map(this::toDomain);
+    }
+
+    @Override
     public List<ConversationMessage> findAllByConversationIdOrderByCreatedAtAsc(final UUID conversationId) {
         return this.conversationMessageJpaRepository.findAllByConversationConversationIdOrderByCreatedAtAsc(conversationId)
                 .stream()

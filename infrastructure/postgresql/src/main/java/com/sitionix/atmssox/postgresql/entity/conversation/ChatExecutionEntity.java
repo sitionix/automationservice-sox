@@ -51,6 +51,9 @@ public class ChatExecutionEntity {
     @Column(name = "idempotency_key", length = 255)
     private String idempotencyKey;
 
+    @Column(name = "input_message_id", nullable = false)
+    private UUID inputMessageId;
+
     @Column(name = "assistant_message_id")
     private UUID assistantMessageId;
 
