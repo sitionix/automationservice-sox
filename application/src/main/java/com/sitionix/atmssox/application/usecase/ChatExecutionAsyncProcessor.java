@@ -28,9 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -50,17 +48,11 @@ public class ChatExecutionAsyncProcessor {
     private final ContextOptimizerProperties contextOptimizerProperties;
     private final AgentExecutionService agentExecutionService;
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
+    private final ChatExecutionAsyncRunner chatExecutionAsyncRunner;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onChatExecutionSubmitted(final ChatExecutionSubmittedEvent event) {
-        this.processAsync(event.executionId());
-    }
-
-    @Async("contextOptimizerTaskExecutor")
-    @Transactional
-    public void processAsync(final UUID executionId) {
-        log.info("[CHAT_EXECUTION] async started executionId={}", executionId);
-        this.process(executionId);
+        this.chatExecutionAsyncRunner.processAsync(event.executionId());
     }
 
     public void process(final UUID executionId) {

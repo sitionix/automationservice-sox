@@ -53,6 +53,7 @@ class ChatExecutionAsyncProcessorTest {
     @Mock private ContextOptimizerProperties contextOptimizerProperties;
     @Mock private AgentExecutionService agentExecutionService;
     @Mock private PostChatWorkflowDispatcher postChatWorkflowDispatcher;
+    @Mock private ChatExecutionAsyncRunner chatExecutionAsyncRunner;
 
     @BeforeEach
     void setUp() {
@@ -67,13 +68,40 @@ class ChatExecutionAsyncProcessorTest {
                 this.conversationContextBuilder,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
-                this.postChatWorkflowDispatcher
+                this.postChatWorkflowDispatcher,
+                this.chatExecutionAsyncRunner
         );
     }
 
     @AfterEach
     void tearDown() {
         verifyNoMoreInteractions(
+                this.chatExecutionRepository,
+                this.conversationRepository,
+                this.conversationMessageRepository,
+                this.conversationParticipantRepository,
+                this.agentRepository,
+                this.agentRuleRepository,
+                this.conversationContextSnapshotRepository,
+                this.conversationContextBuilder,
+                this.contextOptimizerProperties,
+                this.agentExecutionService,
+                this.postChatWorkflowDispatcher,
+                this.chatExecutionAsyncRunner
+        );
+    }
+
+    @Test
+    void givenSubmittedEvent_whenOnChatExecutionSubmitted_thenDelegateToAsyncRunner() {
+        //given
+        final UUID executionId = UUID.fromString("0fcef53d-2f54-4a12-8741-d4abf09ebaf3");
+
+        //when
+        this.processor.onChatExecutionSubmitted(new ChatExecutionSubmittedEvent(executionId));
+
+        //then
+        verify(this.chatExecutionAsyncRunner).processAsync(executionId);
+        verifyNoInteractions(
                 this.chatExecutionRepository,
                 this.conversationRepository,
                 this.conversationMessageRepository,
