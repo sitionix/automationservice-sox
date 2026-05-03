@@ -91,6 +91,7 @@ tables:
       status_id: bigint
       request_message: text
       idempotency_key: varchar(255)
+      input_message_id: uuid
       assistant_message_id: uuid
       failure_class_id: bigint
       failure_reason: text

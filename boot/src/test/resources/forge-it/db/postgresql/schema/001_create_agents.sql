@@ -148,6 +148,7 @@ CREATE TABLE chat_executions (
     status_id BIGINT NOT NULL REFERENCES chat_execution_statuses(id),
     request_message TEXT NOT NULL,
     idempotency_key VARCHAR(255),
+    input_message_id UUID NOT NULL,
     assistant_message_id UUID,
     failure_class_id BIGINT REFERENCES chat_execution_failure_classes(id),
     failure_reason TEXT,
@@ -156,3 +157,5 @@ CREATE TABLE chat_executions (
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ
 );
+CREATE UNIQUE INDEX uq_chat_executions_input_message_id
+    ON chat_executions (input_message_id);

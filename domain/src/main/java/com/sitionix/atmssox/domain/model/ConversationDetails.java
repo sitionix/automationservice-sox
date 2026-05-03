@@ -11,4 +11,6 @@ public class ConversationDetails {
     Conversation conversation;
 
     List<ConversationMessage> messages;
+
+    List<ChatExecution> executions;
 }

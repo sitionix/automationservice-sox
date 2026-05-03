@@ -7,9 +7,11 @@ import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatExecutionStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.repository.ChatExecutionRepository;
+import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import java.time.Instant;
@@ -22,10 +24,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -38,18 +42,20 @@ class SubmitAgentChatExecutionImplTest {
 
     @Mock private ConversationRepository conversationRepository;
     @Mock private ConversationParticipantRepository conversationParticipantRepository;
+    @Mock private ConversationMessageRepository conversationMessageRepository;
     @Mock private ChatExecutionRepository chatExecutionRepository;
     @Mock private AuthenticatedUserProvider authenticatedUserProvider;
-    @Mock private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
+    @Mock private ApplicationEventPublisher applicationEventPublisher;
 
     @BeforeEach
     void setUp() {
         this.submitAgentChatExecution = new SubmitAgentChatExecutionImpl(
                 this.conversationRepository,
                 this.conversationParticipantRepository,
+                this.conversationMessageRepository,
                 this.chatExecutionRepository,
                 this.authenticatedUserProvider,
-                this.chatExecutionAsyncProcessor
+                this.applicationEventPublisher
         );
     }
 
@@ -58,9 +64,10 @@ class SubmitAgentChatExecutionImplTest {
         verifyNoMoreInteractions(
                 this.conversationRepository,
                 this.conversationParticipantRepository,
+                this.conversationMessageRepository,
                 this.chatExecutionRepository,
                 this.authenticatedUserProvider,
-                this.chatExecutionAsyncProcessor
+                this.applicationEventPublisher
         );
     }
 
@@ -84,6 +91,8 @@ class SubmitAgentChatExecutionImplTest {
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(createdConversation);
+        when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
+                .thenReturn(this.getConversationMessage(conversationId, 17L, "hello world"));
         when(this.chatExecutionRepository.save(any(ChatExecution.class))).thenReturn(savedExecution);
 
         //when
@@ -96,11 +105,13 @@ class SubmitAgentChatExecutionImplTest {
         final ChatExecution toSave = executionCaptor.getValue();
         assertThat(toSave.getStatus()).isEqualTo(ChatExecutionStatus.QUEUED);
         assertThat(toSave.getRequestMessage()).isEqualTo("hello world");
+        assertThat(toSave.getInputMessageId()).isNotNull();
         assertThat(toSave.getConversationId()).isEqualTo(conversationId);
         verify(this.authenticatedUserProvider).getUserId();
-        verify(this.conversationRepository).save(any(Conversation.class));
+        verify(this.conversationRepository, times(2)).save(any(Conversation.class));
+        verify(this.conversationMessageRepository).save(any(ConversationMessage.class));
         verify(this.conversationParticipantRepository).saveAll(any());
-        verify(this.chatExecutionAsyncProcessor).processAsync(executionId);
+        verify(this.applicationEventPublisher).publishEvent(any(ChatExecutionSubmittedEvent.class));
     }
 
     @Test
@@ -134,7 +145,7 @@ class SubmitAgentChatExecutionImplTest {
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId);
         verify(this.chatExecutionRepository).findByUserIdAndAgentIdAndIdempotencyKey(17L, agentId, "KEY");
-        verifyNoInteractions(this.chatExecutionAsyncProcessor);
+        verifyNoInteractions(this.applicationEventPublisher, this.conversationMessageRepository);
     }
 
     @Test
@@ -158,7 +169,7 @@ class SubmitAgentChatExecutionImplTest {
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId);
         verify(this.conversationRepository).findActiveByIdAndAgentId(conversationId, agentId);
-        verifyNoInteractions(this.chatExecutionRepository, this.chatExecutionAsyncProcessor, this.conversationParticipantRepository);
+        verifyNoInteractions(this.chatExecutionRepository, this.applicationEventPublisher, this.conversationParticipantRepository, this.conversationMessageRepository);
     }
 
     @Test
@@ -192,7 +203,7 @@ class SubmitAgentChatExecutionImplTest {
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserIdAndAgentId(conversationId, 17L, agentId);
         verify(this.chatExecutionRepository).findByUserIdAndAgentIdAndIdempotencyKey(17L, agentId, "KEY");
-        verifyNoInteractions(this.chatExecutionAsyncProcessor, this.conversationParticipantRepository);
+        verifyNoInteractions(this.applicationEventPublisher, this.conversationParticipantRepository, this.conversationMessageRepository);
     }
 
     @Test
@@ -209,7 +220,7 @@ class SubmitAgentChatExecutionImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Message must not be blank");
         verify(this.authenticatedUserProvider).getUserId();
-        verifyNoInteractions(this.conversationRepository, this.conversationParticipantRepository, this.chatExecutionRepository, this.chatExecutionAsyncProcessor);
+        verifyNoInteractions(this.conversationRepository, this.conversationParticipantRepository, this.chatExecutionRepository, this.applicationEventPublisher, this.conversationMessageRepository);
     }
 
     private Conversation getConversation(final UUID id, final Long userId) {
@@ -250,7 +261,18 @@ class SubmitAgentChatExecutionImplTest {
                 .requestMessage(requestMessage)
                 .idempotencyKey(idempotencyKey)
                 .idempotencyReplayed(false)
+                .inputMessageId(UUID.fromString("11f8d277-bbe4-4e6d-b334-ed2276e833dd"))
                 .createdAt(Instant.parse(createdAt))
+                .build();
+    }
+
+    private ConversationMessage getConversationMessage(final UUID conversationId, final Long userId, final String message) {
+        return ConversationMessage.builder()
+                .id(UUID.fromString("11f8d277-bbe4-4e6d-b334-ed2276e833dd"))
+                .conversationId(conversationId)
+                .authorId(String.valueOf(userId))
+                .content(message)
+                .createdAt(Instant.parse("2026-04-29T00:00:00Z"))
                 .build();
     }
 }

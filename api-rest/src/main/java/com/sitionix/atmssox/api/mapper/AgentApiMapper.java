@@ -45,6 +45,7 @@ public interface AgentApiMapper {
     ChatAgentExecutionDTO asChatAgentResponseDto(ChatAgentResponse src);
 
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "inputMessageId", source = "inputMessageId")
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
 
     @Mapping(target = "status", source = "status")
@@ -84,5 +85,6 @@ public interface AgentApiMapper {
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
     @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
     @Mapping(target = "messages", source = "messages")
+    @Mapping(target = "executions", source = "executions")
     AgentConversationDetailsDTO asAgentConversationDetailsDto(ConversationDetails details);
 }

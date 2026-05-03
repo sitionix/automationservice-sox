@@ -31,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Service
@@ -49,9 +51,15 @@ public class ChatExecutionAsyncProcessor {
     private final AgentExecutionService agentExecutionService;
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onChatExecutionSubmitted(final ChatExecutionSubmittedEvent event) {
+        this.processAsync(event.executionId());
+    }
+
     @Async("contextOptimizerTaskExecutor")
     @Transactional
     public void processAsync(final UUID executionId) {
+        log.info("[CHAT_EXECUTION] async started executionId={}", executionId);
         this.process(executionId);
     }
 
@@ -67,6 +75,7 @@ public class ChatExecutionAsyncProcessor {
                 .status(ChatExecutionStatus.IN_PROGRESS)
                 .startedAt(startedAt)
                 .build());
+        log.info("[CHAT_EXECUTION] execution marked RUNNING executionId={}", execution.getExecutionId());
 
         try {
             final Conversation conversation = this.conversationRepository.findActiveByIdAndUserIdAndAgentId(
@@ -86,11 +95,8 @@ public class ChatExecutionAsyncProcessor {
                 throw new AgentChatNotAllowedException("Only ACTIVE agent can execute chat");
             }
 
-            final ConversationMessage userMessage = this.conversationMessageRepository.save(this.buildUserMessage(
-                    conversation.getId(),
-                    execution.getUserId(),
-                    execution.getRequestMessage()
-            ));
+            final ConversationMessage userMessage = this.conversationMessageRepository.findById(execution.getInputMessageId())
+                    .orElseThrow(() -> new AgentNotFoundException("User message not found"));
             final List<ConversationMessage> lastMessages = this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(
                     conversation.getId(),
                     this.contextOptimizerProperties.getLastMessagesLimit()
@@ -116,6 +122,8 @@ public class ChatExecutionAsyncProcessor {
                     execution.getAgentId(),
                     replyContent
             ));
+            log.info("[CHAT_EXECUTION] assistant message saved executionId={} assistantMessageId={}",
+                    execution.getExecutionId(), assistantMessage.getId());
 
             final Instant completedAt = assistantMessage.getCreatedAt();
             this.conversationRepository.save(conversation.toBuilder()
@@ -129,26 +137,19 @@ public class ChatExecutionAsyncProcessor {
                     .assistantMessageId(assistantMessage.getId())
                     .completedAt(completedAt)
                     .build());
-            log.debug("Chat execution completed executionId={}", execution.getExecutionId());
+            log.info("[CHAT_EXECUTION] execution COMPLETED executionId={}", execution.getExecutionId());
         } catch (Exception exception) {
+            final ChatExecutionFailure failure = this.toFailure(exception);
             this.chatExecutionRepository.save(execution.toBuilder()
                     .status(ChatExecutionStatus.FAILED)
-                    .failure(this.toFailure(exception))
+                    .failure(failure)
                     .completedAt(Instant.now())
                     .build());
-            log.warn("Chat execution failed executionId={}", execution.getExecutionId(), exception);
+            log.warn("[CHAT_EXECUTION] execution FAILED executionId={} errorCode={}",
+                    execution.getExecutionId(),
+                    failure.getFailureClass(),
+                    exception);
         }
-    }
-
-    private ConversationMessage buildUserMessage(final UUID conversationId, final Long userId, final String message) {
-        return ConversationMessage.builder()
-                .id(UUID.randomUUID())
-                .conversationId(conversationId)
-                .authorType(ConversationParticipantType.USER)
-                .authorId(String.valueOf(userId))
-                .content(message)
-                .createdAt(Instant.now())
-                .build();
     }
 
     private ConversationMessage buildAgentMessage(final UUID conversationId, final UUID agentId, final String message) {

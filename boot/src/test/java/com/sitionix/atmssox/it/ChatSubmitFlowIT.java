@@ -6,6 +6,7 @@ import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.util.Comparator;
@@ -88,6 +89,61 @@ class ChatSubmitFlowIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Execution not found"));
         assertThat(persistedExecution.getStatus().getId()).isIn(1L, 2L, 3L, 4L);
+    }
+
+    @Test
+    @DisplayName("Should persist user message and link execution by user message id when submit chat")
+    void givenActiveAgent_whenSubmitChat_thenPersistUserMessageAndLinkExecution() {
+        //given
+        when(this.openAiChatClient.execute(any())).thenReturn("reply");
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Agent not found"))
+                .getAgentId();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionId").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.conversationId").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.inputMessageId").isNotEmpty())
+                .assertDefault();
+
+        //then
+        final ChatExecutionEntity execution = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Execution not found"));
+
+        final ConversationMessageEntity userMessage = this.testManager.postgresql()
+                .get(ConversationMessageEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), execution.getConversationId()))
+                .filter(entity -> Objects.equals(entity.getMessageId(), execution.getInputMessageId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("User message not found by linked input_message_id"));
+
+        assertThat(userMessage.getAuthorType().name()).isEqualTo("USER");
+        assertThat(userMessage.getContent()).isEqualTo(execution.getRequestMessage());
+        assertThat(execution.getInputMessageId()).isEqualTo(userMessage.getMessageId());
     }
 
     @Test
