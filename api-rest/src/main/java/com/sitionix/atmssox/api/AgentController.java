@@ -32,6 +32,7 @@ import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
+import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
@@ -89,6 +90,7 @@ public class AgentController implements AgentApi {
     private final RestoreAgent restoreAgent;
 
     private final DeleteAgent deleteAgent;
+    private final DeleteAgentConversation deleteAgentConversation;
 
     private final AgentApiMapper agentApiMapper;
 
@@ -218,5 +220,11 @@ public class AgentController implements AgentApi {
     @Override
     public ResponseEntity<AgentDTO> deleteAgent(final UUID agentId) {
         return ResponseEntity.ok(this.agentApiMapper.asAgentDto(this.deleteAgent.execute(agentId)));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteAgentConversation(final UUID conversationId) {
+        this.deleteAgentConversation.execute(conversationId);
+        return ResponseEntity.noContent().build();
     }
 }

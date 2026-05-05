@@ -31,6 +31,13 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     @Override
+    public Optional<Conversation> findByIdAndUserId(final UUID conversationId, final Long userId) {
+        return this.conversationJpaRepository
+                .findByIdAndUserId(conversationId, userId)
+                .map(this::toDomain);
+    }
+
+    @Override
     public Optional<Conversation> findActiveByIdAndUserIdAndAgentId(final UUID conversationId, final Long userId, final UUID agentId) {
         return this.conversationJpaRepository
                 .findActiveByIdAndUserIdAndAgent(

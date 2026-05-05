@@ -46,6 +46,15 @@ public interface ConversationJpaRepository extends JpaRepository<ConversationEnt
             select c
             from ConversationEntity c
             where c.conversationId = :conversationId
+              and c.userId = :userId
+            """)
+    Optional<ConversationEntity> findByIdAndUserId(@Param("conversationId") UUID conversationId,
+                                                    @Param("userId") Long userId);
+
+    @Query("""
+            select c
+            from ConversationEntity c
+            where c.conversationId = :conversationId
               and c.status = :status
               and c.userId = :userId
               and exists (
