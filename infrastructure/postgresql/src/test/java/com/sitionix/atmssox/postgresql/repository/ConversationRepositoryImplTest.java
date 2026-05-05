@@ -93,6 +93,24 @@ class ConversationRepositoryImplTest {
     }
 
     @Test
+    void givenConversationIdAndUserId_whenFindByIdAndUserIdExists_thenReturnConversation() {
+        //given
+        final UUID conversationId = UUID.fromString("12121212-1212-1212-1212-121212121212");
+        final Long userId = 17L;
+        final ConversationEntity entity = this.getConversationEntity(conversationId);
+        final Optional<Conversation> expected = Optional.of(this.getConversation(conversationId));
+
+        when(this.conversationJpaRepository.findByIdAndUserId(conversationId, userId)).thenReturn(Optional.of(entity));
+
+        //when
+        final Optional<Conversation> actual = this.conversationRepository.findByIdAndUserId(conversationId, userId);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+        verify(this.conversationJpaRepository).findByIdAndUserId(conversationId, userId);
+    }
+
+    @Test
     void givenConversationIdAndAgentId_whenFindActiveByIdAndAgentIdExists_thenReturnConversation() {
         //given
         final UUID conversationId = UUID.fromString("11111111-1111-1111-1111-111111111111");

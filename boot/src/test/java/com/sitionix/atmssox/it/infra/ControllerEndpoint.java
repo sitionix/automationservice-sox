@@ -1,6 +1,8 @@
 package com.sitionix.atmssox.it.infra;
 
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
@@ -206,6 +208,30 @@ public class ControllerEndpoint {
         );
     }
 
+    public static Endpoint<Void, AgentConversationsResponseDTO> getAgentConversations() {
+        return Endpoint.createContract(
+                "/api/v1/agents/{agentId}/conversations",
+                HttpMethod.GET,
+                Void.class,
+                AgentConversationsResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, AgentConversationDetailsDTO> getAgentConversation() {
+        return Endpoint.createContract(
+                "/api/v1/conversations/{conversationId}",
+                HttpMethod.GET,
+                Void.class,
+                AgentConversationDetailsDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
     public static Endpoint<Void, AgentDTO> restoreAgent() {
         return Endpoint.createContract(
                 "/api/v1/agents/{agentId}/restore",
@@ -227,6 +253,18 @@ public class ControllerEndpoint {
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, Void> deleteAgentConversation() {
+        return Endpoint.createContract(
+                "/api/v1/conversations/{conversationId}",
+                HttpMethod.DELETE,
+                Void.class,
+                Void.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(204)
         );
     }
 

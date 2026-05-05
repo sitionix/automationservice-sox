@@ -28,6 +28,15 @@ public interface ConversationRepository {
     Optional<Conversation> findActiveByIdAndUserId(UUID conversationId, Long userId);
 
     /**
+     * Loads conversation by identifier for current user regardless of lifecycle status.
+     *
+     * @param conversationId conversation identifier.
+     * @param userId current user identifier.
+     * @return conversation when present.
+     */
+    Optional<Conversation> findByIdAndUserId(UUID conversationId, Long userId);
+
+    /**
      * Loads active conversation owned by current user and scoped to one agent.
      *
      * @param conversationId conversation identifier.

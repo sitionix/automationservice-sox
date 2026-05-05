@@ -17,6 +17,7 @@ import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
+import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
 import com.sitionix.atmssox.domain.usecase.GetAgent;
 import com.sitionix.atmssox.domain.usecase.GetAgentChatExecution;
@@ -68,6 +69,7 @@ class AgentControllerTest {
     @Mock private RejectAgentRule rejectAgentRule;
     @Mock private RestoreAgent restoreAgent;
     @Mock private DeleteAgent deleteAgent;
+    @Mock private DeleteAgentConversation deleteAgentConversation;
     @Mock private AgentApiMapper agentApiMapper;
     @Mock private AgentRuleApiMapper agentRuleApiMapper;
 
@@ -92,6 +94,7 @@ class AgentControllerTest {
                 this.rejectAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
+                this.deleteAgentConversation,
                 this.agentApiMapper,
                 this.agentRuleApiMapper
         );
@@ -118,6 +121,7 @@ class AgentControllerTest {
                 this.rejectAgentRule,
                 this.restoreAgent,
                 this.deleteAgent,
+                this.deleteAgentConversation,
                 this.agentApiMapper,
                 this.agentRuleApiMapper
         );
@@ -189,5 +193,18 @@ class AgentControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(response));
         verify(this.getAgentChatExecution).execute(agentId, executionId, conversationId);
         verify(this.agentApiMapper).asChatExecutionDto(execution);
+    }
+
+    @Test
+    void givenConversationId_whenDeleteAgentConversation_thenReturnNoContent() {
+        //given
+        final UUID conversationId = UUID.fromString("9f22ce1b-1286-493f-9f3a-a8f216f51bc7");
+
+        //when
+        final ResponseEntity<Void> actual = this.agentController.deleteAgentConversation(conversationId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.noContent().build());
+        verify(this.deleteAgentConversation).execute(conversationId);
     }
 }
