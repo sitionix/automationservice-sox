@@ -11,7 +11,10 @@ import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
@@ -265,6 +268,31 @@ public class ControllerEndpoint {
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .expectStatus(204)
+        );
+    }
+
+    public static Endpoint<CreateAgentProjectRequestDTO, AgentProjectDTO> createAgentProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects",
+                HttpMethod.POST,
+                CreateAgentProjectRequestDTO.class,
+                AgentProjectDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("createAgentProjectRequest.json")
+                        .expectStatus(201)
+        );
+    }
+
+    public static Endpoint<Void, AgentProjectsPageResponseDTO> getAgentProjects() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects",
+                HttpMethod.GET,
+                Void.class,
+                AgentProjectsPageResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
         );
     }
 

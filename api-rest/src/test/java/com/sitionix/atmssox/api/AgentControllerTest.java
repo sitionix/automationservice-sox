@@ -3,18 +3,26 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatExecution;
+import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.GetAgentProjectsQuery;
 import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.atmssox.domain.usecase.CreateAgentProject;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgent;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
@@ -25,6 +33,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
+import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
 import com.sitionix.atmssox.domain.usecase.PatchAgent;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
 import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
@@ -53,6 +62,7 @@ class AgentControllerTest {
 
     @Mock private CreateAgent createAgent;
     @Mock private GetAgents getAgents;
+    @Mock private GetAgentProjects getAgentProjects;
     @Mock private GetAgent getAgent;
     @Mock private GetAgentConversations getAgentConversations;
     @Mock private GetAgentConversation getAgentConversation;
@@ -62,6 +72,7 @@ class AgentControllerTest {
     @Mock private SubmitAgentChatExecution submitAgentChatExecution;
     @Mock private GetAgentChatExecution getAgentChatExecution;
     @Mock private CreateAgentRule createAgentRule;
+    @Mock private CreateAgentProject createAgentProject;
     @Mock private GetAgentRules getAgentRules;
     @Mock private PatchAgentRule patchAgentRule;
     @Mock private DeleteAgentRule deleteAgentRule;
@@ -78,6 +89,7 @@ class AgentControllerTest {
         this.agentController = new AgentController(
                 this.createAgent,
                 this.getAgents,
+                this.getAgentProjects,
                 this.getAgent,
                 this.getAgentConversations,
                 this.getAgentConversation,
@@ -87,6 +99,7 @@ class AgentControllerTest {
                 this.submitAgentChatExecution,
                 this.getAgentChatExecution,
                 this.createAgentRule,
+                this.createAgentProject,
                 this.getAgentRules,
                 this.patchAgentRule,
                 this.deleteAgentRule,
@@ -105,6 +118,7 @@ class AgentControllerTest {
         verifyNoMoreInteractions(
                 this.createAgent,
                 this.getAgents,
+                this.getAgentProjects,
                 this.getAgent,
                 this.getAgentConversations,
                 this.getAgentConversation,
@@ -114,6 +128,7 @@ class AgentControllerTest {
                 this.submitAgentChatExecution,
                 this.getAgentChatExecution,
                 this.createAgentRule,
+                this.createAgentProject,
                 this.getAgentRules,
                 this.patchAgentRule,
                 this.deleteAgentRule,
@@ -206,5 +221,45 @@ class AgentControllerTest {
         //then
         assertThat(actual).isEqualTo(ResponseEntity.noContent().build());
         verify(this.deleteAgentConversation).execute(conversationId);
+    }
+
+    @Test
+    void givenCreateAgentProjectRequestDto_whenCreateAgentProject_thenReturnCreatedProjectDto() {
+        //given
+        final CreateAgentProjectRequestDTO request = mock(CreateAgentProjectRequestDTO.class);
+        final CreateAgentProjectCommand command = mock(CreateAgentProjectCommand.class);
+        final AgentProject project = mock(AgentProject.class);
+        final AgentProjectDTO response = mock(AgentProjectDTO.class);
+
+        when(this.agentApiMapper.asCreateAgentProjectCommand(request)).thenReturn(command);
+        when(this.createAgentProject.execute(command)).thenReturn(project);
+        when(this.agentApiMapper.asAgentProjectDto(project)).thenReturn(response);
+
+        //when
+        final ResponseEntity<AgentProjectDTO> actual = this.agentController.createAgentProject(request);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.status(HttpStatus.CREATED).body(response));
+        verify(this.agentApiMapper).asCreateAgentProjectCommand(request);
+        verify(this.createAgentProject).execute(command);
+        verify(this.agentApiMapper).asAgentProjectDto(project);
+    }
+
+    @Test
+    void givenPageAndSize_whenGetAgentProjects_thenReturnOkProjectsPageResponseDto() {
+        //given
+        final AgentProjectsPage projectsPage = mock(AgentProjectsPage.class);
+        final AgentProjectsPageResponseDTO response = mock(AgentProjectsPageResponseDTO.class);
+
+        when(this.getAgentProjects.execute(GetAgentProjectsQuery.builder().page(1).size(10).build())).thenReturn(projectsPage);
+        when(this.agentApiMapper.asAgentProjectsPageResponseDto(projectsPage)).thenReturn(response);
+
+        //when
+        final ResponseEntity<AgentProjectsPageResponseDTO> actual = this.agentController.getAgentProjects(1, 10);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(response));
+        verify(this.getAgentProjects).execute(GetAgentProjectsQuery.builder().page(1).size(10).build());
+        verify(this.agentApiMapper).asAgentProjectsPageResponseDto(projectsPage);
     }
 }

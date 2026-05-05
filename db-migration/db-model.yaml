@@ -38,6 +38,15 @@ tables:
       status_id: bigint
       created_at: timestamptz
       updated_at: timestamptz
+  agent_projects:
+    columns:
+      project_id: uuid
+      owner_user_id: bigint
+      name: varchar(120)
+      description: text
+      status: varchar(32)
+      created_at: timestamptz
+      updated_at: timestamptz
   agent_rules:
     columns:
       rule_id: uuid

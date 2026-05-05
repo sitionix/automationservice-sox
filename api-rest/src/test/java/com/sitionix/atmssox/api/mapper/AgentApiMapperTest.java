@@ -10,11 +10,15 @@ import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ExecutionStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentProjectStatus;
+import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
@@ -29,6 +33,7 @@ import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -137,6 +142,53 @@ class AgentApiMapperTest {
 
         //then
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenCreateAgentProjectRequestDto_whenAsCreateAgentProjectCommand_thenReturnCreateAgentProjectCommand() {
+        //given
+        final CreateAgentProjectRequestDTO given = CreateAgentProjectRequestDTO.builder()
+                .name("Project")
+                .description("Description")
+                .build();
+        final CreateAgentProjectCommand expected = CreateAgentProjectCommand.builder()
+                .name("Project")
+                .description("Description")
+                .build();
+
+        //when
+        final CreateAgentProjectCommand actual = this.agentApiMapper.asCreateAgentProjectCommand(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAgentProjectsPage_whenAsAgentProjectsPageResponseDto_thenReturnPageResponseDto() {
+        //given
+        final AgentProjectsPage given = AgentProjectsPage.builder()
+                .items(List.of(AgentProject.builder()
+                        .id(UUID.fromString("f2f2b8c4-5039-4095-b5ec-d584bd429ca3"))
+                        .ownerUserId(17L)
+                        .name("Project")
+                        .description("Description")
+                        .status(AgentProjectStatus.ACTIVE)
+                        .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
+                        .updatedAt(Instant.parse("2026-04-10T10:01:00Z"))
+                        .build()))
+                .page(0)
+                .size(20)
+                .hasNext(false)
+                .build();
+
+        //when
+        final var actual = this.agentApiMapper.asAgentProjectsPageResponseDto(given);
+
+        //then
+        assertThat(actual.getItems()).hasSize(1);
+        assertThat(actual.getPage()).isEqualTo(0);
+        assertThat(actual.getSize()).isEqualTo(20);
+        assertThat(actual.getHasNext()).isFalse();
     }
 
     @Test

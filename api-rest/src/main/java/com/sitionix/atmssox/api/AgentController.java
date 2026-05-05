@@ -4,14 +4,17 @@ import com.app_afesox.atmssox.api_first.api.AgentApi;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleAuthorTypeDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRuleStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.DeleteAgentRuleResponseDTO;
@@ -22,14 +25,19 @@ import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
+import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.AcceptAgentRuleCommand;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
+import com.sitionix.atmssox.domain.model.GetAgentProjectsQuery;
 import com.sitionix.atmssox.domain.model.CreateAgentRuleCommand;
+import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.usecase.ActivateAgent;
 import com.sitionix.atmssox.domain.usecase.ArchiveAgent;
 import com.sitionix.atmssox.domain.usecase.AcceptAgentRule;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
+import com.sitionix.atmssox.domain.usecase.CreateAgentProject;
 import com.sitionix.atmssox.domain.usecase.CreateAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentRule;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
@@ -39,6 +47,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentChatExecution;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
+import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
 import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
@@ -59,6 +68,7 @@ public class AgentController implements AgentApi {
     private final CreateAgent createAgent;
 
     private final GetAgents getAgents;
+    private final GetAgentProjects getAgentProjects;
 
     private final GetAgent getAgent;
 
@@ -76,6 +86,7 @@ public class AgentController implements AgentApi {
     private final GetAgentChatExecution getAgentChatExecution;
 
     private final CreateAgentRule createAgentRule;
+    private final CreateAgentProject createAgentProject;
 
     private final GetAgentRules getAgentRules;
 
@@ -107,6 +118,23 @@ public class AgentController implements AgentApi {
     @Override
     public ResponseEntity<AgentsResponseDTO> getAgents() {
         return ResponseEntity.ok(this.agentApiMapper.asAgentsResponseDto(this.getAgents.execute()));
+    }
+
+    @Override
+    public ResponseEntity<AgentProjectDTO> createAgentProject(@Valid final CreateAgentProjectRequestDTO createAgentProjectRequestDTO) {
+        final CreateAgentProjectCommand command = this.agentApiMapper.asCreateAgentProjectCommand(createAgentProjectRequestDTO);
+        final AgentProject response = this.createAgentProject.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(this.agentApiMapper.asAgentProjectDto(response));
+    }
+
+    @Override
+    public ResponseEntity<AgentProjectsPageResponseDTO> getAgentProjects(final Integer page, final Integer size) {
+        final AgentProjectsPage response = this.getAgentProjects.execute(GetAgentProjectsQuery.builder()
+                .page(page)
+                .size(size)
+                .build());
+        return ResponseEntity.ok(this.agentApiMapper.asAgentProjectsPageResponseDto(response));
     }
 
     @Override
