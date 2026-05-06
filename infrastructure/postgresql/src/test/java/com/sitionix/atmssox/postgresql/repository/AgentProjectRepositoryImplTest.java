@@ -100,7 +100,7 @@ class AgentProjectRepositoryImplTest {
         assertThat(actual.items()).isEqualTo(List.of(firstProject, secondProject));
         assertThat(actual.page()).isEqualTo(page);
         assertThat(actual.size()).isEqualTo(size);
-        assertThat(actual.hasNext()).isEqualTo(true);
+        assertThat(actual.hasNext()).isTrue();
         verify(this.agentProjectJpaRepository).findByOwnerUserIdAndStatusIdNot(
                 ownerUserId,
                 AgentProjectStatus.DELETED.getId(),

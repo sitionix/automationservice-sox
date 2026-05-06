@@ -48,6 +48,6 @@ class AgentRuleTextNormalizerTest {
         final String actual = AgentRuleTextNormalizer.normalizeToEmpty(null);
 
         //then
-        assertThat(actual).isEqualTo("");
+        assertThat(actual).isEmpty();
     }
 }

@@ -2,24 +2,27 @@ package com.sitionix.atmssox.domain.model;
 
 public final class AgentRuleTextNormalizer {
 
+    private static final String RULE_TITLE_REQUIRED_MESSAGE = "Rule title is required";
+    private static final String RULE_CONTENT_REQUIRED_MESSAGE = "Rule content is required";
+
     private AgentRuleTextNormalizer() {
     }
 
     public static String normalizeRequiredTitle(final String value) {
         return TextNormalizer.normalizeRequired(
                 value,
-                "Rule title is required",
+                RULE_TITLE_REQUIRED_MESSAGE,
                 Integer.MAX_VALUE,
-                "Rule title is required"
+                RULE_TITLE_REQUIRED_MESSAGE
         );
     }
 
     public static String normalizeRequiredContent(final String value) {
         return TextNormalizer.normalizeRequired(
                 value,
-                "Rule content is required",
+                RULE_CONTENT_REQUIRED_MESSAGE,
                 Integer.MAX_VALUE,
-                "Rule content is required"
+                RULE_CONTENT_REQUIRED_MESSAGE
         );
     }
 
@@ -27,8 +30,8 @@ public final class AgentRuleTextNormalizer {
         return TextNormalizer.normalizeOptionalStrict(
                 value,
                 Integer.MAX_VALUE,
-                "Rule title is required",
-                "Rule title is required"
+                RULE_TITLE_REQUIRED_MESSAGE,
+                RULE_TITLE_REQUIRED_MESSAGE
         );
     }
 
@@ -36,8 +39,8 @@ public final class AgentRuleTextNormalizer {
         return TextNormalizer.normalizeOptionalStrict(
                 value,
                 Integer.MAX_VALUE,
-                "Rule content is required",
-                "Rule content is required"
+                RULE_CONTENT_REQUIRED_MESSAGE,
+                RULE_CONTENT_REQUIRED_MESSAGE
         );
     }
 

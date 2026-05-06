@@ -114,7 +114,7 @@ class TextNormalizerTest {
         final String actual = TextNormalizer.normalizeToEmpty(null);
 
         //then
-        assertThat(actual).isEqualTo("");
+        assertThat(actual).isEmpty();
     }
 
     @Test
