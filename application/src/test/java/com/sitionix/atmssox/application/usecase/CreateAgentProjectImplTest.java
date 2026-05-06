@@ -77,7 +77,6 @@ class CreateAgentProjectImplTest {
         //given
         final CreateAgentProjectCommand given = mock(CreateAgentProjectCommand.class);
         when(given.name()).thenReturn("   ");
-        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
 
         //when
         //then
@@ -85,10 +84,10 @@ class CreateAgentProjectImplTest {
                 .isInstanceOf(AgentValidationException.class)
                 .hasMessage("Project name must not be blank");
 
-        verify(this.authenticatedUserProvider).getUserId();
         verify(given).name();
         verifyNoMoreInteractions(given);
         verifyNoInteractions(this.agentProjectRepository);
+        verifyNoInteractions(this.authenticatedUserProvider);
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.QueryParams;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
@@ -38,19 +39,14 @@ class AgentProjectFlowIT {
                 .assertDefault();
 
         //then
-        final List<AgentProjectEntity> projects = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll();
-
-        assertThat(projects).anySatisfy(project -> {
-            assertThat(project.getOwnerUserId()).isEqualTo(userId);
-            assertThat(project.getName()).isEqualTo("Marketing Automation");
-            assertThat(project.getDescription()).isEqualTo("Project for marketing agents and campaign automation");
-            assertThat(project.getStatus()).isEqualTo(AgentProjectStatus.ACTIVE);
-            assertThat(project.getProjectId()).isNotNull();
-            assertThat(project.getCreatedAt()).isNotNull();
-            assertThat(project.getUpdatedAt()).isNotNull();
-        });
+        final AgentProjectEntity project = this.getLatestProjectByOwner(userId);
+        assertThat(project.getOwnerUserId()).isEqualTo(userId);
+        assertThat(project.getName()).isEqualTo("Marketing Automation");
+        assertThat(project.getDescription()).isEqualTo("Project for marketing agents and campaign automation");
+        assertThat(project.getStatus()).isEqualTo(AgentProjectStatus.ACTIVE);
+        assertThat(project.getProjectId()).isNotNull();
+        assertThat(project.getCreatedAt()).isNotNull();
+        assertThat(project.getUpdatedAt()).isNotNull();
     }
 
     @Test
@@ -66,14 +62,10 @@ class AgentProjectFlowIT {
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setDescription("   ")));
 
         //then
-        final List<AgentProjectEntity> projects = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll();
-        assertThat(projects).anySatisfy(project -> {
-            assertThat(project.getOwnerUserId()).isEqualTo(userId);
-            assertThat(project.getName()).isEqualTo("Marketing Automation");
-            assertThat(project.getDescription()).isNull();
-        });
+        final AgentProjectEntity project = this.getLatestProjectByOwner(userId);
+        assertThat(project.getOwnerUserId()).isEqualTo(userId);
+        assertThat(project.getName()).isEqualTo("Marketing Automation");
+        assertThat(project.getDescription()).isNull();
     }
 
     @Test
@@ -247,5 +239,15 @@ class AgentProjectFlowIT {
         if (!Objects.equals(beforeReadSize, afterReadSize)) {
             throw new AssertionError("GET requests must not create or modify agent projects");
         }
+    }
+
+    private AgentProjectEntity getLatestProjectByOwner(final Long userId) {
+        return this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll()
+                .stream()
+                .filter(project -> Objects.equals(project.getOwnerUserId(), userId))
+                .max(Comparator.comparing(AgentProjectEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Agent project not found for userId=" + userId));
     }
 }
