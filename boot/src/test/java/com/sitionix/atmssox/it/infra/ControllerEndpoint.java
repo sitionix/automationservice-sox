@@ -272,26 +272,34 @@ public class ControllerEndpoint {
     }
 
     public static Endpoint<CreateAgentProjectRequestDTO, AgentProjectDTO> createAgentProject() {
+        return createAgentProject("1");
+    }
+
+    public static Endpoint<CreateAgentProjectRequestDTO, AgentProjectDTO> createAgentProject(final String userSub) {
         return Endpoint.createContract(
                 "/api/v1/agent-projects",
                 HttpMethod.POST,
                 CreateAgentProjectRequestDTO.class,
                 AgentProjectDTO.class,
                 (MockmvcDefault) context -> context
-                        .header("X-Forge-User-Sub", "1")
+                        .header("X-Forge-User-Sub", userSub)
                         .withRequest("createAgentProjectRequest.json")
                         .expectStatus(201)
         );
     }
 
     public static Endpoint<Void, AgentProjectsPageResponseDTO> getAgentProjects() {
+        return getAgentProjects("1");
+    }
+
+    public static Endpoint<Void, AgentProjectsPageResponseDTO> getAgentProjects(final String userSub) {
         return Endpoint.createContract(
                 "/api/v1/agent-projects",
                 HttpMethod.GET,
                 Void.class,
                 AgentProjectsPageResponseDTO.class,
                 (MockmvcDefault) context -> context
-                        .header("X-Forge-User-Sub", "1")
+                        .header("X-Forge-User-Sub", userSub)
                         .expectStatus(200)
         );
     }

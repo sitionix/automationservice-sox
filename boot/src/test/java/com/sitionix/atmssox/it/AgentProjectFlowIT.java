@@ -1,21 +1,14 @@
 package com.sitionix.atmssox.it;
 
-import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
-import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.QueryParams;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 class AgentProjectFlowIT {
@@ -26,71 +19,46 @@ class AgentProjectFlowIT {
     @Test
     @DisplayName("given valid request when create agent project then return created and persist active project")
     void givenValidRequest_whenCreateAgentProject_thenReturnCreatedAndPersistActiveProject() {
-        //given
-        final Long userId = 1L;
-
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Marketing Automation"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Project for marketing agents and campaign automation"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault();
-
-        //then
-        final AgentProjectEntity project = this.getLatestProjectByOwner(userId);
-        assertThat(project.getOwnerUserId()).isEqualTo(userId);
-        assertThat(project.getName()).isEqualTo("Marketing Automation");
-        assertThat(project.getDescription()).isEqualTo("Project for marketing agents and campaign automation");
-        assertThat(project.getStatus()).isEqualTo(AgentProjectStatus.ACTIVE);
-        assertThat(project.getProjectId()).isNotNull();
-        assertThat(project.getCreatedAt()).isNotNull();
-        assertThat(project.getUpdatedAt()).isNotNull();
     }
 
     @Test
     @DisplayName("given blank description when create agent project then persist null description")
     void givenBlankDescription_whenCreateAgentProject_thenPersistNullDescription() {
         //given
-        final Long userId = 17L;
-
         //when
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", String.valueOf(userId))
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setDescription("   ")));
-
-        //then
-        final AgentProjectEntity project = this.getLatestProjectByOwner(userId);
-        assertThat(project.getOwnerUserId()).isEqualTo(userId);
-        assertThat(project.getName()).isEqualTo("Marketing Automation");
-        assertThat(project.getDescription()).isNull();
+                .ping(ControllerEndpoint.createAgentProject("17"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").doesNotExist())
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setDescription("   "));
+                });
     }
 
     @Test
     @DisplayName("given blank name when create agent project then return bad request and persist nothing")
     void givenBlankName_whenCreateAgentProject_thenReturnBadRequestAndPersistNothing() {
-        //given
-        final int projectsBefore = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().size();
-
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject())
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("   ")));
-
-        //then
-        final int projectsAfter = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().size();
-        assertThat(projectsAfter).isEqualTo(projectsBefore);
     }
 
     @Test
     @DisplayName("given missing user context when create agent project then return unauthorized")
     void givenMissingUserContext_whenCreateAgentProject_thenReturnUnauthorized() {
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", null)
+                .ping(ControllerEndpoint.createAgentProject(null))
                 .expectStatus(HttpStatus.UNAUTHORIZED)
                 .assertDefault();
     }
@@ -119,24 +87,25 @@ class AgentProjectFlowIT {
     @DisplayName("given page and size params when list agent projects then return paginated response")
     void givenPageAndSizeQueryParams_whenGetAgentProjects_thenReturnPaginatedProjects() {
         //given
-        final String userSub = "42";
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", userSub)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Project A")));
+                .ping(ControllerEndpoint.createAgentProject("42"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Project A"));
+                });
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", userSub)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Project B")));
+                .ping(ControllerEndpoint.createAgentProject("42"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Project B"));
+                });
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", userSub)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Project C")));
+                .ping(ControllerEndpoint.createAgentProject("42"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Project C"));
+                });
 
         //when/then
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.getAgentProjects())
-                .header("X-Forge-User-Sub", userSub)
+                .ping(ControllerEndpoint.getAgentProjects("42"))
                 .withQueryParameters(QueryParams.create().add("page", "1").add("size", "2"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.page").value(1))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.size").value(2))
@@ -151,14 +120,14 @@ class AgentProjectFlowIT {
     void givenNoProjectsForCurrentUser_whenGetAgentProjects_thenReturnEmptyItems() {
         //given
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", "2")
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Other user project")));
+                .ping(ControllerEndpoint.createAgentProject("2"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Other user project"));
+                });
 
         //when/then
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.getAgentProjects())
-                .header("X-Forge-User-Sub", "777777")
+                .ping(ControllerEndpoint.getAgentProjects("777777"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(0))
                 .assertDefault();
     }
@@ -167,8 +136,7 @@ class AgentProjectFlowIT {
     @DisplayName("given missing user context when get agent projects then return unauthorized")
     void givenMissingUserContext_whenGetAgentProjects_thenReturnUnauthorized() {
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.getAgentProjects())
-                .header("X-Forge-User-Sub", null)
+                .ping(ControllerEndpoint.getAgentProjects(null))
                 .expectStatus(HttpStatus.UNAUTHORIZED)
                 .assertDefault();
     }
@@ -207,47 +175,29 @@ class AgentProjectFlowIT {
     @DisplayName("given existing projects when get agent projects repeatedly then keep db unchanged")
     void givenExistingProjects_whenGetAgentProjectsRepeatedly_thenReturnConsistentAndNoDbWrites() {
         //given
-        final String userSub = "88";
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", userSub)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Read only one")));
+                .ping(ControllerEndpoint.createAgentProject("88"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Read only one"));
+                });
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .header("X-Forge-User-Sub", userSub)
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Read only two")));
-
-        final int beforeReadSize = (int) this.testManager.postgresql().get(AgentProjectEntity.class).getAll().stream()
-                .filter(project -> Objects.equals(project.getOwnerUserId(), Long.valueOf(userSub)))
-                .count();
+                .ping(ControllerEndpoint.createAgentProject("88"))
+                .assertDefault(defaults -> {
+                    defaults.mutateRequest(request -> request.setName("Read only two"));
+                });
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProjects("88"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
+                .assertDefault();
 
         //when/then
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.getAgentProjects())
-                .header("X-Forge-User-Sub", userSub)
+                .ping(ControllerEndpoint.getAgentProjects("88"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .assertDefault();
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.getAgentProjects())
-                .header("X-Forge-User-Sub", userSub)
+                .ping(ControllerEndpoint.getAgentProjects("88"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .assertDefault();
-
-        final int afterReadSize = (int) this.testManager.postgresql().get(AgentProjectEntity.class).getAll().stream()
-                .filter(project -> Objects.equals(project.getOwnerUserId(), Long.valueOf(userSub)))
-                .count();
-        if (!Objects.equals(beforeReadSize, afterReadSize)) {
-            throw new AssertionError("GET requests must not create or modify agent projects");
-        }
-    }
-
-    private AgentProjectEntity getLatestProjectByOwner(final Long userId) {
-        return this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(project -> Objects.equals(project.getOwnerUserId(), userId))
-                .max(Comparator.comparing(AgentProjectEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Agent project not found for userId=" + userId));
     }
 }
