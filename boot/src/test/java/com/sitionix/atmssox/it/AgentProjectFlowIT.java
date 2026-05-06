@@ -207,14 +207,6 @@ class AgentProjectFlowIT {
     @DisplayName("given existing projects when get agent projects repeatedly then keep db unchanged")
     void givenExistingProjects_whenGetAgentProjectsRepeatedly_thenReturnConsistentAndNoDbWrites() {
         //given
-        final Long ownerUserId = 88L;
-        final long beforeCreateCount = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
-                .count();
-
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject("88"))
                 .assertDefault(defaults -> {
@@ -229,15 +221,6 @@ class AgentProjectFlowIT {
                 .ping(ControllerEndpoint.getAgentProjects("88"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .assertDefault();
-        final long beforeReadCount = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
-                .count();
-        if (!Objects.equals(beforeReadCount, beforeCreateCount + 2)) {
-            throw new AssertionError("Expected exactly two created projects for userId=88 before read checks");
-        }
 
         //when/then
         this.testManager.mockMvc()
@@ -250,17 +233,9 @@ class AgentProjectFlowIT {
                 .assertDefault();
         this.testManager.postgresql()
                 .get(AgentProjectEntity.class)
-                .where(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
+                .where(entity -> Objects.equals(entity.getOwnerUserId(), 88L))
+                .hasSize(2)
                 .andExpected(entity -> Objects.equals(entity.getOwnerUserId(), 88L))
                 .allMatch();
-        final long afterReadCount = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
-                .count();
-        if (!Objects.equals(afterReadCount, beforeReadCount)) {
-            throw new AssertionError("Expected no additional writes during get agent projects");
-        }
     }
 }
