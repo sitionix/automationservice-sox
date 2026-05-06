@@ -61,8 +61,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -142,9 +140,8 @@ public class AgentController implements AgentApi {
                 .build());
         return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectsPageResponseDto(response));
     }
-
-    @GetMapping("/api/v1/agent-projects/{projectId}")
-    public ResponseEntity<AgentProjectDTO> getAgentProject(@PathVariable final UUID projectId) {
+    @Override
+    public ResponseEntity<AgentProjectDTO> getAgentProject(final UUID projectId) {
         final AgentProject response = this.getAgentProject.execute(projectId);
         return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectDto(response));
     }
