@@ -22,6 +22,7 @@ import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
+import com.sitionix.atmssox.api.mapper.AgentProjectApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentRule;
@@ -104,6 +105,7 @@ public class AgentController implements AgentApi {
     private final DeleteAgentConversation deleteAgentConversation;
 
     private final AgentApiMapper agentApiMapper;
+    private final AgentProjectApiMapper agentProjectApiMapper;
 
     private final AgentRuleApiMapper agentRuleApiMapper;
 
@@ -125,7 +127,7 @@ public class AgentController implements AgentApi {
         final CreateAgentProjectCommand command = this.agentApiMapper.asCreateAgentProjectCommand(createAgentProjectRequestDTO);
         final AgentProject response = this.createAgentProject.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(this.agentApiMapper.asAgentProjectDto(response));
+                .body(this.agentProjectApiMapper.asAgentProjectDto(response));
     }
 
     @Override
@@ -134,7 +136,7 @@ public class AgentController implements AgentApi {
                 .page(page)
                 .size(size)
                 .build());
-        return ResponseEntity.ok(this.agentApiMapper.asAgentProjectsPageResponseDto(response));
+        return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectsPageResponseDto(response));
     }
 
     @Override

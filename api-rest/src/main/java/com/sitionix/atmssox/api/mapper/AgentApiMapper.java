@@ -5,8 +5,6 @@ import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
-import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
-import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
@@ -16,8 +14,6 @@ import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
-import com.sitionix.atmssox.domain.model.AgentProject;
-import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
 import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
@@ -66,11 +62,7 @@ public interface AgentApiMapper {
 
     AgentDTO asAgentDto(Agent src);
 
-    AgentProjectDTO asAgentProjectDto(AgentProject src);
-
     List<AgentDTO> asAgentDtos(List<Agent> src);
-
-    List<AgentProjectDTO> asAgentProjectDtos(List<AgentProject> src);
 
     List<AgentConversationDTO> asAgentConversationDtos(List<Conversation> src);
 
@@ -88,15 +80,6 @@ public interface AgentApiMapper {
     default AgentConversationsResponseDTO asAgentConversationsResponseDto(final List<Conversation> conversations) {
         return new AgentConversationsResponseDTO()
                 .items(this.asAgentConversationDtos(conversations));
-    }
-
-    default AgentProjectsPageResponseDTO asAgentProjectsPageResponseDto(final AgentProjectsPage src) {
-        return AgentProjectsPageResponseDTO.builder()
-                .items(this.asAgentProjectDtos(src.items()))
-                .page(src.page())
-                .size(src.size())
-                .hasNext(src.hasNext())
-                .build();
     }
 
     @Mapping(target = "id", source = "conversation.id")

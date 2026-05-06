@@ -9,6 +9,7 @@ import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
+import com.sitionix.atmssox.api.mapper.AgentProjectApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentRuleApiMapper;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentProject;
@@ -82,6 +83,7 @@ class AgentControllerTest {
     @Mock private DeleteAgent deleteAgent;
     @Mock private DeleteAgentConversation deleteAgentConversation;
     @Mock private AgentApiMapper agentApiMapper;
+    @Mock private AgentProjectApiMapper agentProjectApiMapper;
     @Mock private AgentRuleApiMapper agentRuleApiMapper;
 
     @BeforeEach
@@ -109,6 +111,7 @@ class AgentControllerTest {
                 this.deleteAgent,
                 this.deleteAgentConversation,
                 this.agentApiMapper,
+                this.agentProjectApiMapper,
                 this.agentRuleApiMapper
         );
     }
@@ -138,6 +141,7 @@ class AgentControllerTest {
                 this.deleteAgent,
                 this.deleteAgentConversation,
                 this.agentApiMapper,
+                this.agentProjectApiMapper,
                 this.agentRuleApiMapper
         );
     }
@@ -233,7 +237,7 @@ class AgentControllerTest {
 
         when(this.agentApiMapper.asCreateAgentProjectCommand(request)).thenReturn(command);
         when(this.createAgentProject.execute(command)).thenReturn(project);
-        when(this.agentApiMapper.asAgentProjectDto(project)).thenReturn(response);
+        when(this.agentProjectApiMapper.asAgentProjectDto(project)).thenReturn(response);
 
         //when
         final ResponseEntity<AgentProjectDTO> actual = this.agentController.createAgentProject(request);
@@ -242,7 +246,7 @@ class AgentControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.status(HttpStatus.CREATED).body(response));
         verify(this.agentApiMapper).asCreateAgentProjectCommand(request);
         verify(this.createAgentProject).execute(command);
-        verify(this.agentApiMapper).asAgentProjectDto(project);
+        verify(this.agentProjectApiMapper).asAgentProjectDto(project);
     }
 
     @Test
@@ -253,7 +257,7 @@ class AgentControllerTest {
         final GetAgentProjectsQuery query = this.getAgentProjectsQuery(1, 10);
 
         when(this.getAgentProjects.execute(query)).thenReturn(projectsPage);
-        when(this.agentApiMapper.asAgentProjectsPageResponseDto(projectsPage)).thenReturn(response);
+        when(this.agentProjectApiMapper.asAgentProjectsPageResponseDto(projectsPage)).thenReturn(response);
 
         //when
         final ResponseEntity<AgentProjectsPageResponseDTO> actual = this.agentController.getAgentProjects(1, 10);
@@ -261,7 +265,7 @@ class AgentControllerTest {
         //then
         assertThat(actual).isEqualTo(ResponseEntity.ok(response));
         verify(this.getAgentProjects).execute(query);
-        verify(this.agentApiMapper).asAgentProjectsPageResponseDto(projectsPage);
+        verify(this.agentProjectApiMapper).asAgentProjectsPageResponseDto(projectsPage);
     }
 
     private GetAgentProjectsQuery getAgentProjectsQuery(final int page, final int size) {
