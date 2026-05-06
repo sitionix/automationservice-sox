@@ -74,31 +74,16 @@ class AgentProjectFlowIT {
     @Test
     @DisplayName("given blank name when create agent project then return bad request and persist nothing")
     void givenBlankName_whenCreateAgentProject_thenReturnBadRequestAndPersistNothing() {
-        //given
-        final Long ownerUserId = 1L;
-        final long beforeCount = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
-                .count();
-
         //when
         this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
+                .ping(ControllerEndpoint.createAgentProject("99991"))
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("   ")));
 
         //then
-        final long afterCount = this.testManager.postgresql()
+        this.testManager.postgresql()
                 .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
-                .count();
-        if (!Objects.equals(afterCount, beforeCount)) {
-            throw new AssertionError("Expected no new projects for userId=1");
-        }
+                .hasSize(0);
     }
 
     @Test
