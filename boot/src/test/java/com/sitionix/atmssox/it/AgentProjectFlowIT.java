@@ -303,4 +303,180 @@ class AgentProjectFlowIT {
                 .expectStatus(HttpStatus.UNAUTHORIZED)
                 .assertDefault();
     }
+
+    @Test
+    @DisplayName("given owned active project when patch project name then return updated project and persist change")
+    void givenOwnedActiveProject_whenPatchAgentProjectName_thenReturnUpdatedAndPersistedProject() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Updated Project Name"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
+                .assertDefault();
+
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getName(), "Updated Project Name"))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given owned active project when patch project description then return updated project and persist change")
+    void givenOwnedActiveProject_whenPatchAgentProjectDescription_thenReturnUpdatedAndPersistedProject() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .applyDefault(defaults -> defaults.withRequest("patchAgentProjectDescriptionOnlyRequest.json"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Project Details"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.description").value("Updated project description"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
+                .assertDefault();
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getName(), "Project Details"))
+                .andExpected(entity -> Objects.equals(entity.getDescription(), "Updated project description"))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given blank name when patch project then return bad request")
+    void givenBlankName_whenPatchAgentProject_thenReturnBadRequest() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("   ")));
+    }
+
+    @Test
+    @DisplayName("given unsupported field when patch project then return bad request and keep entity unchanged")
+    void givenUnsupportedField_whenPatchAgentProject_thenReturnBadRequestAndKeepEntityUnchanged() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .applyDefault(defaults -> defaults
+                        .withRequest("patchAgentProjectUnsupportedFieldRequest.json")
+                        .expectStatus(HttpStatus.BAD_REQUEST.value()));
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
+                .andExpected(entity -> Objects.equals(entity.getName(), "Project Details"))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given foreign project when patch project then return not found")
+    void givenAnotherUserProject_whenPatchAgentProject_thenReturnNotFound() {
+        //given
+        final UUID projectId = UUID.fromString("f1f77ea9-0822-4d2b-a853-e7c4fa5f631f");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectForeignUserActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "2002")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given owned active project when delete project then set deleted and hide from read endpoints")
+    void givenOwnedActiveProject_whenDeleteAgentProject_thenSoftDeleteAndHideProject() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .assertDefault();
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.DELETED.getId()))
+                .assertEntity();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProjects("1001"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(0))
+                .assertDefault();
+    }
 }

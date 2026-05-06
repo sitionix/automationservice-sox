@@ -17,6 +17,7 @@ import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
@@ -313,6 +314,31 @@ public class ControllerEndpoint {
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<PatchAgentProjectRequestDTO, AgentProjectDTO> patchAgentProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}",
+                HttpMethod.PATCH,
+                PatchAgentProjectRequestDTO.class,
+                AgentProjectDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("patchAgentProjectNameOnlyRequest.json")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, Void> deleteAgentProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}",
+                HttpMethod.DELETE,
+                Void.class,
+                Void.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(204)
         );
     }
 
