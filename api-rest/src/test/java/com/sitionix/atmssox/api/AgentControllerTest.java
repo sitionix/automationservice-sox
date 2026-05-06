@@ -250,8 +250,9 @@ class AgentControllerTest {
         //given
         final AgentProjectsPage projectsPage = mock(AgentProjectsPage.class);
         final AgentProjectsPageResponseDTO response = mock(AgentProjectsPageResponseDTO.class);
+        final GetAgentProjectsQuery query = this.getAgentProjectsQuery(1, 10);
 
-        when(this.getAgentProjects.execute(GetAgentProjectsQuery.builder().page(1).size(10).build())).thenReturn(projectsPage);
+        when(this.getAgentProjects.execute(query)).thenReturn(projectsPage);
         when(this.agentApiMapper.asAgentProjectsPageResponseDto(projectsPage)).thenReturn(response);
 
         //when
@@ -259,7 +260,14 @@ class AgentControllerTest {
 
         //then
         assertThat(actual).isEqualTo(ResponseEntity.ok(response));
-        verify(this.getAgentProjects).execute(GetAgentProjectsQuery.builder().page(1).size(10).build());
+        verify(this.getAgentProjects).execute(query);
         verify(this.agentApiMapper).asAgentProjectsPageResponseDto(projectsPage);
+    }
+
+    private GetAgentProjectsQuery getAgentProjectsQuery(final int page, final int size) {
+        return GetAgentProjectsQuery.builder()
+                .page(page)
+                .size(size)
+                .build();
     }
 }

@@ -147,14 +147,8 @@ class AgentApiMapperTest {
     @Test
     void givenCreateAgentProjectRequestDto_whenAsCreateAgentProjectCommand_thenReturnCreateAgentProjectCommand() {
         //given
-        final CreateAgentProjectRequestDTO given = CreateAgentProjectRequestDTO.builder()
-                .name("Project")
-                .description("Description")
-                .build();
-        final CreateAgentProjectCommand expected = CreateAgentProjectCommand.builder()
-                .name("Project")
-                .description("Description")
-                .build();
+        final CreateAgentProjectRequestDTO given = this.getCreateAgentProjectRequestDto();
+        final CreateAgentProjectCommand expected = this.getCreateAgentProjectCommand();
 
         //when
         final CreateAgentProjectCommand actual = this.agentApiMapper.asCreateAgentProjectCommand(given);
@@ -166,20 +160,7 @@ class AgentApiMapperTest {
     @Test
     void givenAgentProjectsPage_whenAsAgentProjectsPageResponseDto_thenReturnPageResponseDto() {
         //given
-        final AgentProjectsPage given = AgentProjectsPage.builder()
-                .items(List.of(AgentProject.builder()
-                        .id(UUID.fromString("f2f2b8c4-5039-4095-b5ec-d584bd429ca3"))
-                        .ownerUserId(17L)
-                        .name("Project")
-                        .description("Description")
-                        .status(AgentProjectStatus.ACTIVE)
-                        .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
-                        .updatedAt(Instant.parse("2026-04-10T10:01:00Z"))
-                        .build()))
-                .page(0)
-                .size(20)
-                .hasNext(false)
-                .build();
+        final AgentProjectsPage given = this.getAgentProjectsPage();
 
         //when
         final var actual = this.agentApiMapper.asAgentProjectsPageResponseDto(given);
@@ -381,6 +362,41 @@ class AgentApiMapperTest {
         return CreateAgentCommand.builder()
                 .name("My agent")
                 .description(description)
+                .build();
+    }
+
+    private CreateAgentProjectRequestDTO getCreateAgentProjectRequestDto() {
+        return CreateAgentProjectRequestDTO.builder()
+                .name("Project")
+                .description("Description")
+                .build();
+    }
+
+    private CreateAgentProjectCommand getCreateAgentProjectCommand() {
+        return CreateAgentProjectCommand.builder()
+                .name("Project")
+                .description("Description")
+                .build();
+    }
+
+    private AgentProjectsPage getAgentProjectsPage() {
+        return AgentProjectsPage.builder()
+                .items(List.of(this.getAgentProject()))
+                .page(0)
+                .size(20)
+                .hasNext(false)
+                .build();
+    }
+
+    private AgentProject getAgentProject() {
+        return AgentProject.builder()
+                .id(UUID.fromString("f2f2b8c4-5039-4095-b5ec-d584bd429ca3"))
+                .ownerUserId(17L)
+                .name("Project")
+                .description("Description")
+                .status(AgentProjectStatus.ACTIVE)
+                .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
+                .updatedAt(Instant.parse("2026-04-10T10:01:00Z"))
                 .build();
     }
 
