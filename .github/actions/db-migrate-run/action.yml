@@ -112,6 +112,16 @@ runs:
           fi
         fi
 
+        validate_log_file="$(mktemp)"
+        if ! "${flyway_docker[@]}" validate 2>&1 | tee "${validate_log_file}"; then
+          if [[ "${{ inputs.environment_id }}" == "dev" ]] && grep -q "Migration checksum mismatch" "${validate_log_file}"; then
+            echo "Detected checksum mismatch on dev. Running flyway repair before migration."
+            "${flyway_docker[@]}" repair
+          else
+            exit 1
+          fi
+        fi
+
         "${flyway_docker[@]}" migrate
         "${flyway_docker[@]}" validate
         "${flyway_docker[@]}" info
