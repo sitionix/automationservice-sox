@@ -3,8 +3,8 @@ package com.sitionix.atmssox.application.usecase;
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.AgentProjectStatus;
-import com.sitionix.atmssox.domain.model.AgentTextNormalizer;
 import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
+import com.sitionix.atmssox.domain.model.TextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentProjectRepository;
 import com.sitionix.atmssox.domain.usecase.CreateAgentProject;
 import java.time.Instant;
@@ -27,13 +27,13 @@ public class CreateAgentProjectImpl implements CreateAgentProject {
     @Transactional
     public AgentProject execute(final CreateAgentProjectCommand command) {
         final Instant now = Instant.now();
-        final String normalizedName = AgentTextNormalizer.normalizeRequired(
+        final String normalizedName = TextNormalizer.normalizeRequired(
                 command.name(),
                 "Project name must not be blank",
                 NAME_MAX_LENGTH,
                 "Project name must be between 1 and 120 characters"
         );
-        final String normalizedDescription = AgentTextNormalizer.normalizeOptionalNullable(
+        final String normalizedDescription = TextNormalizer.normalizeOptionalNullable(
                 command.description(),
                 DESCRIPTION_MAX_LENGTH,
                 "Project description must be at most 1000 characters"

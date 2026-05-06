@@ -4,7 +4,7 @@ import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class AgentTextNormalizer {
+public class TextNormalizer {
 
     public static String normalizeRequired(final String value,
                                            final String missingMessage,
@@ -22,12 +22,16 @@ public class AgentTextNormalizer {
 
     public static String normalizeOptionalStrict(final String value,
                                                  final int maxLength,
-                                                 final String lengthMessage) {
+                                                 final String lengthMessage,
+                                                 final String emptyMessage) {
         if (value == null) {
             return null;
         }
         final String normalized = value.trim();
-        if (normalized.isEmpty() || normalized.length() > maxLength) {
+        if (normalized.isEmpty()) {
+            throw new AgentValidationException(emptyMessage);
+        }
+        if (normalized.length() > maxLength) {
             throw new AgentValidationException(lengthMessage);
         }
         return normalized;
@@ -47,5 +51,9 @@ public class AgentTextNormalizer {
             throw new AgentValidationException(lengthMessage);
         }
         return normalized;
+    }
+
+    public static String normalizeToEmpty(final String value) {
+        return value == null ? "" : value.trim();
     }
 }
