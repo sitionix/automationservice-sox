@@ -1,0 +1,12 @@
+{
+  "projectId": "eb8f6c2c-2fcf-4515-9275-2be8db8784a6",
+  "ownerUserId": 3001,
+  "name": "Unauthorized Project",
+  "description": "Project for unauthorized context check",
+  "status": {
+    "id": 1,
+    "description": "ACTIVE"
+  },
+  "createdAt": "2026-05-01T08:00:00Z",
+  "updatedAt": "2026-05-01T08:00:00Z"
+}
