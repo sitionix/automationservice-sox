@@ -304,6 +304,18 @@ public class ControllerEndpoint {
         );
     }
 
+    public static Endpoint<Void, AgentProjectDTO> getAgentProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}",
+                HttpMethod.GET,
+                Void.class,
+                AgentProjectDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
     private ControllerEndpoint() {
     }
 }

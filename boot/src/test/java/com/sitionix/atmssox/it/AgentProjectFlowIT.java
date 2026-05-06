@@ -6,6 +6,8 @@ import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.QueryParams;
+import com.sitionix.forgeit.mockmvc.api.PathParams;
+import java.util.UUID;
 import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,6 +85,7 @@ class AgentProjectFlowIT {
         //then
         this.testManager.postgresql()
                 .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getOwnerUserId(), 99991L))
                 .hasSize(0);
     }
 
@@ -237,5 +240,74 @@ class AgentProjectFlowIT {
                 .hasSize(2)
                 .andExpected(entity -> Objects.equals(entity.getOwnerUserId(), 88L))
                 .allMatch();
+    }
+
+    @Test
+    @DisplayName("given active project owned by user when get by id then return project details")
+    void givenOwnedActiveProject_whenGetAgentProject_thenReturnProjectDetails() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject("1001"))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Project Details")));
+        final UUID projectId = this.projectIdByOwnerAndName(1001L, "Project Details");
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Project Details"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given project belongs to another user when get by id then return not found")
+    void givenAnotherUserProject_whenGetAgentProject_thenReturnNotFound() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject("2001"))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Foreign Project")));
+        final UUID projectId = this.projectIdByOwnerAndName(2001L, "Foreign Project");
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "2002")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given missing user context when get project by id then return unauthorized")
+    void givenMissingUserContext_whenGetAgentProject_thenReturnUnauthorized() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject("3001"))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Unauthorized Project")));
+        final UUID projectId = this.projectIdByOwnerAndName(3001L, "Unauthorized Project");
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", null)
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .assertDefault();
+    }
+
+    private UUID projectIdByOwnerAndName(final Long ownerUserId, final String name) {
+        return this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll().stream()
+                .filter(entity -> Objects.equals(entity.getOwnerUserId(), ownerUserId))
+                .filter(entity -> Objects.equals(entity.getName(), name))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Agent project not found"))
+                .getProjectId();
     }
 }

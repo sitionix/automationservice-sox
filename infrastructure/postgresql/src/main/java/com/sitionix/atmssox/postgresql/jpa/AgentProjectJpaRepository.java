@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.postgresql.jpa;
 
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,4 +12,8 @@ public interface AgentProjectJpaRepository extends JpaRepository<AgentProjectEnt
     Page<AgentProjectEntity> findByOwnerUserIdAndStatusIdNot(Long ownerUserId,
                                                            Long statusId,
                                                            Pageable pageable);
+
+    Optional<AgentProjectEntity> findByProjectIdAndOwnerUserIdAndStatusIdNot(UUID projectId,
+                                                                              Long ownerUserId,
+                                                                              Long statusId);
 }

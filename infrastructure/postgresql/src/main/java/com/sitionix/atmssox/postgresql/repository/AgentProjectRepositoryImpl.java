@@ -8,6 +8,8 @@ import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentProjectJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.AgentProjectInfraMapper;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -51,5 +53,14 @@ public class AgentProjectRepositoryImpl implements AgentProjectRepository {
                 .size(size)
                 .hasNext(response.hasNext())
                 .build();
+    }
+
+    @Override
+    public Optional<AgentProject> findVisibleByIdAndOwnerUserId(final UUID projectId, final Long ownerUserId) {
+        return this.agentProjectJpaRepository.findByProjectIdAndOwnerUserIdAndStatusIdNot(
+                projectId,
+                ownerUserId,
+                AgentProjectStatus.DELETED.getId()
+        ).map(this.agentProjectInfraMapper::asAgentProject);
     }
 }

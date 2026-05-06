@@ -49,6 +49,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentChatExecution;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
+import com.sitionix.atmssox.domain.usecase.GetAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
 import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
@@ -60,6 +61,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -70,6 +73,7 @@ public class AgentController implements AgentApi {
 
     private final GetAgents getAgents;
     private final GetAgentProjects getAgentProjects;
+    private final GetAgentProject getAgentProject;
 
     private final GetAgent getAgent;
 
@@ -137,6 +141,12 @@ public class AgentController implements AgentApi {
                 .size(size)
                 .build());
         return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectsPageResponseDto(response));
+    }
+
+    @GetMapping("/api/v1/agent-projects/{projectId}")
+    public ResponseEntity<AgentProjectDTO> getAgentProject(@PathVariable final UUID projectId) {
+        final AgentProject response = this.getAgentProject.execute(projectId);
+        return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectDto(response));
     }
 
     @Override
