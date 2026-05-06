@@ -36,9 +36,9 @@ public class AgentProjectRepositoryImpl implements AgentProjectRepository {
                 Sort.Order.desc("createdAt"),
                 Sort.Order.desc("projectId")
         );
-        final Page<AgentProjectEntity> response = this.agentProjectJpaRepository.findByOwnerUserIdAndStatusNot(
+        final Page<AgentProjectEntity> response = this.agentProjectJpaRepository.findByOwnerUserIdAndStatusIdNot(
                 ownerUserId,
-                AgentProjectStatus.DELETED,
+                AgentProjectStatus.DELETED.getId(),
                 PageRequest.of(page, size, sort)
         );
         final List<AgentProject> items = response.getContent().stream()

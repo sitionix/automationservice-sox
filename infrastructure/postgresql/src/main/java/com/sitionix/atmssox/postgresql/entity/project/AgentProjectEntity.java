@@ -1,12 +1,12 @@
 package com.sitionix.atmssox.postgresql.entity.project;
 
-import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -19,7 +19,7 @@ import lombok.Setter;
 @Table(
         name = "agent_projects",
         indexes = {
-                @Index(name = "idx_agent_projects_owner_status_updated_at", columnList = "owner_user_id, status, updated_at DESC")
+                @Index(name = "idx_agent_projects_owner_status_updated_at", columnList = "owner_user_id, status_id, updated_at DESC")
         }
 )
 @Getter
@@ -41,9 +41,9 @@ public class AgentProjectEntity {
     @Column(name = "description")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 32)
-    private AgentProjectStatus status;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
+    private AgentProjectStatusEntity status;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

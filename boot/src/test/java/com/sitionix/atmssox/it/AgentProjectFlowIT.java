@@ -43,7 +43,7 @@ class AgentProjectFlowIT {
                 .where(entity -> Objects.equals(entity.getName(), "Marketing Automation"))
                 .singleElement()
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Project for marketing agents and campaign automation"))
-                .andExpected(entity -> Objects.equals(entity.getStatus(), AgentProjectStatus.ACTIVE))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
                 .andExpected(entity -> Objects.nonNull(entity.getProjectId()))
                 .andExpected(entity -> Objects.nonNull(entity.getCreatedAt()))
                 .andExpected(entity -> Objects.nonNull(entity.getUpdatedAt()))
