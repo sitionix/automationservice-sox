@@ -1,14 +1,20 @@
 package com.sitionix.atmssox.it;
 
+import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
+import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.QueryParams;
+import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 class AgentProjectFlowIT {
@@ -19,6 +25,9 @@ class AgentProjectFlowIT {
     @Test
     @DisplayName("given valid request when create agent project then return created and persist active project")
     void givenValidRequest_whenCreateAgentProject_thenReturnCreatedAndPersistActiveProject() {
+        //given
+        final long ownerUserId = 1L;
+
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject())
@@ -29,12 +38,23 @@ class AgentProjectFlowIT {
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
                 .assertDefault();
+
+        //then
+        final AgentProjectEntity project = this.findLastProjectByOwner(ownerUserId);
+        assertThat(project.getOwnerUserId()).isEqualTo(ownerUserId);
+        assertThat(project.getName()).isEqualTo("Marketing Automation");
+        assertThat(project.getDescription()).isEqualTo("Project for marketing agents and campaign automation");
+        assertThat(project.getStatus()).isEqualTo(AgentProjectStatus.ACTIVE);
+        assertThat(project.getCreatedAt()).isNotNull();
+        assertThat(project.getUpdatedAt()).isNotNull();
+        assertThat(project.getProjectId()).isNotNull();
     }
 
     @Test
     @DisplayName("given blank description when create agent project then persist null description")
     void givenBlankDescription_whenCreateAgentProject_thenPersistNullDescription() {
         //given
+        final long ownerUserId = 17L;
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject("17"))
@@ -42,16 +62,26 @@ class AgentProjectFlowIT {
                 .assertDefault(defaults -> {
                     defaults.mutateRequest(request -> request.setDescription("   "));
                 });
+
+        //then
+        final AgentProjectEntity project = this.findLastProjectByOwner(ownerUserId);
+        assertThat(project.getDescription()).isNull();
     }
 
     @Test
     @DisplayName("given blank name when create agent project then return bad request and persist nothing")
     void givenBlankName_whenCreateAgentProject_thenReturnBadRequestAndPersistNothing() {
+        //given
+        final int beforeCount = this.countAllProjects();
+
         //when
         this.testManager.mockMvc()
                 .ping(ControllerEndpoint.createAgentProject())
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("   ")));
+
+        //then
+        assertThat(this.countAllProjects()).isEqualTo(beforeCount);
     }
 
     @Test
@@ -189,6 +219,7 @@ class AgentProjectFlowIT {
                 .ping(ControllerEndpoint.getAgentProjects("88"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .assertDefault();
+        final long beforeReadCount = this.countProjectsByOwner(88L);
 
         //when/then
         this.testManager.mockMvc()
@@ -199,5 +230,28 @@ class AgentProjectFlowIT {
                 .ping(ControllerEndpoint.getAgentProjects("88"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(2))
                 .assertDefault();
+        final long afterReadCount = this.countProjectsByOwner(88L);
+        assertThat(afterReadCount).isEqualTo(beforeReadCount);
+    }
+
+    private AgentProjectEntity findLastProjectByOwner(final Long ownerUserId) {
+        return this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll()
+                .stream()
+                .filter(project -> Objects.equals(project.getOwnerUserId(), ownerUserId))
+                .reduce((first, second) -> second)
+                .orElseThrow(() -> new AssertionError("No project found for userId=" + ownerUserId));
+    }
+
+    private int countAllProjects() {
+        return this.testManager.postgresql().get(AgentProjectEntity.class).getAll().size();
+    }
+
+    private long countProjectsByOwner(final Long ownerUserId) {
+        final List<AgentProjectEntity> projects = this.testManager.postgresql().get(AgentProjectEntity.class).getAll();
+        return projects.stream()
+                .filter(project -> Objects.equals(project.getOwnerUserId(), ownerUserId))
+                .count();
     }
 }
