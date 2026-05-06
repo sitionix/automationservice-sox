@@ -1,10 +1,10 @@
 package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
-import com.sitionix.atmssox.domain.exception.AgentValidationException;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.TextNormalizer;
 import com.sitionix.atmssox.domain.repository.AgentRepository;
 import com.sitionix.atmssox.domain.usecase.CreateAgent;
 import java.time.Instant;
@@ -31,10 +31,16 @@ public class CreateAgentImpl implements CreateAgent {
         return this.agentRepository.save(Agent.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
-                .name(this.normalizeRequired(command.name(), "Agent name is required", NAME_MAX_LENGTH, "Agent name must be between 1 and 60 characters"))
-                .description(this.normalizeOptional(
+                .name(TextNormalizer.normalizeRequired(
+                        command.name(),
+                        "Agent name is required",
+                        NAME_MAX_LENGTH,
+                        "Agent name must be between 1 and 60 characters"
+                ))
+                .description(TextNormalizer.normalizeOptionalStrict(
                         command.description(),
                         DESCRIPTION_MAX_LENGTH,
+                        "Agent description must be between 1 and 160 characters",
                         "Agent description must be between 1 and 160 characters"
                 ))
                 .instruction(null)
@@ -43,32 +49,4 @@ public class CreateAgentImpl implements CreateAgent {
                 .updatedAt(now)
                 .build());
     }
-
-    private String normalizeRequired(final String value,
-                                     final String missingMessage,
-                                     final int maxLength,
-                                     final String lengthMessage) {
-        final String normalized = value == null ? null : value.trim();
-        if (normalized == null || normalized.isEmpty()) {
-            throw new AgentValidationException(missingMessage);
-        }
-        if (normalized.length() > maxLength) {
-            throw new AgentValidationException(lengthMessage);
-        }
-        return normalized;
-    }
-
-    private String normalizeOptional(final String value,
-                                     final int maxLength,
-                                     final String lengthMessage) {
-        if (value == null) {
-            return null;
-        }
-        final String normalized = value.trim();
-        if (normalized.isEmpty() || normalized.length() > maxLength) {
-            throw new AgentValidationException(lengthMessage);
-        }
-        return normalized;
-    }
-
 }

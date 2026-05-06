@@ -1,51 +1,50 @@
 package com.sitionix.atmssox.domain.model;
 
-import com.sitionix.atmssox.domain.exception.AgentValidationException;
-
 public final class AgentRuleTextNormalizer {
+
+    private static final String RULE_TITLE_REQUIRED_MESSAGE = "Rule title is required";
+    private static final String RULE_CONTENT_REQUIRED_MESSAGE = "Rule content is required";
 
     private AgentRuleTextNormalizer() {
     }
 
     public static String normalizeRequiredTitle(final String value) {
-        final String normalized = value == null ? null : value.trim();
-        if (normalized == null || normalized.isEmpty()) {
-            throw new AgentValidationException("Rule title is required");
-        }
-        return normalized;
+        return TextNormalizer.normalizeRequired(
+                value,
+                RULE_TITLE_REQUIRED_MESSAGE,
+                Integer.MAX_VALUE,
+                RULE_TITLE_REQUIRED_MESSAGE
+        );
     }
 
     public static String normalizeRequiredContent(final String value) {
-        final String normalized = value == null ? null : value.trim();
-        if (normalized == null || normalized.isEmpty()) {
-            throw new AgentValidationException("Rule content is required");
-        }
-        return normalized;
+        return TextNormalizer.normalizeRequired(
+                value,
+                RULE_CONTENT_REQUIRED_MESSAGE,
+                Integer.MAX_VALUE,
+                RULE_CONTENT_REQUIRED_MESSAGE
+        );
     }
 
     public static String normalizeOptionalTitle(final String value) {
-        if (value == null) {
-            return null;
-        }
-        final String normalized = value.trim();
-        if (normalized.isEmpty()) {
-            throw new AgentValidationException("Rule title is required");
-        }
-        return normalized;
+        return TextNormalizer.normalizeOptionalStrict(
+                value,
+                Integer.MAX_VALUE,
+                RULE_TITLE_REQUIRED_MESSAGE,
+                RULE_TITLE_REQUIRED_MESSAGE
+        );
     }
 
     public static String normalizeOptionalContent(final String value) {
-        if (value == null) {
-            return null;
-        }
-        final String normalized = value.trim();
-        if (normalized.isEmpty()) {
-            throw new AgentValidationException("Rule content is required");
-        }
-        return normalized;
+        return TextNormalizer.normalizeOptionalStrict(
+                value,
+                Integer.MAX_VALUE,
+                RULE_CONTENT_REQUIRED_MESSAGE,
+                RULE_CONTENT_REQUIRED_MESSAGE
+        );
     }
 
     public static String normalizeToEmpty(final String value) {
-        return value == null ? "" : value.trim();
+        return TextNormalizer.normalizeToEmpty(value);
     }
 }

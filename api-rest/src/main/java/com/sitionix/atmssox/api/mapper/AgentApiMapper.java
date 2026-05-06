@@ -9,6 +9,7 @@ import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
@@ -19,6 +20,7 @@ import com.sitionix.atmssox.domain.model.ChatAgentResponse;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
+import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
 import java.time.Instant;
@@ -36,6 +38,8 @@ import org.mapstruct.Mapper;
 public interface AgentApiMapper {
 
     CreateAgentCommand asCreateAgentCommand(CreateAgentRequestDTO src);
+
+    CreateAgentProjectCommand asCreateAgentProjectCommand(CreateAgentProjectRequestDTO src);
 
     PatchAgentCommand asPatchAgentCommand(PatchAgentRequestDTO src);
 
