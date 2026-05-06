@@ -84,4 +84,27 @@ class AgentChatControllerTest {
         verify(this.getAgentChatExecution).execute(agentId, executionId, conversationId);
         verify(this.agentApiMapper).asChatExecutionDto(execution);
     }
+
+    @Test
+    void givenSubmitExecutionByExecutionsPathRequest_whenSubmitAgentChatExecutionByExecutionsPath_thenReturnAcceptedEnvelope() {
+        //given
+        final UUID agentId = UUID.fromString("84de5bd8-e32d-469f-9f10-90f296ba7a92");
+        final ChatAgentRequestDTO request = mock(ChatAgentRequestDTO.class);
+        final ChatAgentCommand command = mock(ChatAgentCommand.class);
+        final ChatExecution execution = mock(ChatExecution.class);
+        final SubmitChatExecutionResponseDTO response = mock(SubmitChatExecutionResponseDTO.class);
+        when(this.agentApiMapper.asChatAgentCommand(request)).thenReturn(command);
+        when(this.submitAgentChatExecution.execute(agentId, command, "idem-2")).thenReturn(execution);
+        when(this.agentApiMapper.asSubmitChatExecutionResponseDto(execution)).thenReturn(response);
+
+        //when
+        final ResponseEntity<SubmitChatExecutionResponseDTO> actual =
+                this.agentChatController.submitAgentChatExecutionByExecutionsPath(agentId, request, "idem-2");
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.status(HttpStatus.ACCEPTED).body(response));
+        verify(this.agentApiMapper).asChatAgentCommand(request);
+        verify(this.submitAgentChatExecution).execute(agentId, command, "idem-2");
+        verify(this.agentApiMapper).asSubmitChatExecutionResponseDto(execution);
+    }
 }
