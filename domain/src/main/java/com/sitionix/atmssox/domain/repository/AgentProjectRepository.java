@@ -2,6 +2,8 @@ package com.sitionix.atmssox.domain.repository;
 
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.AgentProjectsPage;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Persistence contract for automation project aggregate operations.
@@ -25,4 +27,13 @@ public interface AgentProjectRepository {
      * @return one page of visible projects.
      */
     AgentProjectsPage findAllVisibleByOwnerUserId(Long ownerUserId, int page, int size);
+
+    /**
+     * Returns one visible (non-deleted) project by id for one owner.
+     *
+     * @param projectId project identifier.
+     * @param ownerUserId owner identifier.
+     * @return project when visible for current owner.
+     */
+    Optional<AgentProject> findVisibleByIdAndOwnerUserId(UUID projectId, Long ownerUserId);
 }

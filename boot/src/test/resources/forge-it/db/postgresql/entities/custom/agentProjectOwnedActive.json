@@ -1,0 +1,12 @@
+{
+  "projectId": "b5417721-b65d-4bdd-84bc-80491816f854",
+  "ownerUserId": 1001,
+  "name": "Project Details",
+  "description": "Project for details retrieval",
+  "status": {
+    "id": 1,
+    "description": "ACTIVE"
+  },
+  "createdAt": "2026-05-01T08:00:00Z",
+  "updatedAt": "2026-05-01T08:00:00Z"
+}

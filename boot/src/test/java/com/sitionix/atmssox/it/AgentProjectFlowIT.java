@@ -2,11 +2,14 @@ package com.sitionix.atmssox.it;
 
 import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
+import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
 import com.sitionix.forgeit.mockmvc.api.QueryParams;
+import com.sitionix.forgeit.mockmvc.api.PathParams;
 import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +86,7 @@ class AgentProjectFlowIT {
         //then
         this.testManager.postgresql()
                 .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getOwnerUserId(), 99991L))
                 .hasSize(0);
     }
 
@@ -237,5 +241,66 @@ class AgentProjectFlowIT {
                 .hasSize(2)
                 .andExpected(entity -> Objects.equals(entity.getOwnerUserId(), 88L))
                 .allMatch();
+    }
+
+    @Test
+    @DisplayName("given active project owned by user when get by id then return project details")
+    void givenOwnedActiveProject_whenGetAgentProject_thenReturnProjectDetails() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Project Details"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given project belongs to another user when get by id then return not found")
+    void givenAnotherUserProject_whenGetAgentProject_thenReturnNotFound() {
+        //given
+        final UUID projectId = UUID.fromString("f1f77ea9-0822-4d2b-a853-e7c4fa5f631f");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectForeignUserActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "2002")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given missing user context when get project by id then return unauthorized")
+    void givenMissingUserContext_whenGetAgentProject_thenReturnUnauthorized() {
+        //given
+        final UUID projectId = UUID.fromString("eb8f6c2c-2fcf-4515-9275-2be8db8784a6");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectUnauthorizedContextActive.json"))
+                .build();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", null)
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .assertDefault();
     }
 }

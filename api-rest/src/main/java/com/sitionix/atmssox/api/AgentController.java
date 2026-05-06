@@ -49,6 +49,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentChatExecution;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetAgents;
 import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
+import com.sitionix.atmssox.domain.usecase.GetAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentRules;
 import com.sitionix.atmssox.domain.usecase.RejectAgentRule;
 import com.sitionix.atmssox.domain.usecase.PatchAgentRule;
@@ -70,6 +71,7 @@ public class AgentController implements AgentApi {
 
     private final GetAgents getAgents;
     private final GetAgentProjects getAgentProjects;
+    private final GetAgentProject getAgentProject;
 
     private final GetAgent getAgent;
 
@@ -137,6 +139,11 @@ public class AgentController implements AgentApi {
                 .size(size)
                 .build());
         return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectsPageResponseDto(response));
+    }
+    @Override
+    public ResponseEntity<AgentProjectDTO> getAgentProject(final UUID projectId) {
+        final AgentProject response = this.getAgentProject.execute(projectId);
+        return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectDto(response));
     }
 
     @Override
