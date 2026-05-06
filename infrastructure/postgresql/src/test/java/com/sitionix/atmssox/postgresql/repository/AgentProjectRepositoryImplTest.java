@@ -7,6 +7,8 @@ import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentProjectJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.AgentProjectInfraMapper;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,5 +110,57 @@ class AgentProjectRepositoryImplTest {
         );
         verify(this.agentProjectInfraMapper).asAgentProject(firstEntity);
         verify(this.agentProjectInfraMapper).asAgentProject(secondEntity);
+    }
+
+    @Test
+    void givenExistingVisibleProjectByOwner_whenFindVisibleByIdAndOwnerUserId_thenReturnMappedProject() {
+        //given
+        final UUID projectId = UUID.fromString("f8c86cf1-0b14-48f4-a2f9-ca4cb3b7f0f8");
+        final Long ownerUserId = 17L;
+        final AgentProjectEntity entity = mock(AgentProjectEntity.class);
+        final AgentProject mappedProject = mock(AgentProject.class);
+
+        when(this.agentProjectJpaRepository.findByProjectIdAndOwnerUserIdAndStatusIdNot(
+                projectId,
+                ownerUserId,
+                AgentProjectStatus.DELETED.getId()
+        )).thenReturn(Optional.of(entity));
+        when(this.agentProjectInfraMapper.asAgentProject(entity)).thenReturn(mappedProject);
+
+        //when
+        final Optional<AgentProject> actual = this.repository.findVisibleByIdAndOwnerUserId(projectId, ownerUserId);
+
+        //then
+        assertThat(actual).contains(mappedProject);
+        verify(this.agentProjectJpaRepository).findByProjectIdAndOwnerUserIdAndStatusIdNot(
+                projectId,
+                ownerUserId,
+                AgentProjectStatus.DELETED.getId()
+        );
+        verify(this.agentProjectInfraMapper).asAgentProject(entity);
+    }
+
+    @Test
+    void givenNoVisibleProjectByOwner_whenFindVisibleByIdAndOwnerUserId_thenReturnEmptyOptional() {
+        //given
+        final UUID projectId = UUID.fromString("7f5b55d6-73aa-4023-b47f-01645f34711f");
+        final Long ownerUserId = 17L;
+
+        when(this.agentProjectJpaRepository.findByProjectIdAndOwnerUserIdAndStatusIdNot(
+                projectId,
+                ownerUserId,
+                AgentProjectStatus.DELETED.getId()
+        )).thenReturn(Optional.empty());
+
+        //when
+        final Optional<AgentProject> actual = this.repository.findVisibleByIdAndOwnerUserId(projectId, ownerUserId);
+
+        //then
+        assertThat(actual).isEmpty();
+        verify(this.agentProjectJpaRepository).findByProjectIdAndOwnerUserIdAndStatusIdNot(
+                projectId,
+                ownerUserId,
+                AgentProjectStatus.DELETED.getId()
+        );
     }
 }
