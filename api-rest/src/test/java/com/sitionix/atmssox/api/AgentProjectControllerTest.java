@@ -3,15 +3,19 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.PatchAgentProjectRequestDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentProjectApiMapper;
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.GetAgentProjectsQuery;
+import com.sitionix.atmssox.domain.model.PatchAgentProjectCommand;
 import com.sitionix.atmssox.domain.usecase.CreateAgentProject;
+import com.sitionix.atmssox.domain.usecase.DeleteAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
+import com.sitionix.atmssox.domain.usecase.PatchAgentProject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,18 +39,21 @@ class AgentProjectControllerTest {
     @Mock private CreateAgentProject createAgentProject;
     @Mock private GetAgentProjects getAgentProjects;
     @Mock private GetAgentProject getAgentProject;
+    @Mock private PatchAgentProject patchAgentProject;
+    @Mock private DeleteAgentProject deleteAgentProject;
     @Mock private AgentApiMapper agentApiMapper;
     @Mock private AgentProjectApiMapper agentProjectApiMapper;
 
     @BeforeEach
     void setUp() {
         this.agentProjectController = new AgentProjectController(this.createAgentProject, this.getAgentProjects, this.getAgentProject,
-                this.agentApiMapper, this.agentProjectApiMapper);
+                this.patchAgentProject, this.deleteAgentProject, this.agentApiMapper, this.agentProjectApiMapper);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.createAgentProject, this.getAgentProjects, this.getAgentProject, this.agentApiMapper, this.agentProjectApiMapper);
+        verifyNoMoreInteractions(this.createAgentProject, this.getAgentProjects, this.getAgentProject, this.patchAgentProject,
+                this.deleteAgentProject, this.agentApiMapper, this.agentProjectApiMapper);
     }
 
     @Test
@@ -103,5 +110,40 @@ class AgentProjectControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
         verify(this.getAgentProject).execute(projectId);
         verify(this.agentProjectApiMapper).asAgentProjectDto(project);
+    }
+
+    @Test
+    void givenPatchRequestDto_whenPatchAgentProject_thenReturnPatchedProjectDto() {
+        //given
+        final java.util.UUID projectId = java.util.UUID.randomUUID();
+        final PatchAgentProjectRequestDTO requestDto = mock(PatchAgentProjectRequestDTO.class);
+        final PatchAgentProjectCommand command = mock(PatchAgentProjectCommand.class);
+        final AgentProject response = mock(AgentProject.class);
+        final AgentProjectDTO responseDto = mock(AgentProjectDTO.class);
+        when(this.agentProjectApiMapper.asPatchAgentProjectCommand(requestDto)).thenReturn(command);
+        when(this.patchAgentProject.execute(projectId, command)).thenReturn(response);
+        when(this.agentProjectApiMapper.asAgentProjectDto(response)).thenReturn(responseDto);
+
+        //when
+        final ResponseEntity<AgentProjectDTO> actual = this.agentProjectController.patchAgentProject(projectId, requestDto);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
+        verify(this.agentProjectApiMapper).asPatchAgentProjectCommand(requestDto);
+        verify(this.patchAgentProject).execute(projectId, command);
+        verify(this.agentProjectApiMapper).asAgentProjectDto(response);
+    }
+
+    @Test
+    void givenProjectId_whenDeleteAgentProject_thenReturnNoContent() {
+        //given
+        final java.util.UUID projectId = java.util.UUID.randomUUID();
+
+        //when
+        final ResponseEntity<Void> actual = this.agentProjectController.deleteAgentProject(projectId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.noContent().build());
+        verify(this.deleteAgentProject).execute(projectId);
     }
 }
