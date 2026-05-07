@@ -59,14 +59,7 @@ class AddAgentToProjectImplTest {
         final UUID agentId = UUID.fromString("16550e8c-8ea5-43ff-a569-85f8d08fb301");
         final AgentProject project = mock(AgentProject.class);
         final Agent agent = mock(Agent.class);
-        final AgentProjectMember member = AgentProjectMember.builder()
-                .membershipId(UUID.fromString("63759742-a72e-4c94-a4e0-6fc8d5090c2e"))
-                .projectId(projectId)
-                .agentId(agentId)
-                .status(AgentProjectMemberStatus.DELETED)
-                .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
-                .updatedAt(Instant.parse("2026-01-02T00:00:00Z"))
-                .build();
+        final AgentProjectMember member = this.getDeletedMember(projectId, agentId);
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(project));
         when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
@@ -100,5 +93,16 @@ class AddAgentToProjectImplTest {
                 .hasMessage("Agent project not found");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
+    }
+
+    private AgentProjectMember getDeletedMember(final UUID projectId, final UUID agentId) {
+        return AgentProjectMember.builder()
+                .membershipId(UUID.fromString("63759742-a72e-4c94-a4e0-6fc8d5090c2e"))
+                .projectId(projectId)
+                .agentId(agentId)
+                .status(AgentProjectMemberStatus.DELETED)
+                .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
+                .updatedAt(Instant.parse("2026-01-02T00:00:00Z"))
+                .build();
     }
 }

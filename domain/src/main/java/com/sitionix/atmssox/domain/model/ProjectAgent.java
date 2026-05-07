@@ -9,19 +9,19 @@ import lombok.Value;
 @Builder(toBuilder = true)
 public class ProjectAgent {
 
-    UUID id;
+    private UUID id;
 
-    String name;
+    private String name;
 
-    String description;
+    private String description;
 
-    AgentStatus status;
+    private AgentStatus status;
 
-    Instant createdAt;
+    private Instant createdAt;
 
-    Instant updatedAt;
+    private Instant updatedAt;
 
-    UUID membershipId;
+    private UUID membershipId;
 
-    Instant attachedAt;
+    private Instant attachedAt;
 }
