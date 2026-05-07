@@ -28,10 +28,7 @@ class AgentProjectMemberStatusInfraMapperTest {
     @Test
     void givenValidStatusEntity_whenAsStatus_thenReturnMappedStatus() {
         //given
-        final AgentProjectMemberStatusEntity given = AgentProjectMemberStatusEntity.builder()
-                .id(1L)
-                .description("ACTIVE")
-                .build();
+        final AgentProjectMemberStatusEntity given = this.getStatusEntity(1L, "ACTIVE");
 
         //when
         final AgentProjectMemberStatus actual = this.mapper.asStatus(given);
@@ -61,5 +58,12 @@ class AgentProjectMemberStatusInfraMapperTest {
         assertThat(actual).isNotNull();
         assertThat(actual.getId()).isEqualTo(2L);
         assertThat(actual.getDescription()).isNull();
+    }
+
+    private AgentProjectMemberStatusEntity getStatusEntity(final Long id, final String description) {
+        return AgentProjectMemberStatusEntity.builder()
+                .id(id)
+                .description(description)
+                .build();
     }
 }
