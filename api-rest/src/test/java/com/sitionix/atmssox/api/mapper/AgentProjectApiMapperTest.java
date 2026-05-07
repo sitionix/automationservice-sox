@@ -34,6 +34,7 @@ class AgentProjectApiMapperTest {
         assertThat(actual.getId()).isEqualTo(UUID.fromString("f2f2b8c4-5039-4095-b5ec-d584bd429ca3"));
         assertThat(actual.getName()).isEqualTo("Project");
         assertThat(actual.getDescription()).isEqualTo("Description");
+        assertThat(actual.getContext()).isEqualTo("Context");
         assertThat(actual.getStatus()).hasToString("ACTIVE");
         assertThat(actual.getCreatedAt()).isEqualTo(OffsetDateTime.parse("2026-04-10T10:00:00Z"));
         assertThat(actual.getUpdatedAt()).isEqualTo(OffsetDateTime.parse("2026-04-10T10:01:00Z"));
@@ -60,6 +61,7 @@ class AgentProjectApiMapperTest {
                 .ownerUserId(17L)
                 .name("Project")
                 .description("Description")
+                .context("Context")
                 .status(AgentProjectStatus.ACTIVE)
                 .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-10T10:01:00Z"))

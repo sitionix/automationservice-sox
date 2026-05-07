@@ -20,6 +20,7 @@ public class PatchAgentProjectImpl implements PatchAgentProject {
 
     private static final int NAME_MAX_LENGTH = 120;
     private static final int DESCRIPTION_MAX_LENGTH = 1000;
+    private static final int CONTEXT_MAX_LENGTH = 5000;
 
     private final AgentProjectRepository agentProjectRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
@@ -33,8 +34,9 @@ public class PatchAgentProjectImpl implements PatchAgentProject {
 
         final boolean hasName = command.name() != null;
         final boolean hasDescription = command.description() != null;
-        if (!hasName && !hasDescription) {
-            throw new AgentValidationException("At least one field (name or description) must be provided");
+        final boolean hasContext = command.context() != null;
+        if (!hasName && !hasDescription && !hasContext) {
+            throw new AgentValidationException("At least one field (name, description or context) must be provided");
         }
 
         final String updatedName = hasName
@@ -52,10 +54,18 @@ public class PatchAgentProjectImpl implements PatchAgentProject {
                 "Project description must be at most 1000 characters"
         )
                 : current.getDescription();
+        final String updatedContext = hasContext
+                ? TextNormalizer.normalizeOptionalNullable(
+                command.context(),
+                CONTEXT_MAX_LENGTH,
+                "Project context must be at most 5000 characters"
+        )
+                : current.getContext();
 
         return this.agentProjectRepository.save(current.toBuilder()
                 .name(updatedName)
                 .description(updatedDescription)
+                .context(updatedContext)
                 .updatedAt(Instant.now())
                 .build());
     }

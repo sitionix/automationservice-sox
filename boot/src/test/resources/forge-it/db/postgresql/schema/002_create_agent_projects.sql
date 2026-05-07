@@ -13,6 +13,7 @@ CREATE TABLE agent_projects (
     owner_user_id BIGINT NOT NULL,
     name VARCHAR(120) NOT NULL,
     description TEXT,
+    context TEXT,
     status_id BIGINT NOT NULL REFERENCES agent_project_statuses(id),
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL

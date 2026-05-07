@@ -260,6 +260,7 @@ class AgentProjectFlowIT {
                 .header("X-Forge-User-Sub", "1001")
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Project Details"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.context").value("Initial project context"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
@@ -362,6 +363,35 @@ class AgentProjectFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getName(), "Project Details"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Updated project description"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given owned active project when patch project context then trim and persist context")
+    void givenOwnedActiveProject_whenPatchAgentProjectContext_thenTrimAndPersistContext() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .applyDefault(defaults -> defaults.withRequest("patchAgentProjectContextOnlyRequest.json"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.context").value("Updated project context"))
+                .assertDefault();
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getContext(), "Updated project context"))
                 .assertEntity();
     }
 

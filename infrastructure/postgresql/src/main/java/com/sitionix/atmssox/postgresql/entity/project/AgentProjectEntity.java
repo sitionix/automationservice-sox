@@ -41,6 +41,9 @@ public class AgentProjectEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "context")
+    private String context;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "status_id", nullable = false, referencedColumnName = "id")
     private AgentProjectStatusEntity status;
