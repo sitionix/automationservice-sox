@@ -143,7 +143,7 @@ class AgentProjectMemberRepositoryImplTest {
                 projectId,
                 ownerUserId,
                 3L,
-                3L,
+                AgentStatus.DELETED.getId(),
                 1L
         )).thenReturn(List.of(firstMemberEntity, secondMemberEntity));
 
@@ -166,7 +166,7 @@ class AgentProjectMemberRepositoryImplTest {
                 projectId,
                 ownerUserId,
                 3L,
-                3L,
+                AgentStatus.DELETED.getId(),
                 1L
         );
     }
