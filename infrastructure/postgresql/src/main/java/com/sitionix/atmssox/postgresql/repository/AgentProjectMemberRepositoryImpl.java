@@ -51,20 +51,7 @@ public class AgentProjectMemberRepositoryImpl implements AgentProjectMemberRepos
                         AgentStatus.DELETED.getId(),
                         AgentProjectMemberStatus.ACTIVE.getId()
                 ).stream()
-                .map(this::asProjectAgent)
+                .map(this.agentProjectMemberInfraMapper::asProjectAgent)
                 .toList();
-    }
-
-    private ProjectAgent asProjectAgent(final AgentProjectMemberEntity member) {
-        return ProjectAgent.builder()
-                .id(member.getAgent().getAgentId())
-                .name(member.getAgent().getName())
-                .description(member.getAgent().getDescription())
-                .status(AgentStatus.fromId(member.getAgent().getStatus().getId()))
-                .createdAt(member.getAgent().getCreatedAt())
-                .updatedAt(member.getAgent().getUpdatedAt())
-                .membershipId(member.getMembershipId())
-                .attachedAt(member.getCreatedAt())
-                .build();
     }
 }

@@ -4,12 +4,9 @@ import com.sitionix.atmssox.domain.model.AgentProjectMember;
 import com.sitionix.atmssox.domain.model.AgentProjectMemberStatus;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ProjectAgent;
-import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
-import com.sitionix.atmssox.postgresql.entity.agent.AgentStatusEntity;
 import com.sitionix.atmssox.postgresql.entity.member.AgentProjectMemberEntity;
 import com.sitionix.atmssox.postgresql.jpa.AgentProjectMemberJpaRepository;
 import com.sitionix.atmssox.postgresql.mapper.AgentProjectMemberInfraMapper;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -111,34 +108,10 @@ class AgentProjectMemberRepositoryImplTest {
         //given
         final UUID projectId = UUID.fromString("9f24ca55-a6e8-4747-b8ca-a6ac8a238f4b");
         final Long ownerUserId = 17L;
-        final UUID firstAgentId = UUID.fromString("1e2268e2-cde0-4c52-8fd4-fcb84047f307");
-        final UUID secondAgentId = UUID.fromString("5fc4d7a8-6cd7-47ba-bc67-5065f2848e5a");
-        final Instant firstCreatedAt = Instant.parse("2026-05-01T11:00:00Z");
-        final Instant firstUpdatedAt = Instant.parse("2026-05-01T12:00:00Z");
-        final Instant secondCreatedAt = Instant.parse("2026-05-02T11:00:00Z");
-        final Instant secondUpdatedAt = Instant.parse("2026-05-02T12:00:00Z");
-        final Instant firstAttachedAt = Instant.parse("2026-05-03T11:00:00Z");
-        final Instant secondAttachedAt = Instant.parse("2026-05-04T11:00:00Z");
-        final AgentProjectMemberEntity firstMemberEntity = this.getMemberEntity(
-                UUID.fromString("ea8a9848-d678-49b8-8ea2-c6fbb2953687"),
-                firstAgentId,
-                "First agent",
-                "First description",
-                AgentStatus.ACTIVE.getId(),
-                firstCreatedAt,
-                firstUpdatedAt,
-                firstAttachedAt
-        );
-        final AgentProjectMemberEntity secondMemberEntity = this.getMemberEntity(
-                UUID.fromString("daf4593c-8e42-4851-b6dc-c6bbc5bc0fcf"),
-                secondAgentId,
-                "Second agent",
-                "Second description",
-                AgentStatus.ARCHIVED.getId(),
-                secondCreatedAt,
-                secondUpdatedAt,
-                secondAttachedAt
-        );
+        final AgentProjectMemberEntity firstMemberEntity = mock(AgentProjectMemberEntity.class);
+        final AgentProjectMemberEntity secondMemberEntity = mock(AgentProjectMemberEntity.class);
+        final ProjectAgent firstProjectAgent = mock(ProjectAgent.class);
+        final ProjectAgent secondProjectAgent = mock(ProjectAgent.class);
         when(this.agentProjectMemberJpaRepository.findVisibleProjectAgents(
                 projectId,
                 ownerUserId,
@@ -146,22 +119,14 @@ class AgentProjectMemberRepositoryImplTest {
                 AgentStatus.DELETED.getId(),
                 1L
         )).thenReturn(List.of(firstMemberEntity, secondMemberEntity));
+        when(this.agentProjectMemberInfraMapper.asProjectAgent(firstMemberEntity)).thenReturn(firstProjectAgent);
+        when(this.agentProjectMemberInfraMapper.asProjectAgent(secondMemberEntity)).thenReturn(secondProjectAgent);
 
         //when
         final List<ProjectAgent> actual = this.repository.findVisibleProjectAgents(projectId, ownerUserId);
 
         //then
-        assertThat(actual).hasSize(2);
-        assertThat(actual.get(0).getId()).isEqualTo(firstAgentId);
-        assertThat(actual.get(0).getName()).isEqualTo("First agent");
-        assertThat(actual.get(0).getDescription()).isEqualTo("First description");
-        assertThat(actual.get(0).getStatus()).isEqualTo(AgentStatus.ACTIVE);
-        assertThat(actual.get(0).getCreatedAt()).isEqualTo(firstCreatedAt);
-        assertThat(actual.get(0).getUpdatedAt()).isEqualTo(firstUpdatedAt);
-        assertThat(actual.get(0).getMembershipId()).isEqualTo(UUID.fromString("ea8a9848-d678-49b8-8ea2-c6fbb2953687"));
-        assertThat(actual.get(0).getAttachedAt()).isEqualTo(firstAttachedAt);
-        assertThat(actual.get(1).getId()).isEqualTo(secondAgentId);
-        assertThat(actual.get(1).getStatus()).isEqualTo(AgentStatus.ARCHIVED);
+        assertThat(actual).isEqualTo(List.of(firstProjectAgent, secondProjectAgent));
         verify(this.agentProjectMemberJpaRepository).findVisibleProjectAgents(
                 projectId,
                 ownerUserId,
@@ -169,30 +134,7 @@ class AgentProjectMemberRepositoryImplTest {
                 AgentStatus.DELETED.getId(),
                 1L
         );
-    }
-
-    private AgentProjectMemberEntity getMemberEntity(final UUID membershipId,
-                                                     final UUID agentId,
-                                                     final String name,
-                                                     final String description,
-                                                     final Long statusId,
-                                                     final Instant createdAt,
-                                                     final Instant updatedAt,
-                                                     final Instant attachedAt) {
-        final AgentStatusEntity statusEntity = AgentStatusEntity.builder()
-                .id(statusId)
-                .build();
-        final AgentEntity agentEntity = new AgentEntity();
-        agentEntity.setAgentId(agentId);
-        agentEntity.setName(name);
-        agentEntity.setDescription(description);
-        agentEntity.setStatus(statusEntity);
-        agentEntity.setCreatedAt(createdAt);
-        agentEntity.setUpdatedAt(updatedAt);
-        final AgentProjectMemberEntity memberEntity = new AgentProjectMemberEntity();
-        memberEntity.setMembershipId(membershipId);
-        memberEntity.setAgent(agentEntity);
-        memberEntity.setCreatedAt(attachedAt);
-        return memberEntity;
+        verify(this.agentProjectMemberInfraMapper).asProjectAgent(firstMemberEntity);
+        verify(this.agentProjectMemberInfraMapper).asProjectAgent(secondMemberEntity);
     }
 }

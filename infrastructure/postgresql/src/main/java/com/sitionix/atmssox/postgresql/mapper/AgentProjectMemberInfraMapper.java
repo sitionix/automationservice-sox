@@ -1,6 +1,8 @@
 package com.sitionix.atmssox.postgresql.mapper;
 
 import com.sitionix.atmssox.domain.model.AgentProjectMember;
+import com.sitionix.atmssox.domain.model.AgentStatus;
+import com.sitionix.atmssox.domain.model.ProjectAgent;
 import com.sitionix.atmssox.postgresql.entity.member.AgentProjectMemberEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,4 +23,18 @@ public interface AgentProjectMemberInfraMapper {
     @Mapping(target = "agent.agentId", source = "agentId")
     @Mapping(target = "status", source = "status")
     AgentProjectMemberEntity asAgentProjectMemberEntity(AgentProjectMember member);
+
+    @Mapping(target = "id", source = "agent.agentId")
+    @Mapping(target = "name", source = "agent.name")
+    @Mapping(target = "description", source = "agent.description")
+    @Mapping(target = "status", source = "agent.status.id")
+    @Mapping(target = "createdAt", source = "agent.createdAt")
+    @Mapping(target = "updatedAt", source = "agent.updatedAt")
+    @Mapping(target = "membershipId", source = "membershipId")
+    @Mapping(target = "attachedAt", source = "createdAt")
+    ProjectAgent asProjectAgent(AgentProjectMemberEntity member);
+
+    default AgentStatus asAgentStatus(final Long statusId) {
+        return AgentStatus.fromId(statusId);
+    }
 }
