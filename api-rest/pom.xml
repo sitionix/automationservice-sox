@@ -12,7 +12,7 @@
     <artifactId>api-rest</artifactId>
 
     <properties>
-        <atmssox.api.version>0.0.23</atmssox.api.version>
+        <atmssox.api.version>0.0.24</atmssox.api.version>
     </properties>
 
     <dependencies>
