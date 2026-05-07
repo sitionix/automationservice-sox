@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 
@@ -38,7 +39,7 @@ public interface AgentProjectApiMapper {
         return dto;
     }
 
-    default java.util.UUID asAgentId(final AddAgentToProjectRequestDTO src) {
+    default UUID asAgentId(final AddAgentToProjectRequestDTO src) {
         return src == null ? null : src.getAgentId();
     }
 
