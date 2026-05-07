@@ -124,7 +124,7 @@ class AgentProjectMemberRepositoryImplTest {
                 firstAgentId,
                 "First agent",
                 "First description",
-                1L,
+                AgentStatus.ACTIVE.getId(),
                 firstCreatedAt,
                 firstUpdatedAt,
                 firstAttachedAt
@@ -134,7 +134,7 @@ class AgentProjectMemberRepositoryImplTest {
                 secondAgentId,
                 "Second agent",
                 "Second description",
-                2L,
+                AgentStatus.ARCHIVED.getId(),
                 secondCreatedAt,
                 secondUpdatedAt,
                 secondAttachedAt
