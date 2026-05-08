@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.application.usecase;
 
 import com.sitionix.atmssox.application.security.AuthenticatedUserProvider;
+import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -111,5 +113,43 @@ class GetProjectConversationImplTest {
         verify(projectAgent).getName();
         verify(projectAgent).getDescription();
         verify(projectAgent).getStatus();
+    }
+
+    @Test
+    void givenProjectNotFound_whenExecute_thenThrowNotFound() {
+        //given
+        final UUID projectId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final UUID conversationId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.empty());
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.getProjectConversation.execute(projectId, conversationId))
+                .isInstanceOf(AgentNotFoundException.class)
+                .hasMessage("Agent project not found");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
+    }
+
+    @Test
+    void givenConversationNotFound_whenExecute_thenThrowNotFound() {
+        //given
+        final UUID projectId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final UUID conversationId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        final AgentProject project = mock(AgentProject.class);
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(project));
+        when(this.conversationRepository.findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId))
+                .thenReturn(Optional.empty());
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.getProjectConversation.execute(projectId, conversationId))
+                .isInstanceOf(AgentNotFoundException.class)
+                .hasMessage("Conversation not found");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
+        verify(this.conversationRepository).findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId);
     }
 }
