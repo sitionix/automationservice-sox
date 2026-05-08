@@ -5,6 +5,7 @@ import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
+import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
 import com.sitionix.atmssox.domain.model.ProjectAgent;
 import com.sitionix.atmssox.domain.repository.AgentProjectMemberRepository;
@@ -47,7 +48,7 @@ public class GetProjectConversationImpl implements GetProjectConversation {
 
         final List<ConversationParticipant> participants = this.conversationParticipantRepository.findAllByConversationId(conversation.getId())
                 .stream()
-                .filter(participant -> participant.getParticipantType() == com.sitionix.atmssox.domain.model.ConversationParticipantType.AGENT)
+                .filter(participant -> participant.getParticipantType() == ConversationParticipantType.AGENT)
                 .map(participant -> {
                     final ProjectAgent projectAgent = projectAgentsById.get(UUID.fromString(participant.getParticipantId()));
                     return participant.toBuilder()
