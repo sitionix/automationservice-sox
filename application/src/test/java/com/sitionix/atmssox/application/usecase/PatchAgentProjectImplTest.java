@@ -50,7 +50,7 @@ class PatchAgentProjectImplTest {
         //given
         final UUID projectId = UUID.fromString("de273c1c-78de-4062-bfb0-f3156838fce8");
         final AgentProject current = this.getProject("Old", "Old desc");
-        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("  New name  ", "  New desc  ");
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("  New name  ", "  New desc  ", "  New context  ");
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
 
@@ -65,6 +65,7 @@ class PatchAgentProjectImplTest {
         final AgentProject actual = captor.getValue();
         assertThat(actual.getName()).isEqualTo("New name");
         assertThat(actual.getDescription()).isEqualTo("New desc");
+        assertThat(actual.getContext()).isEqualTo("New context");
         assertThat(actual.getUpdatedAt()).isAfter(current.getUpdatedAt());
     }
 
@@ -73,7 +74,7 @@ class PatchAgentProjectImplTest {
         //given
         final UUID projectId = UUID.fromString("39cd5a49-6277-4ac8-af89-4f38e2af2f3f");
         final AgentProject current = this.getProject("Project", "Old desc");
-        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, "   ");
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, "   ", null);
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
 
@@ -95,7 +96,7 @@ class PatchAgentProjectImplTest {
         //given
         final UUID projectId = UUID.fromString("f0768e07-c85f-4f3c-b4dd-ed97d5bc9ba9");
         final AgentProject current = this.getProject("Current", "Current desc");
-        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("   ", null);
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("   ", null, null);
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
 
@@ -112,14 +113,14 @@ class PatchAgentProjectImplTest {
         //given
         final UUID projectId = UUID.fromString("e5423ca5-a650-4fdf-8ef8-94a54f80da4b");
         final AgentProject current = this.getProject("Current", "Current desc");
-        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, null);
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, null, null);
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
 
         //when then
         assertThatThrownBy(() -> this.patchAgentProject.execute(projectId, command))
                 .isInstanceOf(AgentValidationException.class)
-                .hasMessage("At least one field (name or description) must be provided");
+                .hasMessage("At least one field (name, description or context) must be provided");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
     }
@@ -128,7 +129,7 @@ class PatchAgentProjectImplTest {
     void givenUnknownOrHiddenProject_whenExecute_thenThrowNotFound() {
         //given
         final UUID projectId = UUID.fromString("5aa5fcfe-9a51-4f1d-b2fb-e9ce270bf16a");
-        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("Name", null);
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand("Name", null, null);
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.empty());
 
@@ -140,12 +141,50 @@ class PatchAgentProjectImplTest {
         verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
     }
 
+    @Test
+    void givenBlankContext_whenExecute_thenSaveNullContext() {
+        //given
+        final UUID projectId = UUID.fromString("a76674a6-4950-4450-bf39-ef0aa5827157");
+        final AgentProject current = this.getProject("Project", "Old desc");
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, null, "   ");
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
+
+        //when
+        this.patchAgentProject.execute(projectId, command);
+
+        //then
+        final ArgumentCaptor<AgentProject> captor = ArgumentCaptor.forClass(AgentProject.class);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
+        verify(this.agentProjectRepository).save(captor.capture());
+        assertThat(captor.getValue().getContext()).isNull();
+    }
+
+    @Test
+    void givenTooLongContext_whenExecute_thenThrowValidation() {
+        //given
+        final UUID projectId = UUID.fromString("893680d8-960a-43f5-ae52-d8f0a64ad669");
+        final AgentProject current = this.getProject("Current", "Current desc");
+        final PatchAgentProjectCommand command = new PatchAgentProjectCommand(null, null, "a".repeat(5001));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(current));
+
+        //when then
+        assertThatThrownBy(() -> this.patchAgentProject.execute(projectId, command))
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("Project context must be at most 5000 characters");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
+    }
+
     private AgentProject getProject(final String name, final String description) {
         return AgentProject.builder()
                 .id(UUID.fromString("11a44ec8-c579-49b9-a3ac-75fa66b6ca3c"))
                 .ownerUserId(17L)
                 .name(name)
                 .description(description)
+                .context("Existing context")
                 .status(AgentProjectStatus.ACTIVE)
                 .createdAt(Instant.parse("2026-05-01T10:15:30Z"))
                 .updatedAt(Instant.parse("2026-05-01T10:15:30Z"))

@@ -3,6 +3,7 @@
   "ownerUserId": 1001,
   "name": "Project Details",
   "description": "Project for details retrieval",
+  "context": "Initial project context",
   "status": {
     "id": 1,
     "description": "ACTIVE"

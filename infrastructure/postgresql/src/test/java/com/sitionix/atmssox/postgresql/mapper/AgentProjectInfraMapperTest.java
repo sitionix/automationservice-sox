@@ -36,6 +36,7 @@ class AgentProjectInfraMapperTest {
                 .ownerUserId(17L)
                 .name("Project")
                 .description("Description")
+                .context("Context")
                 .status(AgentProjectStatus.ACTIVE)
                 .createdAt(Instant.parse("2026-04-10T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-10T10:01:00Z"))
@@ -52,6 +53,7 @@ class AgentProjectInfraMapperTest {
         assertThat(actual.getOwnerUserId()).isEqualTo(given.getOwnerUserId());
         assertThat(actual.getName()).isEqualTo(given.getName());
         assertThat(actual.getDescription()).isEqualTo(given.getDescription());
+        assertThat(actual.getContext()).isEqualTo(given.getContext());
         assertThat(actual.getStatus()).isEqualTo(statusEntity);
         assertThat(actual.getCreatedAt()).isEqualTo(given.getCreatedAt());
         assertThat(actual.getUpdatedAt()).isEqualTo(given.getUpdatedAt());
@@ -65,6 +67,7 @@ class AgentProjectInfraMapperTest {
                 17L,
                 "Project",
                 "Description",
+                "Context",
                 AgentProjectStatusEntity.builder().id(1L).description("ACTIVE").build(),
                 Instant.parse("2026-04-10T10:00:00Z"),
                 Instant.parse("2026-04-10T10:01:00Z")
@@ -80,6 +83,7 @@ class AgentProjectInfraMapperTest {
         assertThat(actual.getOwnerUserId()).isEqualTo(given.getOwnerUserId());
         assertThat(actual.getName()).isEqualTo(given.getName());
         assertThat(actual.getDescription()).isEqualTo(given.getDescription());
+        assertThat(actual.getContext()).isEqualTo(given.getContext());
         assertThat(actual.getStatus()).isEqualTo(AgentProjectStatus.ACTIVE);
         assertThat(actual.getCreatedAt()).isEqualTo(given.getCreatedAt());
         assertThat(actual.getUpdatedAt()).isEqualTo(given.getUpdatedAt());

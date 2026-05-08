@@ -1,13 +1,17 @@
 package com.sitionix.atmssox.it;
 
+import com.sitionix.atmssox.domain.model.AgentProjectMemberStatus;
 import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.DatabaseContract;
 import com.sitionix.atmssox.it.infra.TestManager;
+import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.member.AgentProjectMemberEntity;
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
-import com.sitionix.forgeit.mockmvc.api.QueryParams;
 import com.sitionix.forgeit.mockmvc.api.PathParams;
+import com.sitionix.forgeit.mockmvc.api.QueryParams;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -260,6 +264,7 @@ class AgentProjectFlowIT {
                 .header("X-Forge-User-Sub", "1001")
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.name").value("Project Details"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.context").value("Initial project context"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.status").value("ACTIVE"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.createdAt").isNotEmpty())
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.updatedAt").isNotEmpty())
@@ -362,6 +367,35 @@ class AgentProjectFlowIT {
                 .andExpected(entity -> Objects.equals(entity.getName(), "Project Details"))
                 .andExpected(entity -> Objects.equals(entity.getDescription(), "Updated project description"))
                 .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectStatus.ACTIVE.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given owned active project when patch project context then trim and persist context")
+    void givenOwnedActiveProject_whenPatchAgentProjectContext_thenTrimAndPersistContext() {
+        //given
+        final UUID projectId = UUID.fromString("b5417721-b65d-4bdd-84bc-80491816f854");
+        this.testManager.postgresql()
+                .create()
+                .to(DatabaseContract.AGENT_PROJECT_ENTITY_DB_CONTRACT.withJson("agentProjectOwnedActive.json"))
+                .build();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1001")
+                .applyDefault(defaults -> defaults.withRequest("patchAgentProjectContextOnlyRequest.json"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(projectId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.context").value("Updated project context"))
+                .assertDefault();
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getContext(), "Updated project context"))
                 .assertEntity();
     }
 
@@ -478,5 +512,262 @@ class AgentProjectFlowIT {
                 .ping(ControllerEndpoint.getAgentProjects("1001"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(0))
                 .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given owner project and owner agent when add list and remove project agent then membership lifecycle is consistent")
+    void givenOwnedProjectAndAgent_whenAddListAndRemoveAgentFromProject_thenPersistAndHideMembership() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll()
+                .get(0)
+                .getProjectId();
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .get(0)
+                .getAgentId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.listAgentProjectAgents())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items[0].id").value(agentId.toString()))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.removeAgentFromProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId).add("agentId", agentId))
+                .assertDefault();
+
+        //then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.listAgentProjectAgents())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(0))
+                .assertDefault();
+        this.testManager.postgresql()
+                .get(AgentProjectMemberEntity.class)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getProject().getProjectId(), projectId))
+                .andExpected(entity -> Objects.equals(entity.getAgent().getAgentId(), agentId))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectMemberStatus.DELETED.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given duplicate add request when add agent to project then keep single active membership")
+    void givenDuplicateAddRequest_whenAddAgentToProject_thenKeepSingleMembership() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().get(0).getProjectId();
+        final UUID agentId = this.testManager.postgresql().get(AgentEntity.class).getAll().get(0).getAgentId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectMemberEntity.class)
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getProject().getProjectId(), projectId))
+                .andExpected(entity -> Objects.equals(entity.getAgent().getAgentId(), agentId))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectMemberStatus.ACTIVE.getId()))
+                .assertEntity();
+    }
+
+    @Test
+    @DisplayName("given request without agent id when add agent to project then return bad request and persist nothing")
+    void givenMissingAgentId_whenAddAgentToProject_thenReturnBadRequestAndPersistNothing() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().get(0).getProjectId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(null)));
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectMemberEntity.class)
+                .hasSize(0);
+    }
+
+    @Test
+    @DisplayName("given missing user context when list add and remove project agent then return unauthorized")
+    void givenMissingUserContext_whenListAddAndRemoveProjectAgent_thenReturnUnauthorized() {
+        //given
+        final UUID projectId = UUID.randomUUID();
+        final UUID agentId = UUID.randomUUID();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.listAgentProjectAgents())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", null)
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", null)
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.removeAgentFromProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId).add("agentId", agentId))
+                .header("X-Forge-User-Sub", null)
+                .expectStatus(HttpStatus.UNAUTHORIZED)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given malformed project id when list and add project agents then return bad request")
+    void givenMalformedProjectId_whenListAndAddProjectAgents_thenReturnBadRequest() {
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.listAgentProjectAgents())
+                .withPathParameters(PathParams.create().add("projectId", "%%%"))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", "%%%"))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given malformed agent id when remove agent from project then return bad request")
+    void givenMalformedAgentId_whenRemoveAgentFromProject_thenReturnBadRequest() {
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.removeAgentFromProject())
+                .withPathParameters(PathParams.create().add("projectId", UUID.randomUUID()).add("agentId", "%%%"))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given empty project when list project agents then return empty list")
+    void givenEmptyProject_whenListAgentProjectAgents_thenReturnEmptyList() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().get(0).getProjectId();
+
+        //when then
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.listAgentProjectAgents())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.items.length()").value(0))
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given foreign user agent when add agent to project then return not found and keep membership table unchanged")
+    void givenForeignUserAgent_whenAddAgentToProject_thenReturnNotFoundAndPersistNothing() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject("1"))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .header("X-Forge-User-Sub", "2")
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .where(entity -> Objects.equals(entity.getOwnerUserId(), 1L))
+                .getAll()
+                .get(0)
+                .getProjectId();
+        final UUID foreignAgentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .where(entity -> Objects.equals(entity.getUserId(), 2L))
+                .getAll()
+                .get(0)
+                .getAgentId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .header("X-Forge-User-Sub", "1")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(foreignAgentId)));
+
+        //then
+        this.testManager.postgresql()
+                .get(AgentProjectMemberEntity.class)
+                .hasSize(0);
+    }
+
+    @Test
+    @DisplayName("given no active membership when remove agent from project then return not found and keep active membership untouched")
+    void givenNoActiveMembership_whenRemoveAgentFromProject_thenReturnNotFoundAndKeepCurrentState() {
+        //given
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgent())
+                .assertDefault();
+        final UUID projectId = this.testManager.postgresql().get(AgentProjectEntity.class).getAll().get(0).getProjectId();
+        final UUID agentId = this.testManager.postgresql().get(AgentEntity.class).getAll().get(0).getAgentId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.removeAgentFromProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId).add("agentId", agentId))
+                .assertDefault();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.removeAgentFromProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId).add("agentId", agentId))
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        final List<AgentProjectMemberEntity> memberships = this.testManager.postgresql().get(AgentProjectMemberEntity.class).getAll();
+        this.testManager.postgresql()
+                .get(AgentProjectMemberEntity.class)
+                .hasSize(1)
+                .singleElement()
+                .andExpected(entity -> Objects.equals(entity.getMembershipId(), memberships.get(0).getMembershipId()))
+                .andExpected(entity -> Objects.equals(entity.getStatus().getId(), AgentProjectMemberStatus.DELETED.getId()))
+                .assertEntity();
     }
 }

@@ -17,6 +17,8 @@ public class AgentProject {
 
     String description;
 
+    String context;
+
     AgentProjectStatus status;
 
     Instant createdAt;
