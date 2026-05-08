@@ -7,6 +7,7 @@ import com.app_afesox.atmssox.api_first.dto.AgentRuleDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentRulesResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AcceptAgentRuleRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.AddAgentToProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRuleRequestDTO;
@@ -18,6 +19,8 @@ import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRuleRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentProjectRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectAgentResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectAgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
@@ -333,6 +336,43 @@ public class ControllerEndpoint {
     public static Endpoint<Void, Void> deleteAgentProject() {
         return Endpoint.createContract(
                 "/api/v1/agent-projects/{projectId}",
+                HttpMethod.DELETE,
+                Void.class,
+                Void.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(204)
+        );
+    }
+
+    public static Endpoint<Void, ProjectAgentsResponseDTO> listAgentProjectAgents() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/agents",
+                HttpMethod.GET,
+                Void.class,
+                ProjectAgentsResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<AddAgentToProjectRequestDTO, ProjectAgentResponseDTO> addAgentToProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/agents",
+                HttpMethod.POST,
+                AddAgentToProjectRequestDTO.class,
+                ProjectAgentResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("addAgentToProjectRequest.json")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, Void> removeAgentFromProject() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/agents/{agentId}",
                 HttpMethod.DELETE,
                 Void.class,
                 Void.class,
