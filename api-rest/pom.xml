@@ -25,7 +25,7 @@
         <!-- DEPENDENCY -->
         <dependency>
             <groupId>com.afesox</groupId>
-            <artifactId>app-afesox-atmssox-api-first-sitionix-134-unstable</artifactId>
+            <artifactId>app-afesox-atmssox-api-first-stable</artifactId>
             <version>${atmssox.api.version}</version>
         </dependency>
         <dependency>
