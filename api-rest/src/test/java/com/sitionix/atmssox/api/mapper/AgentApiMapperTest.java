@@ -10,9 +10,13 @@ import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ExecutionStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
@@ -28,8 +32,12 @@ import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
+import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
+import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
+import com.sitionix.atmssox.domain.model.AgentProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +49,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -310,11 +319,97 @@ class AgentApiMapperTest {
         assertThat(actual.getError()).isEqualTo(chatExecutionFailureDto);
     }
 
+    @Test
+    void givenCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnMappedCommand() {
+        //given
+        final UUID agentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final CreateProjectConversationRequestDTO given = CreateProjectConversationRequestDTO.builder()
+                .agentIds(Set.of(agentId))
+                .build();
+
+        //when
+        final CreateProjectConversationCommand actual = this.agentApiMapper.asCreateProjectConversationCommand(given);
+
+        //then
+        assertThat(actual.getAgentIds()).isEqualTo(List.of(agentId));
+    }
+
+    @Test
+    void givenNullCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnEmptyAgentIds() {
+        //given
+        final CreateProjectConversationRequestDTO given = null;
+
+        //when
+        final CreateProjectConversationCommand actual = this.agentApiMapper.asCreateProjectConversationCommand(given);
+
+        //then
+        assertThat(actual.getAgentIds()).isEqualTo(List.of());
+    }
+
+    @Test
+    void givenProjectConversationDetails_whenAsProjectConversationsResponseDto_thenReturnMappedItems() {
+        //given
+        final List<ProjectConversationDetails> details = List.of(this.getProjectConversationDetails());
+
+        //when
+        final ProjectConversationsResponseDTO actual = this.agentApiMapper.asProjectConversationsResponseDto(details);
+
+        //then
+        assertThat(actual.getItems()).hasSize(1);
+        assertThat(actual.getItems().get(0).getType()).isEqualTo(ProjectConversationDTO.TypeEnum.MULTI_AGENT);
+        assertThat(actual.getItems().get(0).getStatus()).isEqualTo(ProjectConversationDTO.StatusEnum.ACTIVE);
+    }
+
+    @Test
+    void givenProjectConversationDetails_whenAsProjectConversationDetailsDto_thenReturnMappedDto() {
+        //given
+        final ProjectConversationDetails given = this.getProjectConversationDetails();
+
+        //when
+        final ProjectConversationDetailsDTO actual = this.agentApiMapper.asProjectConversationDetailsDto(given);
+
+        //then
+        assertThat(actual.getProject().getName()).isEqualTo("Sitionix");
+        assertThat(actual.getType()).isEqualTo(ProjectConversationDetailsDTO.TypeEnum.MULTI_AGENT);
+        assertThat(actual.getStatus()).isEqualTo(ProjectConversationDetailsDTO.StatusEnum.ACTIVE);
+        assertThat(actual.getParticipants()).hasSize(1);
+    }
+
     private ChatExecutionFailureDTO getChatExecutionFailureDto() {
         return ChatExecutionFailureDTO.builder()
                 .code("EXECUTION_ERROR")
                 .message("Execution failed")
                 .details(Map.of("retryable", true))
+                .build();
+    }
+
+    private ProjectConversationDetails getProjectConversationDetails() {
+        final AgentProject project = AgentProject.builder()
+                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                .name("Sitionix")
+                .context("Project context")
+                .build();
+        final Conversation conversation = Conversation.builder()
+                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .projectId(project.getId())
+                .type(ConversationType.MULTI_AGENT)
+                .title("Team chat")
+                .status(ConversationStatus.ACTIVE)
+                .createdAt(Instant.parse("2026-05-08T10:00:00Z"))
+                .updatedAt(Instant.parse("2026-05-08T10:01:00Z"))
+                .lastMessageAt(null)
+                .build();
+        final ConversationParticipant participant = ConversationParticipant.builder()
+                .participantType(ConversationParticipantType.AGENT)
+                .participantId("33333333-3333-3333-3333-333333333333")
+                .name("Writer")
+                .description("Writes copy")
+                .status(AgentStatus.ACTIVE)
+                .build();
+        return ProjectConversationDetails.builder()
+                .conversation(conversation)
+                .project(project)
+                .participants(List.of(participant))
                 .build();
     }
 
