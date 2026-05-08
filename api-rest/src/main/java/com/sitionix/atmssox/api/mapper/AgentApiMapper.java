@@ -43,13 +43,14 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.NullValueMappingStrategy;
+import org.mapstruct.ObjectFactory;
 
 @Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR, uses = {
         ChatExecutionStatusApiMapper.class,
@@ -65,19 +66,8 @@ public interface AgentApiMapper {
 
     ChatAgentCommand asChatAgentCommand(ChatAgentRequestDTO src);
 
-    default CreateProjectConversationCommand asCreateProjectConversationCommand(final CreateProjectConversationRequestDTO src) {
-        final CreateProjectConversationCommand command = this.mapCreateProjectConversationCommand(src);
-        if (command.getAgentIds() == null) {
-            return command.toBuilder()
-                    .agentIds(List.of())
-                    .build();
-        }
-        return command;
-    }
-
-    @Mapping(target = "agentIds", source = "agentIds")
-    @BeanMapping(nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT)
-    CreateProjectConversationCommand mapCreateProjectConversationCommand(CreateProjectConversationRequestDTO src);
+    @Mapping(target = "agentIds", source = "src", qualifiedByName = "extractAgentIds")
+    CreateProjectConversationCommand asCreateProjectConversationCommand(CreateProjectConversationRequestDTO src);
 
     @Mapping(target = "assistantMessage", source = "reply")
     ChatAgentExecutionDTO asChatAgentResponseDto(ChatAgentResponse src);
@@ -139,20 +129,22 @@ public interface AgentApiMapper {
     @Mapping(target = "type", source = "conversation.type")
     @Mapping(target = "title", source = "conversation.title")
     @Mapping(target = "status", source = "conversation.status")
-    @Mapping(target = "participants", source = "participants")
+    @Mapping(target = "participants", source = "participants", qualifiedByName = "mapAgentParticipants")
     @Mapping(target = "canSendMessages", constant = "false")
     @Mapping(target = "createdAt", source = "conversation.createdAt")
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
     @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
     ProjectConversationDTO asProjectConversationDto(ProjectConversationDetails details);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
     @Mapping(target = "id", source = "conversation.id")
     @Mapping(target = "projectId", source = "conversation.projectId")
     @Mapping(target = "project", source = "project")
     @Mapping(target = "type", source = "conversation.type")
     @Mapping(target = "title", source = "conversation.title")
     @Mapping(target = "status", source = "conversation.status")
-    @Mapping(target = "participants", source = "participants")
+    @Mapping(target = "participants", source = "participants", qualifiedByName = "mapAgentParticipants")
+    @Mapping(target = "messages", source = "details", qualifiedByName = "mapProjectConversationMessages")
     @Mapping(target = "canSendMessages", constant = "false")
     @Mapping(target = "createdAt", source = "conversation.createdAt")
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
@@ -161,8 +153,12 @@ public interface AgentApiMapper {
 
     ProjectConversationProjectDTO asProjectConversationProjectDto(AgentProject project);
 
-    default List<UUID> map(final Set<UUID> source) {
-        return source == null ? List.of() : List.copyOf(source);
+    @Named("extractAgentIds")
+    default List<UUID> extractAgentIds(final CreateProjectConversationRequestDTO source) {
+        if (source == null || source.getAgentIds() == null) {
+            return List.of();
+        }
+        return List.copyOf(source.getAgentIds());
     }
 
     default UUID map(final String value) {
@@ -183,7 +179,8 @@ public interface AgentApiMapper {
     @Mapping(target = "status", source = "status")
     ProjectConversationParticipantDTO asProjectConversationParticipantDto(ConversationParticipant src);
 
-    default List<ProjectConversationParticipantDTO> asProjectConversationParticipantDtos(final List<ConversationParticipant> source) {
+    @Named("mapAgentParticipants")
+    default List<ProjectConversationParticipantDTO> mapAgentParticipants(final List<ConversationParticipant> source) {
         if (source == null) {
             return List.of();
         }
@@ -193,27 +190,9 @@ public interface AgentApiMapper {
                 .toList();
     }
 
-    @AfterMapping
-    default void filterProjectConversationParticipants(@MappingTarget final ProjectConversationDTO target) {
-        if (target.getParticipants() == null) {
-            target.setParticipants(List.of());
-            return;
-        }
-        target.setParticipants(target.getParticipants().stream()
-                .filter(participant -> participant.getAgentId() != null)
-                .toList());
-    }
-
-    @AfterMapping
-    default void finalizeProjectConversationDetails(@MappingTarget final ProjectConversationDetailsDTO target) {
-        if (target.getParticipants() == null) {
-            target.setParticipants(List.of());
-        } else {
-            target.setParticipants(target.getParticipants().stream()
-                    .filter(participant -> participant.getAgentId() != null)
-                    .toList());
-        }
-        target.setMessages(List.of());
+    @Named("mapProjectConversationMessages")
+    default List<AgentConversationMessageDTO> mapProjectConversationMessages(final ProjectConversationDetails source) {
+        return List.of();
     }
 
 

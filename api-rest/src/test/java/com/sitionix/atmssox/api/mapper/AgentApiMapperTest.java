@@ -337,7 +337,7 @@ class AgentApiMapperTest {
     }
 
     @Test
-    void givenNullCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnEmptyAgentIds() {
+    void givenNullCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnNull() {
         //given
         final CreateProjectConversationRequestDTO given = null;
 
@@ -345,7 +345,7 @@ class AgentApiMapperTest {
         final CreateProjectConversationCommand actual = this.agentApiMapper.asCreateProjectConversationCommand(given);
 
         //then
-        assertThat(actual.getAgentIds()).isEqualTo(List.of());
+        assertThat(actual).isNull();
     }
 
     @Test
