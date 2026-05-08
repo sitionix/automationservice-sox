@@ -63,6 +63,13 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     @Override
+    public Optional<Conversation> findActiveByIdAndUserIdAndProjectId(final UUID conversationId, final Long userId, final UUID projectId) {
+        return this.conversationJpaRepository
+                .findActiveByIdAndUserIdAndProjectId(conversationId, ConversationStatus.ACTIVE, userId, projectId)
+                .map(this::toDomain);
+    }
+
+    @Override
     public List<Conversation> findAllActiveByUserIdAndAgentId(final Long userId, final UUID agentId) {
         return this.conversationJpaRepository
                 .findAllActiveByUserIdAndAgent(
@@ -76,10 +83,20 @@ public class ConversationRepositoryImpl implements ConversationRepository {
                 .toList();
     }
 
+    @Override
+    public List<Conversation> findAllActiveByUserIdAndProjectId(final Long userId, final UUID projectId) {
+        return this.conversationJpaRepository
+                .findAllActiveByUserIdAndProjectId(ConversationStatus.ACTIVE, userId, projectId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
     private ConversationEntity toEntity(final Conversation conversation) {
         return ConversationEntity.builder()
                 .conversationId(conversation.getId())
                 .userId(conversation.getUserId())
+                .projectId(conversation.getProjectId())
                 .title(conversation.getTitle())
                 .type(conversation.getType())
                 .status(conversation.getStatus())
@@ -93,6 +110,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         return Conversation.builder()
                 .id(entity.getConversationId())
                 .userId(entity.getUserId())
+                .projectId(entity.getProjectId())
                 .title(entity.getTitle())
                 .type(entity.getType())
                 .status(entity.getStatus())

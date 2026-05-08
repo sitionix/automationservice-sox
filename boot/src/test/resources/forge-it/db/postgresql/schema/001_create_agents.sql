@@ -84,7 +84,8 @@ CREATE TABLE conversations (
     status VARCHAR(32) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    last_message_at TIMESTAMPTZ NOT NULL
+    last_message_at TIMESTAMPTZ NULL,
+    project_id UUID NULL
 );
 
 CREATE TABLE conversation_participants (

@@ -17,5 +17,11 @@ public class ConversationParticipant {
 
     String participantId;
 
+    String name;
+
+    String description;
+
+    AgentStatus status;
+
     Instant joinedAt;
 }

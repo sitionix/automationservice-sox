@@ -6,6 +6,9 @@ import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
+import com.sitionix.atmssox.domain.usecase.CreateProjectConversation;
+import com.sitionix.atmssox.domain.usecase.ListProjectConversations;
+import com.sitionix.atmssox.domain.usecase.GetProjectConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import java.util.UUID;
@@ -32,17 +35,19 @@ class AgentConversationControllerTest {
     @Mock private GetAgentConversations getAgentConversations;
     @Mock private GetAgentConversation getAgentConversation;
     @Mock private DeleteAgentConversation deleteAgentConversation;
+    @Mock private CreateProjectConversation createProjectConversation;
+    @Mock private ListProjectConversations listProjectConversations;
+    @Mock private GetProjectConversation getProjectConversation;
     @Mock private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentConversationController = new AgentConversationController(this.getAgentConversations, this.getAgentConversation,
-                this.deleteAgentConversation, this.agentApiMapper);
+        this.agentConversationController = new AgentConversationController(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.agentApiMapper);
+        verifyNoMoreInteractions(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
     }
 
     @Test

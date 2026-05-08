@@ -13,6 +13,8 @@ public class Conversation {
 
     Long userId;
 
+    UUID projectId;
+
     String title;
 
     ConversationType type;
