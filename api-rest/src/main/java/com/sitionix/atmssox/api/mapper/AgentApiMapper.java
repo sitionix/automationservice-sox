@@ -41,13 +41,15 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueMappingStrategy;
-import org.mapstruct.BeanMapping;
 
 @Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR, uses = {
         ChatExecutionStatusApiMapper.class,
@@ -63,10 +65,19 @@ public interface AgentApiMapper {
 
     ChatAgentCommand asChatAgentCommand(ChatAgentRequestDTO src);
 
-    @Mapping(target = "agentIds",
-            expression = "java(src == null || src.getAgentIds() == null ? java.util.List.of() : java.util.List.copyOf(src.getAgentIds()))")
+    default CreateProjectConversationCommand asCreateProjectConversationCommand(final CreateProjectConversationRequestDTO src) {
+        final CreateProjectConversationCommand command = this.mapCreateProjectConversationCommand(src);
+        if (command.getAgentIds() == null) {
+            return command.toBuilder()
+                    .agentIds(List.of())
+                    .build();
+        }
+        return command;
+    }
+
+    @Mapping(target = "agentIds", source = "agentIds")
     @BeanMapping(nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT)
-    CreateProjectConversationCommand asCreateProjectConversationCommand(CreateProjectConversationRequestDTO src);
+    CreateProjectConversationCommand mapCreateProjectConversationCommand(CreateProjectConversationRequestDTO src);
 
     @Mapping(target = "assistantMessage", source = "reply")
     ChatAgentExecutionDTO asChatAgentResponseDto(ChatAgentResponse src);
@@ -128,10 +139,7 @@ public interface AgentApiMapper {
     @Mapping(target = "type", source = "conversation.type")
     @Mapping(target = "title", source = "conversation.title")
     @Mapping(target = "status", source = "conversation.status")
-    @Mapping(target = "participants",
-            expression = "java(details.getParticipants() == null ? List.of() : details.getParticipants().stream()"
-                    + ".filter(this::isAgentParticipant).map(this::asProjectConversationParticipantDto)"
-                    + ".toList())")
+    @Mapping(target = "participants", source = "participants")
     @Mapping(target = "canSendMessages", constant = "false")
     @Mapping(target = "createdAt", source = "conversation.createdAt")
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
@@ -144,11 +152,7 @@ public interface AgentApiMapper {
     @Mapping(target = "type", source = "conversation.type")
     @Mapping(target = "title", source = "conversation.title")
     @Mapping(target = "status", source = "conversation.status")
-    @Mapping(target = "participants",
-            expression = "java(details.getParticipants() == null ? List.of() : details.getParticipants().stream()"
-                    + ".filter(this::isAgentParticipant).map(this::asProjectConversationParticipantDto)"
-                    + ".toList())")
-    @Mapping(target = "messages", expression = "java(List.of())")
+    @Mapping(target = "participants", source = "participants")
     @Mapping(target = "canSendMessages", constant = "false")
     @Mapping(target = "createdAt", source = "conversation.createdAt")
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
@@ -157,17 +161,60 @@ public interface AgentApiMapper {
 
     ProjectConversationProjectDTO asProjectConversationProjectDto(AgentProject project);
 
-    @Named("isAgentParticipant")
-    default boolean isAgentParticipant(final ConversationParticipant participant) {
-        return ConversationParticipantType.AGENT.equals(participant.getParticipantType());
+    default List<UUID> map(final Set<UUID> source) {
+        return source == null ? List.of() : List.copyOf(source);
+    }
+
+    default UUID map(final String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     @Mapping(target = "type", constant = "AGENT")
-    @Mapping(target = "agentId", expression = "java(UUID.fromString(src.getParticipantId()))")
+    @Mapping(target = "agentId", source = "participantId")
     @Mapping(target = "name", source = "name")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "status", source = "status")
     ProjectConversationParticipantDTO asProjectConversationParticipantDto(ConversationParticipant src);
+
+    default List<ProjectConversationParticipantDTO> asProjectConversationParticipantDtos(final List<ConversationParticipant> source) {
+        if (source == null) {
+            return List.of();
+        }
+        return source.stream()
+                .filter(participant -> ConversationParticipantType.AGENT.equals(participant.getParticipantType()))
+                .map(this::asProjectConversationParticipantDto)
+                .toList();
+    }
+
+    @AfterMapping
+    default void filterProjectConversationParticipants(@MappingTarget final ProjectConversationDTO target) {
+        if (target.getParticipants() == null) {
+            target.setParticipants(List.of());
+            return;
+        }
+        target.setParticipants(target.getParticipants().stream()
+                .filter(participant -> participant.getAgentId() != null)
+                .toList());
+    }
+
+    @AfterMapping
+    default void finalizeProjectConversationDetails(@MappingTarget final ProjectConversationDetailsDTO target) {
+        if (target.getParticipants() == null) {
+            target.setParticipants(List.of());
+        } else {
+            target.setParticipants(target.getParticipants().stream()
+                    .filter(participant -> participant.getAgentId() != null)
+                    .toList());
+        }
+        target.setMessages(List.of());
+    }
 
 
     default ProjectConversationDTO.TypeEnum mapProjectConversationType(final ConversationType type) {
