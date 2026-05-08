@@ -13,4 +13,17 @@ public class ProjectConversationDetails {
     AgentProject project;
 
     List<ConversationParticipant> participants;
+
+    public List<ConversationParticipant> getAgentParticipants() {
+        if (this.participants == null) {
+            return List.of();
+        }
+        return this.participants.stream()
+                .filter(participant -> participant.getParticipantType() == ConversationParticipantType.AGENT)
+                .toList();
+    }
+
+    public List<ConversationMessage> getMessages() {
+        return List.of();
+    }
 }
