@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,7 +102,7 @@ public class CreateProjectConversationImpl implements CreateProjectConversation 
                 .toList();
 
         this.conversationParticipantRepository.saveAll(
-                java.util.stream.Stream.concat(java.util.stream.Stream.of(userParticipant), agentParticipants.stream()).toList()
+                Stream.concat(Stream.of(userParticipant), agentParticipants.stream()).toList()
         );
 
         return ProjectConversationDetails.builder()
