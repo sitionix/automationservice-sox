@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -479,92 +480,100 @@ class AgentApiMapperTest {
     }
 
     private ProjectConversationDetails getProjectConversationDetails() {
-        final AgentProject project = AgentProject.builder()
-                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-                .name("Sitionix")
-                .context("Project context")
-                .build();
-        final Conversation conversation = Conversation.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .projectId(project.getId())
-                .type(ConversationType.MULTI_AGENT)
-                .title("Team chat")
-                .status(ConversationStatus.ACTIVE)
-                .createdAt(Instant.parse("2026-05-08T10:00:00Z"))
-                .updatedAt(Instant.parse("2026-05-08T10:01:00Z"))
-                .lastMessageAt(null)
-                .build();
-        final ConversationParticipant participant = ConversationParticipant.builder()
-                .participantType(ConversationParticipantType.AGENT)
-                .participantId("33333333-3333-3333-3333-333333333333")
-                .name("Writer")
-                .description("Writes copy")
-                .status(AgentStatus.ACTIVE)
-                .build();
-        return ProjectConversationDetails.builder()
-                .conversation(conversation)
-                .project(project)
-                .participants(List.of(participant))
-                .build();
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                List.of(this.getAgentConversationParticipant()),
+                true
+        );
     }
 
     private ProjectConversationDetails getProjectConversationDetailsWithUserAndAgentParticipants() {
-        final AgentProject project = AgentProject.builder()
-                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-                .name("Sitionix")
-                .context("Project context")
-                .build();
-        final Conversation conversation = Conversation.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .projectId(project.getId())
-                .type(ConversationType.MULTI_AGENT)
-                .title("Team chat")
-                .status(ConversationStatus.ACTIVE)
-                .createdAt(Instant.parse("2026-05-08T10:00:00Z"))
-                .updatedAt(Instant.parse("2026-05-08T10:01:00Z"))
-                .lastMessageAt(null)
-                .build();
-        final ConversationParticipant userParticipant = ConversationParticipant.builder()
-                .participantType(ConversationParticipantType.USER)
-                .participantId("7")
-                .name("Owner")
-                .description("Project owner")
-                .status(AgentStatus.ACTIVE)
-                .build();
-        final ConversationParticipant agentParticipant = ConversationParticipant.builder()
-                .participantType(ConversationParticipantType.AGENT)
-                .participantId("33333333-3333-3333-3333-333333333333")
-                .name("Writer")
-                .description("Writes copy")
-                .status(AgentStatus.ACTIVE)
-                .build();
-        return ProjectConversationDetails.builder()
-                .conversation(conversation)
-                .project(project)
-                .participants(List.of(userParticipant, agentParticipant))
-                .build();
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                List.of(this.getUserConversationParticipant(), this.getAgentConversationParticipant()),
+                true
+        );
     }
 
     private ProjectConversationDetails getProjectConversationDetailsWithNullParticipants() {
-        final AgentProject project = AgentProject.builder()
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                null,
+                true
+        );
+    }
+
+    private ProjectConversationDetails getProjectConversationDetails(
+            final Supplier<Conversation> conversationBuilder,
+            final List<ConversationParticipant> participants,
+            final boolean includeProject
+    ) {
+        final AgentProject project = this.getProjectConversationProject();
+        return ProjectConversationDetails.builder()
+                .conversation(conversationBuilder.get())
+                .project(includeProject ? project : null)
+                .participants(participants)
+                .build();
+    }
+
+    private Conversation getDefaultProjectConversation() {
+        return this.getProjectConversation(this.getProjectConversationProject().getId(), "Team chat");
+    }
+
+    private AgentProject getProjectConversationProject() {
+        return AgentProject.builder()
                 .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
                 .name("Sitionix")
                 .context("Project context")
                 .build();
-        final Conversation conversation = Conversation.builder()
+    }
+
+    private Conversation getProjectConversation(final UUID projectId, final String title) {
+        return Conversation.builder()
                 .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .projectId(project.getId())
+                .projectId(projectId)
                 .type(ConversationType.MULTI_AGENT)
-                .title("Team chat")
+                .title(title)
                 .status(ConversationStatus.ACTIVE)
                 .createdAt(Instant.parse("2026-05-08T10:00:00Z"))
                 .updatedAt(Instant.parse("2026-05-08T10:01:00Z"))
                 .lastMessageAt(null)
                 .build();
-        return ProjectConversationDetails.builder()
-                .conversation(conversation)
-                .project(project)
-                .participants(null)
+    }
+
+    private ConversationParticipant getAgentConversationParticipant() {
+        return this.getConversationParticipant(
+                ConversationParticipantType.AGENT,
+                "33333333-3333-3333-3333-333333333333",
+                "Writer",
+                "Writes copy",
+                AgentStatus.ACTIVE
+        );
+    }
+
+    private ConversationParticipant getUserConversationParticipant() {
+        return this.getConversationParticipant(
+                ConversationParticipantType.USER,
+                "7",
+                "Owner",
+                "Project owner",
+                AgentStatus.ACTIVE
+        );
+    }
+
+    private ConversationParticipant getConversationParticipant(
+            final ConversationParticipantType participantType,
+            final String participantId,
+            final String name,
+            final String description,
+            final AgentStatus status
+    ) {
+        return ConversationParticipant.builder()
+                .participantType(participantType)
+                .participantId(participantId)
+                .name(name)
+                .description(description)
+                .status(status)
                 .build();
     }
 
