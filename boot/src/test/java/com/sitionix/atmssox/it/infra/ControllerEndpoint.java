@@ -21,6 +21,9 @@ import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectAgentResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectAgentsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
@@ -379,6 +382,43 @@ public class ControllerEndpoint {
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
                         .expectStatus(204)
+        );
+    }
+
+    public static Endpoint<CreateProjectConversationRequestDTO, ProjectConversationDetailsDTO> createProjectConversation() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/conversations",
+                HttpMethod.POST,
+                CreateProjectConversationRequestDTO.class,
+                ProjectConversationDetailsDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("createProjectConversationRequest.json")
+                        .expectStatus(201)
+        );
+    }
+
+    public static Endpoint<Void, ProjectConversationsResponseDTO> listProjectConversations() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/conversations",
+                HttpMethod.GET,
+                Void.class,
+                ProjectConversationsResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<Void, ProjectConversationDetailsDTO> getProjectConversation() {
+        return Endpoint.createContract(
+                "/api/v1/agent-projects/{projectId}/conversations/{conversationId}",
+                HttpMethod.GET,
+                Void.class,
+                ProjectConversationDetailsDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
         );
     }
 

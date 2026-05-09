@@ -235,6 +235,7 @@ class ConversationRepositoryImplTest {
         return Conversation.builder()
                 .id(conversationId)
                 .userId(17L)
+                .projectId(null)
                 .title("Explain clean architecture")
                 .type(ConversationType.DIRECT)
                 .status(ConversationStatus.ACTIVE)
@@ -248,6 +249,7 @@ class ConversationRepositoryImplTest {
         return new ConversationEntity(
                 conversationId,
                 17L,
+                null,
                 "Explain clean architecture",
                 ConversationType.DIRECT,
                 ConversationStatus.ACTIVE,

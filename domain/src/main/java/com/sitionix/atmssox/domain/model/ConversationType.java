@@ -9,7 +9,8 @@ import lombok.Setter;
 
 @RequiredArgsConstructor
 public enum ConversationType {
-    DIRECT("directConversationChatHandler");
+    DIRECT("directConversationChatHandler"),
+    MULTI_AGENT("multiAgentConversationChatHandler");
 
     @Getter
     private final String bindingKey;

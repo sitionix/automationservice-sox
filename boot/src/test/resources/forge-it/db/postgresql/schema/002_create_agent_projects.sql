@@ -37,3 +37,6 @@ CREATE TABLE agent_project_members (
     updated_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT uq_agent_project_members_project_agent UNIQUE (project_id, agent_id)
 );
+
+ALTER TABLE conversations
+    ADD CONSTRAINT fk_conversations_project_id FOREIGN KEY (project_id) REFERENCES agent_projects(project_id);

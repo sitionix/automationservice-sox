@@ -34,6 +34,7 @@ class ConversationTypeHandlerInjectorTest {
     @AfterEach
     void tearDown() {
         ConversationType.DIRECT.setHandler(null);
+        ConversationType.MULTI_AGENT.setHandler(null);
         verifyNoMoreInteractions(this.context);
     }
 
@@ -41,14 +42,19 @@ class ConversationTypeHandlerInjectorTest {
     void givenHandlerBeanMap_whenInjectHandlers_thenAssignHandlerToConversationType() {
         //given
         final ConversationChatHandler directConversationChatHandler = mock(ConversationChatHandler.class);
+        final ConversationChatHandler multiAgentConversationChatHandler = mock(ConversationChatHandler.class);
         when(this.context.getBeansOfType(ConversationChatHandler.class))
-                .thenReturn(Map.of("directConversationChatHandler", directConversationChatHandler));
+                .thenReturn(Map.of(
+                        ConversationType.DIRECT.getBindingKey(), directConversationChatHandler,
+                        ConversationType.MULTI_AGENT.getBindingKey(), multiAgentConversationChatHandler
+                ));
 
         //when
         this.conversationTypeHandlerInjector.injectHandlers();
 
         //then
         assertThat(ConversationType.DIRECT.getHandler()).isEqualTo(directConversationChatHandler);
+        assertThat(ConversationType.MULTI_AGENT.getHandler()).isEqualTo(multiAgentConversationChatHandler);
         verify(this.context).getBeansOfType(ConversationChatHandler.class);
     }
 

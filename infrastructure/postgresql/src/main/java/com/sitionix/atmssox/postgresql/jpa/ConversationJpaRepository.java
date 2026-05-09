@@ -88,4 +88,29 @@ public interface ConversationJpaRepository extends JpaRepository<ConversationEnt
                                                          @Param("status") ConversationStatus status,
                                                          @Param("agentType") ConversationParticipantType agentType,
                                                          @Param("agentRef") String agentRef);
+
+    @Query("""
+            select c
+            from ConversationEntity c
+            where c.status = :status
+              and c.userId = :userId
+              and c.projectId = :projectId
+            order by c.lastMessageAt desc nulls last, c.updatedAt desc, c.createdAt desc
+            """)
+    List<ConversationEntity> findAllActiveByUserIdAndProjectId(@Param("status") ConversationStatus status,
+                                                                @Param("userId") Long userId,
+                                                                @Param("projectId") UUID projectId);
+
+    @Query("""
+            select c
+            from ConversationEntity c
+            where c.conversationId = :conversationId
+              and c.status = :status
+              and c.userId = :userId
+              and c.projectId = :projectId
+            """)
+    Optional<ConversationEntity> findActiveByIdAndUserIdAndProjectId(@Param("conversationId") UUID conversationId,
+                                                                      @Param("status") ConversationStatus status,
+                                                                      @Param("userId") Long userId,
+                                                                      @Param("projectId") UUID projectId);
 }

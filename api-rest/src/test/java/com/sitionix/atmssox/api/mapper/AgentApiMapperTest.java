@@ -10,9 +10,15 @@ import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatExecutionFailureDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ExecutionStatusDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationParticipantDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
@@ -28,8 +34,12 @@ import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.model.ConversationType;
+import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
+import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
+import com.sitionix.atmssox.domain.model.AgentProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +51,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -310,11 +322,346 @@ class AgentApiMapperTest {
         assertThat(actual.getError()).isEqualTo(chatExecutionFailureDto);
     }
 
+    @Test
+    void givenCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnMappedCommand() {
+        //given
+        final UUID agentId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        final CreateProjectConversationRequestDTO given = CreateProjectConversationRequestDTO.builder()
+                .agentIds(Set.of(agentId))
+                .build();
+
+        //when
+        final CreateProjectConversationCommand actual = this.agentApiMapper.asCreateProjectConversationCommand(given);
+
+        //then
+        assertThat(actual.getAgentIds()).isEqualTo(List.of(agentId));
+    }
+
+    @Test
+    void givenNullCreateProjectConversationRequestDto_whenAsCreateProjectConversationCommand_thenReturnNull() {
+        //given
+        final CreateProjectConversationRequestDTO given = null;
+
+        //when
+        final CreateProjectConversationCommand actual = this.agentApiMapper.asCreateProjectConversationCommand(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenProjectConversationDetails_whenAsProjectConversationsResponseDto_thenReturnMappedItems() {
+        //given
+        final List<ProjectConversationDetails> details = List.of(this.getProjectConversationDetails());
+        final ProjectConversationsResponseDTO expected = this.getProjectConversationsResponseDto();
+
+        //when
+        final ProjectConversationsResponseDTO actual = this.agentApiMapper.asProjectConversationsResponseDto(details);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenProjectConversationDetails_whenAsProjectConversationDetailsDto_thenReturnMappedDto() {
+        //given
+        final ProjectConversationDetails given = this.getProjectConversationDetails();
+        final ProjectConversationDetailsDTO expected = this.getProjectConversationDetailsDto();
+
+        //when
+        final ProjectConversationDetailsDTO actual = this.agentApiMapper.asProjectConversationDetailsDto(given);
+
+        //then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenProjectConversationDetailsWithUserAndAgentParticipants_whenAsProjectConversationDetailsDto_thenReturnOnlyAgentParticipants() {
+        //given
+        final ProjectConversationDetails given = this.getProjectConversationDetailsWithUserAndAgentParticipants();
+
+        //when
+        final ProjectConversationDetailsDTO actual = this.agentApiMapper.asProjectConversationDetailsDto(given);
+
+        //then
+        assertThat(actual.getParticipants())
+                .extracting(ProjectConversationParticipantDTO::getType)
+                .containsOnly(ProjectConversationParticipantDTO.TypeEnum.AGENT);
+        assertThat(actual.getParticipants()).hasSize(1);
+    }
+
+    @Test
+    void givenProjectConversationDetailsWithNullParticipants_whenAsProjectConversationDto_thenReturnEmptyParticipants() {
+        //given
+        final ProjectConversationDetails given = this.getProjectConversationDetailsWithNullParticipants();
+
+        //when
+        final ProjectConversationDTO actual = this.agentApiMapper.asProjectConversationDto(given);
+
+        //then
+        assertThat(actual.getParticipants()).isEqualTo(List.of());
+        assertThat(actual.getCanSendMessages()).isFalse();
+    }
+
+    @Test
+    void givenProjectConversationDetailsWithNullParticipants_whenAsProjectConversationDetailsDto_thenReturnEmptyParticipantsAndEmptyMessages() {
+        //given
+        final ProjectConversationDetails given = this.getProjectConversationDetailsWithNullParticipants();
+
+        //when
+        final ProjectConversationDetailsDTO actual = this.agentApiMapper.asProjectConversationDetailsDto(given);
+
+        //then
+        assertThat(actual.getParticipants()).isEqualTo(List.of());
+        assertThat(actual.getMessages()).isEqualTo(List.of());
+        assertThat(actual.getCanSendMessages()).isFalse();
+    }
+
+    @Test
+    void givenConversationTypeAndStatusNull_whenMapProjectConversationEnums_thenReturnNull() {
+        //given
+        final ConversationType givenType = null;
+        final ConversationStatus givenStatus = null;
+
+        //when
+        final ProjectConversationDTO.TypeEnum actualType = this.agentApiMapper.mapProjectConversationType(givenType);
+        final ProjectConversationDTO.StatusEnum actualStatus = this.agentApiMapper.mapProjectConversationStatus(givenStatus);
+        final ProjectConversationDetailsDTO.TypeEnum actualDetailsType = this.agentApiMapper.mapProjectConversationDetailsType(givenType);
+        final ProjectConversationDetailsDTO.StatusEnum actualDetailsStatus = this.agentApiMapper.mapProjectConversationDetailsStatus(givenStatus);
+
+        //then
+        assertThat(actualType).isNull();
+        assertThat(actualStatus).isNull();
+        assertThat(actualDetailsType).isNull();
+        assertThat(actualDetailsStatus).isNull();
+    }
+
+    @Test
+    void givenAgentStatusNull_whenMapProjectConversationParticipantStatus_thenReturnNull() {
+        //given
+        final AgentStatus given = null;
+
+        //when
+        final ProjectConversationParticipantDTO.StatusEnum actual = this.agentApiMapper.mapProjectConversationParticipantStatus(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenDirectTypeAndDeletedStatus_whenMapProjectConversationEnums_thenReturnMappedEnums() {
+        //given
+        final ConversationType givenType = ConversationType.DIRECT;
+        final ConversationStatus givenStatus = ConversationStatus.DELETED;
+        final AgentStatus givenAgentStatus = AgentStatus.ARCHIVED;
+
+        //when
+        final ProjectConversationDTO.TypeEnum actualType = this.agentApiMapper.mapProjectConversationType(givenType);
+        final ProjectConversationDTO.StatusEnum actualStatus = this.agentApiMapper.mapProjectConversationStatus(givenStatus);
+        final ProjectConversationDetailsDTO.TypeEnum actualDetailsType = this.agentApiMapper.mapProjectConversationDetailsType(givenType);
+        final ProjectConversationDetailsDTO.StatusEnum actualDetailsStatus = this.agentApiMapper.mapProjectConversationDetailsStatus(givenStatus);
+        final ProjectConversationParticipantDTO.StatusEnum actualParticipantStatus =
+                this.agentApiMapper.mapProjectConversationParticipantStatus(givenAgentStatus);
+
+        //then
+        assertThat(actualType).isEqualTo(ProjectConversationDTO.TypeEnum.DIRECT);
+        assertThat(actualStatus).isEqualTo(ProjectConversationDTO.StatusEnum.DELETED);
+        assertThat(actualDetailsType).isEqualTo(ProjectConversationDetailsDTO.TypeEnum.DIRECT);
+        assertThat(actualDetailsStatus).isEqualTo(ProjectConversationDetailsDTO.StatusEnum.DELETED);
+        assertThat(actualParticipantStatus).isEqualTo(ProjectConversationParticipantDTO.StatusEnum.ARCHIVED);
+    }
+
     private ChatExecutionFailureDTO getChatExecutionFailureDto() {
         return ChatExecutionFailureDTO.builder()
                 .code("EXECUTION_ERROR")
                 .message("Execution failed")
                 .details(Map.of("retryable", true))
+                .build();
+    }
+
+    private ProjectConversationDetails getProjectConversationDetails() {
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                List.of(this.getAgentConversationParticipant()),
+                true
+        );
+    }
+
+    private ProjectConversationDetails getProjectConversationDetailsWithUserAndAgentParticipants() {
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                List.of(this.getUserConversationParticipant(), this.getAgentConversationParticipant()),
+                true
+        );
+    }
+
+    private ProjectConversationDetails getProjectConversationDetailsWithNullParticipants() {
+        return this.getProjectConversationDetails(
+                this::getDefaultProjectConversation,
+                null,
+                true
+        );
+    }
+
+    private ProjectConversationDetails getProjectConversationDetails(
+            final Supplier<Conversation> conversationBuilder,
+            final List<ConversationParticipant> participants,
+            final boolean includeProject
+    ) {
+        final AgentProject project = this.getProjectConversationProject();
+        return ProjectConversationDetails.builder()
+                .conversation(conversationBuilder.get())
+                .project(includeProject ? project : null)
+                .participants(participants)
+                .build();
+    }
+
+    private Conversation getDefaultProjectConversation() {
+        return this.getProjectConversation(this.getProjectConversationProject().getId(), "Team chat");
+    }
+
+    private AgentProject getProjectConversationProject() {
+        return AgentProject.builder()
+                .id(this.getProjectId())
+                .name(this.getProjectName())
+                .context(this.getProjectContext())
+                .build();
+    }
+
+    private Conversation getProjectConversation(final UUID projectId, final String title) {
+        return Conversation.builder()
+                .id(this.getProjectConversationId())
+                .projectId(projectId)
+                .type(ConversationType.MULTI_AGENT)
+                .title(title)
+                .status(ConversationStatus.ACTIVE)
+                .createdAt(this.getProjectCreatedAt())
+                .updatedAt(this.getProjectUpdatedAt())
+                .lastMessageAt(null)
+                .build();
+    }
+
+    private ConversationParticipant getAgentConversationParticipant() {
+        return this.getConversationParticipant(
+                ConversationParticipantType.AGENT,
+                this.getParticipantAgentId().toString(),
+                this.getParticipantName(),
+                this.getParticipantDescription(),
+                AgentStatus.ACTIVE
+        );
+    }
+
+    private ConversationParticipant getUserConversationParticipant() {
+        return this.getConversationParticipant(
+                ConversationParticipantType.USER,
+                "7",
+                "Owner",
+                "Project owner",
+                AgentStatus.ACTIVE
+        );
+    }
+
+    private ConversationParticipant getConversationParticipant(
+            final ConversationParticipantType participantType,
+            final String participantId,
+            final String name,
+            final String description,
+            final AgentStatus status
+    ) {
+        return ConversationParticipant.builder()
+                .participantType(participantType)
+                .participantId(participantId)
+                .name(name)
+                .description(description)
+                .status(status)
+                .build();
+    }
+
+    private ProjectConversationsResponseDTO getProjectConversationsResponseDto() {
+        return ProjectConversationsResponseDTO.builder()
+                .items(List.of(this.getProjectConversationDto()))
+                .build();
+    }
+
+    private ProjectConversationDTO getProjectConversationDto() {
+        return this.getProjectConversationDto(
+                this.getProjectConversationParticipantDtos(),
+                this.agentApiMapper.map(this.getProjectCreatedAt()),
+                this.agentApiMapper.map(this.getProjectUpdatedAt())
+        );
+    }
+
+    private ProjectConversationDTO getProjectConversationDto(
+            final List<ProjectConversationParticipantDTO> participants,
+            final OffsetDateTime createdAt,
+            final OffsetDateTime updatedAt
+    ) {
+        return ProjectConversationDTO.builder()
+                .id(this.getProjectConversationId())
+                .projectId(this.getProjectId())
+                .type(ProjectConversationDTO.TypeEnum.MULTI_AGENT)
+                .title(this.getConversationTitle())
+                .status(ProjectConversationDTO.StatusEnum.ACTIVE)
+                .participants(participants)
+                .canSendMessages(Boolean.FALSE)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .lastMessageAt(null)
+                .build();
+    }
+
+    private ProjectConversationDetailsDTO getProjectConversationDetailsDto() {
+        return this.getProjectConversationDetailsDto(
+                this.getProjectConversationParticipantDtos(),
+                List.of(),
+                this.getProjectConversationProjectDto(),
+                this.agentApiMapper.map(this.getProjectCreatedAt()),
+                this.agentApiMapper.map(this.getProjectUpdatedAt())
+        );
+    }
+
+    private ProjectConversationDetailsDTO getProjectConversationDetailsDto(
+            final List<ProjectConversationParticipantDTO> participants,
+            final List<AgentConversationMessageDTO> messages,
+            final ProjectConversationProjectDTO project,
+            final OffsetDateTime createdAt,
+            final OffsetDateTime updatedAt
+    ) {
+        return ProjectConversationDetailsDTO.builder()
+                .id(this.getProjectConversationId())
+                .projectId(this.getProjectId())
+                .project(project)
+                .type(ProjectConversationDetailsDTO.TypeEnum.MULTI_AGENT)
+                .title(this.getConversationTitle())
+                .status(ProjectConversationDetailsDTO.StatusEnum.ACTIVE)
+                .participants(participants)
+                .messages(messages)
+                .canSendMessages(Boolean.FALSE)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .lastMessageAt(null)
+                .build();
+    }
+
+    private ProjectConversationProjectDTO getProjectConversationProjectDto() {
+        return ProjectConversationProjectDTO.builder()
+                .id(this.getProjectId())
+                .name(this.getProjectName())
+                .context(this.getProjectContext())
+                .build();
+    }
+
+    private List<ProjectConversationParticipantDTO> getProjectConversationParticipantDtos() {
+        return List.of(this.getProjectConversationParticipantDto());
+    }
+
+    private ProjectConversationParticipantDTO getProjectConversationParticipantDto() {
+        return ProjectConversationParticipantDTO.builder()
+                .type(ProjectConversationParticipantDTO.TypeEnum.AGENT)
+                .agentId(this.getParticipantAgentId())
+                .name(this.getParticipantName())
+                .description(this.getParticipantDescription())
+                .status(ProjectConversationParticipantDTO.StatusEnum.ACTIVE)
                 .build();
     }
 
@@ -363,57 +710,44 @@ class AgentApiMapperTest {
     }
 
     private Agent getDomainAgent() {
-        final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
-        final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
+        return this.getDomainAgent(AgentStatus.DRAFT);
+    }
+
+    private Agent getDomainAgent(final AgentStatus status) {
         return Agent.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .id(this.getAgentId())
                 .userId(7L)
                 .name("My agent")
                 .description("My description")
                 .instruction("My instruction")
-                .status(AgentStatus.DRAFT)
-                .createdAt(createdAt)
-                .updatedAt(updatedAt)
+                .status(status)
+                .createdAt(this.getAgentCreatedAt())
+                .updatedAt(this.getAgentUpdatedAt())
                 .build();
     }
 
     private AgentDTO getApiAgent() {
+        return this.getApiAgent(AgentDTO.StatusEnum.DRAFT);
+    }
+
+    private AgentDTO getApiAgent(final AgentDTO.StatusEnum status) {
         return AgentDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .id(this.getAgentId())
                 .name("My agent")
                 .description("My description")
                 .instruction("My instruction")
-                .status(AgentDTO.StatusEnum.DRAFT)
-                .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
-                .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
+                .status(status)
+                .createdAt(OffsetDateTime.ofInstant(this.getAgentCreatedAt(), ZoneOffset.UTC))
+                .updatedAt(OffsetDateTime.ofInstant(this.getAgentUpdatedAt(), ZoneOffset.UTC))
                 .build();
     }
 
     private Agent getDomainAgentWithNullStatus() {
-        final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
-        final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
-        return Agent.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .userId(7L)
-                .name("My agent")
-                .description("My description")
-                .instruction("My instruction")
-                .status(null)
-                .createdAt(createdAt)
-                .updatedAt(updatedAt)
-                .build();
+        return this.getDomainAgent(null);
     }
 
     private AgentDTO getApiAgentWithNullStatus() {
-        return AgentDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .name("My agent")
-                .description("My description")
-                .instruction("My instruction")
-                .status(null)
-                .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
-                .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
-                .build();
+        return this.getApiAgent(null);
     }
 
     private AgentsResponseDTO getAgentsResponseDto() {
@@ -587,6 +921,58 @@ class AgentApiMapperTest {
                 .reason("Execution failed")
                 .retryable(true)
                 .build();
+    }
+
+    private UUID getAgentId() {
+        return UUID.fromString("11111111-1111-1111-1111-111111111111");
+    }
+
+    private UUID getProjectConversationId() {
+        return UUID.fromString("11111111-1111-1111-1111-111111111111");
+    }
+
+    private UUID getProjectId() {
+        return UUID.fromString("22222222-2222-2222-2222-222222222222");
+    }
+
+    private UUID getParticipantAgentId() {
+        return UUID.fromString("33333333-3333-3333-3333-333333333333");
+    }
+
+    private String getProjectName() {
+        return "Sitionix";
+    }
+
+    private String getProjectContext() {
+        return "Project context";
+    }
+
+    private String getConversationTitle() {
+        return "Team chat";
+    }
+
+    private String getParticipantName() {
+        return "Writer";
+    }
+
+    private String getParticipantDescription() {
+        return "Writes copy";
+    }
+
+    private Instant getProjectCreatedAt() {
+        return Instant.parse("2026-05-08T10:00:00Z");
+    }
+
+    private Instant getProjectUpdatedAt() {
+        return Instant.parse("2026-05-08T10:01:00Z");
+    }
+
+    private Instant getAgentCreatedAt() {
+        return Instant.parse("2026-01-10T10:15:30Z");
+    }
+
+    private Instant getAgentUpdatedAt() {
+        return Instant.parse("2026-01-10T10:20:30Z");
     }
 
 }

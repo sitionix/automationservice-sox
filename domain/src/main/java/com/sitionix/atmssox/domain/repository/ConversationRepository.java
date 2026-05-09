@@ -48,6 +48,8 @@ public interface ConversationRepository {
 
     Optional<Conversation> findActiveByIdAndAgentId(UUID conversationId, UUID agentId);
 
+    Optional<Conversation> findActiveByIdAndUserIdAndProjectId(UUID conversationId, Long userId, UUID projectId);
+
     /**
      * Loads all active conversations for one user-agent context.
      *
@@ -56,4 +58,6 @@ public interface ConversationRepository {
      * @return active conversations sorted by recency.
      */
     List<Conversation> findAllActiveByUserIdAndAgentId(Long userId, UUID agentId);
+
+    List<Conversation> findAllActiveByUserIdAndProjectId(Long userId, UUID projectId);
 }

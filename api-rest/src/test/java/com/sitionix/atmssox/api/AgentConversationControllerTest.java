@@ -2,10 +2,18 @@ package com.sitionix.atmssox.api;
 
 import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
+import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
+import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentConversation;
+import com.sitionix.atmssox.domain.usecase.CreateProjectConversation;
+import com.sitionix.atmssox.domain.usecase.ListProjectConversations;
+import com.sitionix.atmssox.domain.usecase.GetProjectConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import java.util.UUID;
@@ -32,17 +40,19 @@ class AgentConversationControllerTest {
     @Mock private GetAgentConversations getAgentConversations;
     @Mock private GetAgentConversation getAgentConversation;
     @Mock private DeleteAgentConversation deleteAgentConversation;
+    @Mock private CreateProjectConversation createProjectConversation;
+    @Mock private ListProjectConversations listProjectConversations;
+    @Mock private GetProjectConversation getProjectConversation;
     @Mock private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentConversationController = new AgentConversationController(this.getAgentConversations, this.getAgentConversation,
-                this.deleteAgentConversation, this.agentApiMapper);
+        this.agentConversationController = new AgentConversationController(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.agentApiMapper);
+        verifyNoMoreInteractions(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
     }
 
     @Test
@@ -92,5 +102,67 @@ class AgentConversationControllerTest {
         assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
         verify(this.getAgentConversation).execute(conversationId);
         verify(this.agentApiMapper).asAgentConversationDetailsDto(details);
+    }
+
+    @Test
+    void givenProjectIdAndRequest_whenCreateProjectConversation_thenReturnCreatedResponse() {
+        //given
+        final UUID projectId = UUID.randomUUID();
+        final CreateProjectConversationRequestDTO requestDto = mock(CreateProjectConversationRequestDTO.class);
+        final CreateProjectConversationCommand command = mock(CreateProjectConversationCommand.class);
+        final ProjectConversationDetails response = mock(ProjectConversationDetails.class);
+        final ProjectConversationDetailsDTO responseDto = mock(ProjectConversationDetailsDTO.class);
+        when(this.agentApiMapper.asCreateProjectConversationCommand(requestDto)).thenReturn(command);
+        when(this.createProjectConversation.execute(projectId, command)).thenReturn(response);
+        when(this.agentApiMapper.asProjectConversationDetailsDto(response)).thenReturn(responseDto);
+
+        //when
+        final ResponseEntity<ProjectConversationDetailsDTO> actual =
+                this.agentConversationController.createProjectConversation(projectId, requestDto);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.status(201).body(responseDto));
+        verify(this.agentApiMapper).asCreateProjectConversationCommand(requestDto);
+        verify(this.createProjectConversation).execute(projectId, command);
+        verify(this.agentApiMapper).asProjectConversationDetailsDto(response);
+    }
+
+    @Test
+    void givenProjectId_whenListProjectConversations_thenReturnMappedResponse() {
+        //given
+        final UUID projectId = UUID.randomUUID();
+        final List<ProjectConversationDetails> response = mock(List.class);
+        final ProjectConversationsResponseDTO responseDto = mock(ProjectConversationsResponseDTO.class);
+        when(this.listProjectConversations.execute(projectId)).thenReturn(response);
+        when(this.agentApiMapper.asProjectConversationsResponseDto(response)).thenReturn(responseDto);
+
+        //when
+        final ResponseEntity<ProjectConversationsResponseDTO> actual =
+                this.agentConversationController.listProjectConversations(projectId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
+        verify(this.listProjectConversations).execute(projectId);
+        verify(this.agentApiMapper).asProjectConversationsResponseDto(response);
+    }
+
+    @Test
+    void givenProjectIdAndConversationId_whenGetProjectConversation_thenReturnMappedResponse() {
+        //given
+        final UUID projectId = UUID.randomUUID();
+        final UUID conversationId = UUID.randomUUID();
+        final ProjectConversationDetails response = mock(ProjectConversationDetails.class);
+        final ProjectConversationDetailsDTO responseDto = mock(ProjectConversationDetailsDTO.class);
+        when(this.getProjectConversation.execute(projectId, conversationId)).thenReturn(response);
+        when(this.agentApiMapper.asProjectConversationDetailsDto(response)).thenReturn(responseDto);
+
+        //when
+        final ResponseEntity<ProjectConversationDetailsDTO> actual =
+                this.agentConversationController.getProjectConversation(projectId, conversationId);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
+        verify(this.getProjectConversation).execute(projectId, conversationId);
+        verify(this.agentApiMapper).asProjectConversationDetailsDto(response);
     }
 }

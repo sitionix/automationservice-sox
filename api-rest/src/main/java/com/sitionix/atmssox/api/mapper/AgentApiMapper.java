@@ -5,31 +5,49 @@ import com.app_afesox.atmssox.api_first.dto.AgentConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationMessageDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentsResponseDTO;
-import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ChatAgentExecutionDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ChatExecutionDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationParticipantDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
+import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
-import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.ChatAgentResponse;
+import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
-import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
+import com.sitionix.atmssox.domain.model.ConversationParticipant;
+import com.sitionix.atmssox.domain.model.ConversationStatus;
+import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.domain.model.CreateAgentCommand;
+import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
+import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
 import com.sitionix.atmssox.domain.model.PatchAgentCommand;
+import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
-import org.mapstruct.Mapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.NullValueMappingStrategy;
 
 @Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR, uses = {
         ChatExecutionStatusApiMapper.class,
@@ -44,6 +62,10 @@ public interface AgentApiMapper {
     PatchAgentCommand asPatchAgentCommand(PatchAgentRequestDTO src);
 
     ChatAgentCommand asChatAgentCommand(ChatAgentRequestDTO src);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
+    @Mapping(target = "agentIds", source = "agentIds")
+    CreateProjectConversationCommand asCreateProjectConversationCommand(CreateProjectConversationRequestDTO src);
 
     @Mapping(target = "assistantMessage", source = "reply")
     ChatAgentExecutionDTO asChatAgentResponseDto(ChatAgentResponse src);
@@ -91,4 +113,80 @@ public interface AgentApiMapper {
     @Mapping(target = "messages", source = "messages")
     @Mapping(target = "executions", source = "executions")
     AgentConversationDetailsDTO asAgentConversationDetailsDto(ConversationDetails details);
+
+    default ProjectConversationsResponseDTO asProjectConversationsResponseDto(final List<ProjectConversationDetails> details) {
+        return ProjectConversationsResponseDTO.builder()
+                .items(this.asProjectConversationDtos(details))
+                .build();
+    }
+
+    List<ProjectConversationDTO> asProjectConversationDtos(List<ProjectConversationDetails> details);
+
+    @Mapping(target = "id", source = "conversation.id")
+    @Mapping(target = "projectId", source = "conversation.projectId")
+    @Mapping(target = "type", source = "conversation.type")
+    @Mapping(target = "title", source = "conversation.title")
+    @Mapping(target = "status", source = "conversation.status")
+    @Mapping(target = "participants", source = "agentParticipants")
+    @Mapping(target = "canSendMessages", constant = "false")
+    @Mapping(target = "createdAt", source = "conversation.createdAt")
+    @Mapping(target = "updatedAt", source = "conversation.updatedAt")
+    @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
+    ProjectConversationDTO asProjectConversationDto(ProjectConversationDetails details);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
+    @Mapping(target = "id", source = "conversation.id")
+    @Mapping(target = "projectId", source = "conversation.projectId")
+    @Mapping(target = "project", source = "project")
+    @Mapping(target = "type", source = "conversation.type")
+    @Mapping(target = "title", source = "conversation.title")
+    @Mapping(target = "status", source = "conversation.status")
+    @Mapping(target = "participants", source = "agentParticipants")
+    @Mapping(target = "messages", source = "messages")
+    @Mapping(target = "canSendMessages", constant = "false")
+    @Mapping(target = "createdAt", source = "conversation.createdAt")
+    @Mapping(target = "updatedAt", source = "conversation.updatedAt")
+    @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
+    ProjectConversationDetailsDTO asProjectConversationDetailsDto(ProjectConversationDetails details);
+
+    ProjectConversationProjectDTO asProjectConversationProjectDto(AgentProject project);
+
+    default UUID map(final String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    @Mapping(target = "type", constant = "AGENT")
+    @Mapping(target = "agentId", source = "participantId")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "status", source = "status")
+    ProjectConversationParticipantDTO asProjectConversationParticipantDto(ConversationParticipant src);
+
+
+    default ProjectConversationDTO.TypeEnum mapProjectConversationType(final ConversationType type) {
+        return type == null ? null : ProjectConversationDTO.TypeEnum.fromValue(type.name());
+    }
+
+    default ProjectConversationDTO.StatusEnum mapProjectConversationStatus(final ConversationStatus status) {
+        return status == null ? null : ProjectConversationDTO.StatusEnum.fromValue(status.name());
+    }
+
+    default ProjectConversationDetailsDTO.TypeEnum mapProjectConversationDetailsType(final ConversationType type) {
+        return type == null ? null : ProjectConversationDetailsDTO.TypeEnum.fromValue(type.name());
+    }
+
+    default ProjectConversationDetailsDTO.StatusEnum mapProjectConversationDetailsStatus(final ConversationStatus status) {
+        return status == null ? null : ProjectConversationDetailsDTO.StatusEnum.fromValue(status.name());
+    }
+
+    default ProjectConversationParticipantDTO.StatusEnum mapProjectConversationParticipantStatus(final AgentStatus status) {
+        return status == null ? null : ProjectConversationParticipantDTO.StatusEnum.fromValue(status.name());
+    }
 }

@@ -38,6 +38,9 @@ public class ConversationEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "project_id")
+    private UUID projectId;
+
     @Column(name = "title", nullable = false, length = 80)
     private String title;
 
@@ -55,6 +58,6 @@ public class ConversationEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    @Column(name = "last_message_at", nullable = false)
+    @Column(name = "last_message_at")
     private Instant lastMessageAt;
 }
