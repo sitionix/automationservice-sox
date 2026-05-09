@@ -61,6 +61,20 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AgentApiMapperTest {
 
+    private static final UUID AGENT_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID PROJECT_CONVERSATION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID PROJECT_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final UUID PARTICIPANT_AGENT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final String PROJECT_NAME = "Sitionix";
+    private static final String PROJECT_CONTEXT = "Project context";
+    private static final String CONVERSATION_TITLE = "Team chat";
+    private static final String PARTICIPANT_NAME = "Writer";
+    private static final String PARTICIPANT_DESCRIPTION = "Writes copy";
+    private static final Instant PROJECT_CREATED_AT = Instant.parse("2026-05-08T10:00:00Z");
+    private static final Instant PROJECT_UPDATED_AT = Instant.parse("2026-05-08T10:01:00Z");
+    private static final Instant AGENT_CREATED_AT = Instant.parse("2026-01-10T10:15:30Z");
+    private static final Instant AGENT_UPDATED_AT = Instant.parse("2026-01-10T10:20:30Z");
+
     private AgentApiMapper agentApiMapper;
 
     @Mock private ChatExecutionStatusApiMapper chatExecutionStatusApiMapper;
@@ -522,21 +536,21 @@ class AgentApiMapperTest {
 
     private AgentProject getProjectConversationProject() {
         return AgentProject.builder()
-                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-                .name("Sitionix")
-                .context("Project context")
+                .id(PROJECT_ID)
+                .name(PROJECT_NAME)
+                .context(PROJECT_CONTEXT)
                 .build();
     }
 
     private Conversation getProjectConversation(final UUID projectId, final String title) {
         return Conversation.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .id(PROJECT_CONVERSATION_ID)
                 .projectId(projectId)
                 .type(ConversationType.MULTI_AGENT)
                 .title(title)
                 .status(ConversationStatus.ACTIVE)
-                .createdAt(Instant.parse("2026-05-08T10:00:00Z"))
-                .updatedAt(Instant.parse("2026-05-08T10:01:00Z"))
+                .createdAt(PROJECT_CREATED_AT)
+                .updatedAt(PROJECT_UPDATED_AT)
                 .lastMessageAt(null)
                 .build();
     }
@@ -544,9 +558,9 @@ class AgentApiMapperTest {
     private ConversationParticipant getAgentConversationParticipant() {
         return this.getConversationParticipant(
                 ConversationParticipantType.AGENT,
-                "33333333-3333-3333-3333-333333333333",
-                "Writer",
-                "Writes copy",
+                PARTICIPANT_AGENT_ID.toString(),
+                PARTICIPANT_NAME,
+                PARTICIPANT_DESCRIPTION,
                 AgentStatus.ACTIVE
         );
     }
@@ -584,51 +598,83 @@ class AgentApiMapperTest {
     }
 
     private ProjectConversationDTO getProjectConversationDto() {
+        return this.getProjectConversationDto(
+                this.getProjectConversationParticipantDtos(),
+                this.agentApiMapper.map(PROJECT_CREATED_AT),
+                this.agentApiMapper.map(PROJECT_UPDATED_AT)
+        );
+    }
+
+    private ProjectConversationDTO getProjectConversationDto(
+            final List<ProjectConversationParticipantDTO> participants,
+            final OffsetDateTime createdAt,
+            final OffsetDateTime updatedAt
+    ) {
         return ProjectConversationDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .projectId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                .id(PROJECT_CONVERSATION_ID)
+                .projectId(PROJECT_ID)
                 .type(ProjectConversationDTO.TypeEnum.MULTI_AGENT)
-                .title("Team chat")
+                .title(CONVERSATION_TITLE)
                 .status(ProjectConversationDTO.StatusEnum.ACTIVE)
-                .participants(List.of(this.getProjectConversationParticipantDto()))
+                .participants(participants)
                 .canSendMessages(Boolean.FALSE)
-                .createdAt(OffsetDateTime.parse("2026-05-08T10:00:00Z"))
-                .updatedAt(OffsetDateTime.parse("2026-05-08T10:01:00Z"))
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .lastMessageAt(null)
                 .build();
     }
 
     private ProjectConversationDetailsDTO getProjectConversationDetailsDto() {
+        return this.getProjectConversationDetailsDto(
+                this.getProjectConversationParticipantDtos(),
+                List.of(),
+                this.getProjectConversationProjectDto(),
+                this.agentApiMapper.map(PROJECT_CREATED_AT),
+                this.agentApiMapper.map(PROJECT_UPDATED_AT)
+        );
+    }
+
+    private ProjectConversationDetailsDTO getProjectConversationDetailsDto(
+            final List<ProjectConversationParticipantDTO> participants,
+            final List<AgentConversationMessageDTO> messages,
+            final ProjectConversationProjectDTO project,
+            final OffsetDateTime createdAt,
+            final OffsetDateTime updatedAt
+    ) {
         return ProjectConversationDetailsDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .projectId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-                .project(this.getProjectConversationProjectDto())
+                .id(PROJECT_CONVERSATION_ID)
+                .projectId(PROJECT_ID)
+                .project(project)
                 .type(ProjectConversationDetailsDTO.TypeEnum.MULTI_AGENT)
-                .title("Team chat")
+                .title(CONVERSATION_TITLE)
                 .status(ProjectConversationDetailsDTO.StatusEnum.ACTIVE)
-                .participants(List.of(this.getProjectConversationParticipantDto()))
-                .messages(List.of())
+                .participants(participants)
+                .messages(messages)
                 .canSendMessages(Boolean.FALSE)
-                .createdAt(OffsetDateTime.parse("2026-05-08T10:00:00Z"))
-                .updatedAt(OffsetDateTime.parse("2026-05-08T10:01:00Z"))
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .lastMessageAt(null)
                 .build();
     }
 
     private ProjectConversationProjectDTO getProjectConversationProjectDto() {
         return ProjectConversationProjectDTO.builder()
-                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-                .name("Sitionix")
-                .context("Project context")
+                .id(PROJECT_ID)
+                .name(PROJECT_NAME)
+                .context(PROJECT_CONTEXT)
                 .build();
+    }
+
+    private List<ProjectConversationParticipantDTO> getProjectConversationParticipantDtos() {
+        return List.of(this.getProjectConversationParticipantDto());
     }
 
     private ProjectConversationParticipantDTO getProjectConversationParticipantDto() {
         return ProjectConversationParticipantDTO.builder()
                 .type(ProjectConversationParticipantDTO.TypeEnum.AGENT)
-                .agentId(UUID.fromString("33333333-3333-3333-3333-333333333333"))
-                .name("Writer")
-                .description("Writes copy")
+                .agentId(PARTICIPANT_AGENT_ID)
+                .name(PARTICIPANT_NAME)
+                .description(PARTICIPANT_DESCRIPTION)
                 .status(ProjectConversationParticipantDTO.StatusEnum.ACTIVE)
                 .build();
     }
@@ -678,57 +724,44 @@ class AgentApiMapperTest {
     }
 
     private Agent getDomainAgent() {
-        final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
-        final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
+        return this.getDomainAgent(AgentStatus.DRAFT);
+    }
+
+    private Agent getDomainAgent(final AgentStatus status) {
         return Agent.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .id(AGENT_ID)
                 .userId(7L)
                 .name("My agent")
                 .description("My description")
                 .instruction("My instruction")
-                .status(AgentStatus.DRAFT)
-                .createdAt(createdAt)
-                .updatedAt(updatedAt)
+                .status(status)
+                .createdAt(AGENT_CREATED_AT)
+                .updatedAt(AGENT_UPDATED_AT)
                 .build();
     }
 
     private AgentDTO getApiAgent() {
+        return this.getApiAgent(AgentDTO.StatusEnum.DRAFT);
+    }
+
+    private AgentDTO getApiAgent(final AgentDTO.StatusEnum status) {
         return AgentDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .id(AGENT_ID)
                 .name("My agent")
                 .description("My description")
                 .instruction("My instruction")
-                .status(AgentDTO.StatusEnum.DRAFT)
-                .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
-                .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
+                .status(status)
+                .createdAt(OffsetDateTime.ofInstant(AGENT_CREATED_AT, ZoneOffset.UTC))
+                .updatedAt(OffsetDateTime.ofInstant(AGENT_UPDATED_AT, ZoneOffset.UTC))
                 .build();
     }
 
     private Agent getDomainAgentWithNullStatus() {
-        final Instant createdAt = Instant.parse("2026-01-10T10:15:30Z");
-        final Instant updatedAt = Instant.parse("2026-01-10T10:20:30Z");
-        return Agent.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .userId(7L)
-                .name("My agent")
-                .description("My description")
-                .instruction("My instruction")
-                .status(null)
-                .createdAt(createdAt)
-                .updatedAt(updatedAt)
-                .build();
+        return this.getDomainAgent(null);
     }
 
     private AgentDTO getApiAgentWithNullStatus() {
-        return AgentDTO.builder()
-                .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .name("My agent")
-                .description("My description")
-                .instruction("My instruction")
-                .status(null)
-                .createdAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:15:30Z"), ZoneOffset.UTC))
-                .updatedAt(OffsetDateTime.ofInstant(Instant.parse("2026-01-10T10:20:30Z"), ZoneOffset.UTC))
-                .build();
+        return this.getApiAgent(null);
     }
 
     private AgentsResponseDTO getAgentsResponseDto() {
