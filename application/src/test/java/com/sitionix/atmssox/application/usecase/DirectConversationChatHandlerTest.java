@@ -350,6 +350,57 @@ class DirectConversationChatHandlerTest {
         );
     }
 
+    @Test
+    void givenProjectConversation_whenHandle_thenBuildContextUsingResolvedProjectRuntimeContext() {
+        //given
+        final UUID conversationId = UUID.fromString("5f7b1803-6555-43b4-a0a0-a9bcd1e44234");
+        final UUID agentId = UUID.fromString("2ecc95b9-d2fc-47a6-b49f-9ae8034f3b3a");
+        final UUID projectId = UUID.fromString("fda50e6f-b87f-4f6f-a4cc-d74572967e95");
+        final Conversation conversation = this.getConversation(conversationId).toBuilder()
+                .projectId(projectId)
+                .build();
+        final List<ConversationParticipant> participants = this.getParticipants(conversationId, agentId);
+        final ChatAgentCommand command = ChatAgentCommand.builder()
+                .conversationId(conversationId)
+                .message("explain release risk")
+                .build();
+        final Agent agent = this.getAgent(AgentStatus.ACTIVE, "Instruction");
+        final ConversationMessage userMessage = this.getMessage(conversationId, ConversationParticipantType.USER, "17", "explain release risk");
+        final ConversationMessage replyMessage = this.getMessage(conversationId, ConversationParticipantType.AGENT, agentId.toString(), "Use explicit rollback.");
+        final Optional<ProjectRuntimeContext> projectRuntimeContext = Optional.of(new ProjectRuntimeContext(
+                projectId,
+                "Project Atlas",
+                "Rollback plan is mandatory"
+        ));
+
+        when(this.agentRepository.findVisibleByIdAndUserId(agentId, 17L)).thenReturn(Optional.of(agent));
+        when(this.agentExecutionHandler.supportedContextType()).thenReturn(UserAgentExecutionContext.class);
+        when(this.conversationMessageRepository.save(any(ConversationMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(replyMessage);
+        when(this.contextOptimizerProperties.getLastMessagesLimit()).thenReturn(10);
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10))
+                .thenReturn(List.of(userMessage));
+        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(agentId, 17L, AgentRuleStatus.ACTIVE, null))
+                .thenReturn(List.of());
+        when(this.conversationContextSnapshotRepository.findByConversationId(conversationId)).thenReturn(Optional.empty());
+        when(this.projectRuntimeContextResolver.resolve(17L, projectId)).thenReturn(projectRuntimeContext);
+        when(this.conversationContextBuilder.build("Instruction", List.of(), "", projectRuntimeContext, List.of(userMessage), userMessage))
+                .thenReturn(new UserAgentExecutionContext("instruction", "context-prompt"));
+        when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class))).thenReturn("Use explicit rollback.");
+        when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
+
+        //when
+        final ChatAgentResponse actual = this.directConversationChatHandler.handle(conversation, participants, command, 17L);
+
+        //then
+        assertThat(actual.getConversationId()).isEqualTo(conversationId);
+        assertThat(actual.getReply()).isEqualTo(replyMessage);
+        verify(this.projectRuntimeContextResolver).resolve(17L, projectId);
+        verify(this.conversationContextBuilder).build("Instruction", List.of(), "", projectRuntimeContext, List.of(userMessage), userMessage);
+        verify(this.postChatWorkflowDispatcher).dispatch(any(ChatCompletedContext.class));
+    }
+
     private Conversation getConversation(final UUID conversationId) {
         return Conversation.builder()
                 .id(conversationId)
