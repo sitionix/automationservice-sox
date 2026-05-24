@@ -60,11 +60,9 @@ class ProjectRuntimeContextFlowIT {
         final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
         verify(this.openAiChatClient).execute(requestCaptor.capture());
         final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).contains("Project context:");
-        assertThat(runtimeInput).contains("Project name: Alpha Project");
-        assertThat(runtimeInput).contains("Project details: Updated project context");
+        assertThat(runtimeInput).contains("Updated project context");
         assertThat(runtimeInput).contains("Messages:");
-        assertThat(runtimeInput.indexOf("Project context:")).isLessThan(runtimeInput.indexOf("Messages:"));
+        assertThat(runtimeInput.indexOf("Updated project context")).isLessThan(runtimeInput.indexOf("Messages:"));
     }
 
     @Test
@@ -82,7 +80,7 @@ class ProjectRuntimeContextFlowIT {
         final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
         verify(this.openAiChatClient).execute(requestCaptor.capture());
         final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).doesNotContain("Project context:");
+        assertThat(runtimeInput).doesNotContain("Updated project context");
         assertThat(runtimeInput).contains("Messages:");
     }
 
@@ -104,8 +102,7 @@ class ProjectRuntimeContextFlowIT {
         final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
         verify(this.openAiChatClient).execute(requestCaptor.capture());
         final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).contains("Project name: Fallback Project");
-        assertThat(runtimeInput).contains("Project details: No additional project context provided.");
+        assertThat(runtimeInput).contains("No additional project context provided.");
     }
 
     private UUID createActiveAgent() {

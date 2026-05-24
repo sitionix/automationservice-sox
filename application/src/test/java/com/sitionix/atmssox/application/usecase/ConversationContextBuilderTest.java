@@ -143,9 +143,7 @@ class ConversationContextBuilderTest {
 
         //then
         final String expectedInput = """
-                Project context:
-                Project name: Project Atlas
-                Project details: Focus on deterministic context assembly.
+                Focus on deterministic context assembly.
 
                 Messages:
                 AGENT: Let's inspect execution latency trends.
@@ -182,7 +180,7 @@ class ConversationContextBuilderTest {
         );
 
         //then
-        assertThat(actual.input()).contains("Project details: No additional project context provided.");
+        assertThat(actual.input()).contains("No additional project context provided.");
     }
 
     private ConversationMessage getConversationMessage(

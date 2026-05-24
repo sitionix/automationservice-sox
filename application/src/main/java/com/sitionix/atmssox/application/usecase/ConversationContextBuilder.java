@@ -62,12 +62,7 @@ public class ConversationContextBuilder {
         }
         final ProjectRuntimeContext context = projectRuntimeContext.get();
         final String contextText = AgentRuleTextNormalizer.normalizeToEmpty(context.projectContextText());
-        inputBuilder.append("Project context:\n");
-        inputBuilder.append("Project name: ")
-                .append(AgentRuleTextNormalizer.normalizeToEmpty(context.projectName()))
-                .append("\n");
-        inputBuilder.append("Project details: ")
-                .append(contextText.isEmpty() ? "No additional project context provided." : contextText)
+        inputBuilder.append(contextText.isEmpty() ? "No additional project context provided." : contextText)
                 .append("\n\n");
     }
 
