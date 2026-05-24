@@ -1,9 +1,6 @@
 package com.sitionix.atmssox.it;
 
-import com.sitionix.atmssox.application.usecase.ChatExecutionAsyncProcessor;
-import com.sitionix.atmssox.application.usecase.ChatExecutionAsyncRunner;
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
-import com.sitionix.atmssox.domain.client.OpenAiChatRequest;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
@@ -18,12 +15,13 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,12 +30,6 @@ class ProjectRuntimeContextFlowIT {
 
     @Autowired
     private TestManager testManager;
-
-    @Autowired
-    private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
-
-    @MockBean
-    private ChatExecutionAsyncRunner chatExecutionAsyncRunner;
 
     @MockBean
     private OpenAiChatClient openAiChatClient;
@@ -98,25 +90,14 @@ class ProjectRuntimeContextFlowIT {
                     request.setConversationId(conversationId);
                     request.setMessage("Continue with project details");
                 }));
-        final UUID executionId = this.testManager.postgresql()
-                .get(ChatExecutionEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
-                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Execution not found"))
-                .getExecutionId();
-
         //when
-        this.chatExecutionAsyncProcessor.process(executionId);
-
         //then
-        final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
-        verify(this.openAiChatClient).execute(requestCaptor.capture());
-        final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).contains("Updated project context");
-        assertThat(runtimeInput).contains("Messages:");
-        assertThat(runtimeInput.indexOf("Updated project context")).isLessThan(runtimeInput.indexOf("Messages:"));
+        verify(this.openAiChatClient, timeout(4000)).execute(argThat(request -> {
+            final String runtimeInput = request.input();
+            return runtimeInput.contains("Updated project context")
+                    && runtimeInput.contains("Messages:")
+                    && runtimeInput.indexOf("Updated project context") < runtimeInput.indexOf("Messages:");
+        }));
     }
 
     @Test
@@ -143,24 +124,12 @@ class ProjectRuntimeContextFlowIT {
                     request.setConversationId(null);
                     request.setMessage("Standalone request");
                 }));
-        final UUID executionId = this.testManager.postgresql()
-                .get(ChatExecutionEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
-                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Execution not found"))
-                .getExecutionId();
-
         //when
-        this.chatExecutionAsyncProcessor.process(executionId);
-
         //then
-        final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
-        verify(this.openAiChatClient).execute(requestCaptor.capture());
-        final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).doesNotContain("Updated project context");
-        assertThat(runtimeInput).contains("Messages:");
+        verify(this.openAiChatClient, timeout(4000)).execute(argThat(request -> {
+            final String runtimeInput = request.input();
+            return !runtimeInput.contains("Updated project context") && runtimeInput.contains("Messages:");
+        }));
     }
 
     @Test
@@ -213,23 +182,11 @@ class ProjectRuntimeContextFlowIT {
                     request.setConversationId(conversationId);
                     request.setMessage("Need fallback rendering");
                 }));
-        final UUID executionId = this.testManager.postgresql()
-                .get(ChatExecutionEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
-                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Execution not found"))
-                .getExecutionId();
-
         //when
-        this.chatExecutionAsyncProcessor.process(executionId);
-
         //then
-        final ArgumentCaptor<OpenAiChatRequest> requestCaptor = ArgumentCaptor.forClass(OpenAiChatRequest.class);
-        verify(this.openAiChatClient).execute(requestCaptor.capture());
-        final String runtimeInput = requestCaptor.getValue().input();
-        assertThat(runtimeInput).contains("No additional project context provided.");
+        verify(this.openAiChatClient, timeout(4000)).execute(argThat(request ->
+                request.input().contains("No additional project context provided.")
+        ));
     }
 
 }

@@ -1,7 +1,6 @@
 package com.sitionix.atmssox.it;
 
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
-import com.sitionix.atmssox.application.usecase.ChatExecutionAsyncProcessor;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
@@ -38,9 +37,6 @@ class ChatExecutionRetrievalFlowIT {
 
     @MockBean
     private OpenAiChatClient openAiChatClient;
-
-    @MockBean
-    private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
 
     @Test
     @DisplayName("Should submit chat by executions path and persist execution")
