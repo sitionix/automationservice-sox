@@ -47,11 +47,65 @@ class ProjectRuntimeContextFlowIT {
     void givenProjectBoundConversation_whenProcessExecution_thenProjectContextIsPrepended() {
         //given
         when(this.openAiChatClient.execute(any())).thenReturn("reply");
-        final UUID agentId = this.createActiveAgent();
-        final UUID projectId = this.createProject("Alpha Project", true);
-        this.attachAgent(projectId, agentId);
-        final UUID conversationId = this.createProjectConversation(projectId, agentId);
-        final UUID executionId = this.submitExecution(agentId, conversationId, "Continue with project details");
+        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Agent not found"))
+                .getAgentId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Alpha Project")));
+        final UUID projectId = this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentProjectEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Project not found"))
+                .getProjectId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.patchAgentProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .applyDefault(defaults -> defaults.withRequest("patchAgentProjectContextOnlyRequest.json"))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(agentId))));
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .max(Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Project conversation not found"))
+                .getConversationId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage("Continue with project details");
+                }));
+        final UUID executionId = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Execution not found"))
+                .getExecutionId();
 
         //when
         this.chatExecutionAsyncProcessor.process(executionId);
@@ -70,8 +124,33 @@ class ProjectRuntimeContextFlowIT {
     void givenStandaloneConversation_whenProcessExecution_thenProjectContextIsAbsent() {
         //given
         when(this.openAiChatClient.execute(any())).thenReturn("reply");
-        final UUID agentId = this.createActiveAgent();
-        final UUID executionId = this.submitExecution(agentId, null, "Standalone request");
+        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Agent not found"))
+                .getAgentId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setConversationId(null);
+                    request.setMessage("Standalone request");
+                }));
+        final UUID executionId = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Execution not found"))
+                .getExecutionId();
 
         //when
         this.chatExecutionAsyncProcessor.process(executionId);
@@ -89,11 +168,59 @@ class ProjectRuntimeContextFlowIT {
     void givenProjectWithBlankContext_whenProcessExecution_thenFallbackProjectContextIsUsed() {
         //given
         when(this.openAiChatClient.execute(any())).thenReturn("reply");
-        final UUID agentId = this.createActiveAgent();
-        final UUID projectId = this.createProject("Fallback Project", false);
-        this.attachAgent(projectId, agentId);
-        final UUID conversationId = this.createProjectConversation(projectId, agentId);
-        final UUID executionId = this.submitExecution(agentId, conversationId, "Need fallback rendering");
+        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
+        final UUID agentId = this.testManager.postgresql()
+                .get(AgentEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Agent not found"))
+                .getAgentId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.activateAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createAgentProject())
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName("Fallback Project")));
+        final UUID projectId = this.testManager.postgresql()
+                .get(AgentProjectEntity.class)
+                .getAll()
+                .stream()
+                .max(Comparator.comparing(AgentProjectEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Project not found"))
+                .getProjectId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.addAgentToProject())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(agentId))));
+        final UUID conversationId = this.testManager.postgresql()
+                .get(ConversationEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getProjectId(), projectId))
+                .max(Comparator.comparing(ConversationEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Project conversation not found"))
+                .getConversationId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", agentId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> {
+                    request.setConversationId(conversationId);
+                    request.setMessage("Need fallback rendering");
+                }));
+        final UUID executionId = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
+                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Execution not found"))
+                .getExecutionId();
 
         //when
         this.chatExecutionAsyncProcessor.process(executionId);
@@ -105,84 +232,4 @@ class ProjectRuntimeContextFlowIT {
         assertThat(runtimeInput).contains("No additional project context provided.");
     }
 
-    private UUID createActiveAgent() {
-        this.testManager.mockMvc().ping(ControllerEndpoint.createAgent()).assertDefault();
-        final UUID agentId = this.testManager.postgresql()
-                .get(AgentEntity.class)
-                .getAll()
-                .stream()
-                .max(Comparator.comparing(AgentEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Agent not found"))
-                .getAgentId();
-
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.activateAgent())
-                .withPathParameters(PathParams.create().add("agentId", agentId))
-                .assertDefault();
-        return agentId;
-    }
-
-    private UUID createProject(final String name, final boolean withContextPatch) {
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createAgentProject())
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setName(name)));
-        final UUID projectId = this.testManager.postgresql()
-                .get(AgentProjectEntity.class)
-                .getAll()
-                .stream()
-                .max(Comparator.comparing(AgentProjectEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Project not found"))
-                .getProjectId();
-
-        if (withContextPatch) {
-            this.testManager.mockMvc()
-                    .ping(ControllerEndpoint.patchAgentProject())
-                    .withPathParameters(PathParams.create().add("projectId", projectId))
-                    .applyDefault(defaults -> defaults.withRequest("patchAgentProjectContextOnlyRequest.json"))
-                    .assertDefault();
-        }
-        return projectId;
-    }
-
-    private void attachAgent(final UUID projectId, final UUID agentId) {
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.addAgentToProject())
-                .withPathParameters(PathParams.create().add("projectId", projectId))
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentId(agentId)));
-    }
-
-    private UUID createProjectConversation(final UUID projectId, final UUID agentId) {
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.createProjectConversation())
-                .withPathParameters(PathParams.create().add("projectId", projectId))
-                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(agentId))));
-
-        return this.testManager.postgresql()
-                .get(ConversationEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getProjectId(), projectId))
-                .max(Comparator.comparing(ConversationEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Project conversation not found"))
-                .getConversationId();
-    }
-
-    private UUID submitExecution(final UUID agentId, final UUID conversationId, final String message) {
-        this.testManager.mockMvc()
-                .ping(ControllerEndpoint.chatAgent())
-                .withPathParameters(PathParams.create().add("agentId", agentId))
-                .assertDefault(defaults -> defaults.mutateRequest(request -> {
-                    request.setConversationId(conversationId);
-                    request.setMessage(message);
-                }));
-
-        return this.testManager.postgresql()
-                .get(ChatExecutionEntity.class)
-                .getAll()
-                .stream()
-                .filter(entity -> Objects.equals(entity.getAgentId(), agentId))
-                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Execution not found"))
-                .getExecutionId();
-    }
 }
