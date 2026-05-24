@@ -45,6 +45,7 @@ public class ChatExecutionAsyncProcessor {
     private final AgentRuleRepository agentRuleRepository;
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     private final ConversationContextBuilder conversationContextBuilder;
+    private final ProjectRuntimeContextResolver projectRuntimeContextResolver;
     private final ContextOptimizerProperties contextOptimizerProperties;
     private final AgentExecutionService agentExecutionService;
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
@@ -100,11 +101,16 @@ public class ChatExecutionAsyncProcessor {
                     null
             );
             final Optional<ConversationContextSnapshot> snapshot = this.conversationContextSnapshotRepository.findByConversationId(conversation.getId());
+            final Optional<ProjectRuntimeContext> projectRuntimeContext = this.projectRuntimeContextResolver.resolve(
+                    execution.getUserId(),
+                    conversation.getProjectId()
+            );
 
             final UserAgentExecutionContext contextPrompt = this.conversationContextBuilder.build(
                     agent.getInstruction(),
                     activeRules,
                     snapshot.map(ConversationContextSnapshot::getSummary).orElse(""),
+                    projectRuntimeContext,
                     lastMessages,
                     userMessage
             );

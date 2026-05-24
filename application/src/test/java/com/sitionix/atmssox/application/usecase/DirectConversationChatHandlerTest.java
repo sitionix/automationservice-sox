@@ -68,6 +68,9 @@ class DirectConversationChatHandlerTest {
     private ConversationContextBuilder conversationContextBuilder;
 
     @Mock
+    private ProjectRuntimeContextResolver projectRuntimeContextResolver;
+
+    @Mock
     private ContextOptimizerProperties contextOptimizerProperties;
 
     @Mock
@@ -88,6 +91,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
@@ -109,6 +113,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,
@@ -153,7 +158,8 @@ class DirectConversationChatHandlerTest {
                 .thenReturn(List.of());
         when(this.conversationContextSnapshotRepository.findByConversationId(conversationId))
                 .thenReturn(Optional.of(this.getSnapshot(conversationId)));
-        when(this.conversationContextBuilder.build("  Keep answers concise.  ", List.of(), "summary", List.of(userMessage), userMessage))
+        when(this.projectRuntimeContextResolver.resolve(17L, null)).thenReturn(Optional.empty());
+        when(this.conversationContextBuilder.build("  Keep answers concise.  ", List.of(), "summary", Optional.empty(), List.of(userMessage), userMessage))
                 .thenReturn(new UserAgentExecutionContext("instruction", "context-prompt"));
         when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class)))
                 .thenReturn("It separates business rules from external frameworks.");
@@ -172,7 +178,8 @@ class DirectConversationChatHandlerTest {
         verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10);
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversationId);
-        verify(this.conversationContextBuilder).build("  Keep answers concise.  ", List.of(), "summary", List.of(userMessage), userMessage);
+        verify(this.projectRuntimeContextResolver).resolve(17L, null);
+        verify(this.conversationContextBuilder).build("  Keep answers concise.  ", List.of(), "summary", Optional.empty(), List.of(userMessage), userMessage);
         verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
         verify(this.postChatWorkflowDispatcher).dispatch(any(ChatCompletedContext.class));
@@ -205,7 +212,8 @@ class DirectConversationChatHandlerTest {
                 .thenReturn(List.of());
         when(this.conversationContextSnapshotRepository.findByConversationId(conversationId))
                 .thenReturn(Optional.empty());
-        when(this.conversationContextBuilder.build(null, List.of(), "", List.of(userMessage), userMessage))
+        when(this.projectRuntimeContextResolver.resolve(17L, null)).thenReturn(Optional.empty());
+        when(this.conversationContextBuilder.build(null, List.of(), "", Optional.empty(), List.of(userMessage), userMessage))
                 .thenReturn(new UserAgentExecutionContext("", "context-prompt"));
         when(this.agentExecutionService.execute(any(Agent.class), any(AgentExecutionContext.class))).thenReturn("hi");
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
@@ -223,7 +231,8 @@ class DirectConversationChatHandlerTest {
         verify(this.conversationMessageRepository).findLastByConversationIdOrderByCreatedAtAsc(conversationId, 10);
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversationId);
-        verify(this.conversationContextBuilder).build(null, List.of(), "", List.of(userMessage), userMessage);
+        verify(this.projectRuntimeContextResolver).resolve(17L, null);
+        verify(this.conversationContextBuilder).build(null, List.of(), "", Optional.empty(), List.of(userMessage), userMessage);
         verify(this.agentExecutionService).execute(any(Agent.class), any(AgentExecutionContext.class));
         verify(this.conversationRepository).save(any(Conversation.class));
         verify(this.postChatWorkflowDispatcher).dispatch(any(ChatCompletedContext.class));
@@ -261,6 +270,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,
@@ -296,6 +306,7 @@ class DirectConversationChatHandlerTest {
                 this.conversationMessageRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionHandler,
                 this.agentExecutionService,

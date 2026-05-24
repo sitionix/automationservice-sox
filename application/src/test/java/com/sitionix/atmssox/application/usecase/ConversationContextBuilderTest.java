@@ -9,6 +9,7 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,7 @@ class ConversationContextBuilderTest {
                 "Follow architecture guidance.",
                 List.of(rule),
                 "Project Alpha uses Spring Boot and Kafka.",
+                Optional.empty(),
                 given,
                 userMessage
         );
@@ -97,6 +99,7 @@ class ConversationContextBuilderTest {
                 "Instruction",
                 List.of(),
                 "",
+                Optional.empty(),
                 given,
                 currentUserMessage
         );

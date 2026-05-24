@@ -50,6 +50,7 @@ class ChatExecutionAsyncProcessorTest {
     @Mock private AgentRuleRepository agentRuleRepository;
     @Mock private ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     @Mock private ConversationContextBuilder conversationContextBuilder;
+    @Mock private ProjectRuntimeContextResolver projectRuntimeContextResolver;
     @Mock private ContextOptimizerProperties contextOptimizerProperties;
     @Mock private AgentExecutionService agentExecutionService;
     @Mock private PostChatWorkflowDispatcher postChatWorkflowDispatcher;
@@ -66,6 +67,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher,
@@ -84,6 +86,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher,
@@ -110,6 +113,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
@@ -197,6 +201,7 @@ class ChatExecutionAsyncProcessorTest {
                 .thenReturn(Optional.of(this.getUserMessage(queued.getConversationId(), queued.getUserId(), queued.getRequestMessage())));
         when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
         when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(agent));
+        when(this.projectRuntimeContextResolver.resolve(queued.getUserId(), null)).thenReturn(Optional.empty());
         when(this.agentExecutionService.execute(any(), any())).thenThrow(new IllegalStateException("gateway timeout"));
 
         //when
@@ -224,7 +229,8 @@ class ChatExecutionAsyncProcessorTest {
                 null
         );
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversation.getId());
-        verify(this.conversationContextBuilder).build(any(), any(), any(), any(), any());
+        verify(this.projectRuntimeContextResolver).resolve(queued.getUserId(), null);
+        verify(this.conversationContextBuilder).build(any(), any(), any(), any(), any(), any());
         verify(this.agentExecutionService).execute(any(), any());
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
     }
@@ -267,6 +273,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
