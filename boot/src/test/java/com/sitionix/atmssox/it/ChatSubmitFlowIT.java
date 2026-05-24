@@ -15,7 +15,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -391,7 +390,7 @@ class ChatSubmitFlowIT {
     }
 
     @ParameterizedTest
-    @NullSource
+    @org.junit.jupiter.params.provider.NullSource
     @ValueSource(strings = {"\t\t", "\n\n"})
     @DisplayName("Should return bad request when submit chat with null or whitespace control message")
     void givenNullOrWhitespaceControlMessage_whenSubmitChat_thenReturnBadRequest(final String message) {
@@ -408,6 +407,17 @@ class ChatSubmitFlowIT {
                 .withPathParameters(PathParams.create().add("agentId", agentId))
                 .expectStatus(HttpStatus.BAD_REQUEST)
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(message)));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when submit chat with malformed agent id")
+    void givenMalformedAgentId_whenSubmitChat_thenReturnBadRequest() {
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.chatAgent())
+                .withPathParameters(PathParams.create().add("agentId", "%%%"))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault();
     }
 
     @Test
