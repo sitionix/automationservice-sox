@@ -519,5 +519,4 @@ class ChatSubmitFlowIT {
                 }));
     }
 
-
 }

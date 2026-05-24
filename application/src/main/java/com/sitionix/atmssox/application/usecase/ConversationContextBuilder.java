@@ -5,6 +5,7 @@ import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.AgentRule;
 import com.sitionix.atmssox.domain.model.AgentRuleTextNormalizer;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class ConversationContextBuilder {
     public UserAgentExecutionContext build(final String agentInstruction,
                                            final List<AgentRule> activeRules,
                                            final String summary,
+                                           final Optional<ProjectRuntimeContext> projectRuntimeContext,
                                            final List<ConversationMessage> lastMessages,
                                            final ConversationMessage currentUserMessage) {
         final StringBuilder systemBuilder = new StringBuilder(AgentRuleTextNormalizer.normalizeToEmpty(agentInstruction));
@@ -35,6 +37,7 @@ public class ConversationContextBuilder {
         }
 
         final StringBuilder inputBuilder = new StringBuilder();
+        this.appendProjectContextBlock(inputBuilder, projectRuntimeContext);
         inputBuilder.append("Messages:\n");
         for (ConversationMessage message : lastMessages) {
             inputBuilder.append(this.mapAuthor(message.getAuthorType()))
@@ -50,6 +53,17 @@ public class ConversationContextBuilder {
         inputBuilder.append("Respond as AGENT to the latest USER message.");
 
         return new UserAgentExecutionContext(systemBuilder.toString(), inputBuilder.toString());
+    }
+
+    private void appendProjectContextBlock(final StringBuilder inputBuilder,
+                                           final Optional<ProjectRuntimeContext> projectRuntimeContext) {
+        if (projectRuntimeContext.isEmpty()) {
+            return;
+        }
+        final ProjectRuntimeContext context = projectRuntimeContext.get();
+        final String contextText = AgentRuleTextNormalizer.normalizeToEmpty(context.projectContextText());
+        inputBuilder.append(contextText.isEmpty() ? "No additional project context provided." : contextText)
+                .append("\n\n");
     }
 
     private boolean shouldAppendCurrentMessage(final List<ConversationMessage> lastMessages,

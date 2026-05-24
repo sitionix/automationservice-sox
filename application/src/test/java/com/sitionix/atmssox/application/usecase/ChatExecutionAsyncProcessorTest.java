@@ -50,6 +50,7 @@ class ChatExecutionAsyncProcessorTest {
     @Mock private AgentRuleRepository agentRuleRepository;
     @Mock private ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     @Mock private ConversationContextBuilder conversationContextBuilder;
+    @Mock private ProjectRuntimeContextResolver projectRuntimeContextResolver;
     @Mock private ContextOptimizerProperties contextOptimizerProperties;
     @Mock private AgentExecutionService agentExecutionService;
     @Mock private PostChatWorkflowDispatcher postChatWorkflowDispatcher;
@@ -66,6 +67,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher,
@@ -84,6 +86,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher,
@@ -110,6 +113,7 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
@@ -197,6 +201,7 @@ class ChatExecutionAsyncProcessorTest {
                 .thenReturn(Optional.of(this.getUserMessage(queued.getConversationId(), queued.getUserId(), queued.getRequestMessage())));
         when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
         when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(agent));
+        when(this.projectRuntimeContextResolver.resolve(queued.getUserId(), null)).thenReturn(Optional.empty());
         when(this.agentExecutionService.execute(any(), any())).thenThrow(new IllegalStateException("gateway timeout"));
 
         //when
@@ -224,7 +229,8 @@ class ChatExecutionAsyncProcessorTest {
                 null
         );
         verify(this.conversationContextSnapshotRepository).findByConversationId(conversation.getId());
-        verify(this.conversationContextBuilder).build(any(), any(), any(), any(), any());
+        verify(this.projectRuntimeContextResolver).resolve(queued.getUserId(), null);
+        verify(this.conversationContextBuilder).build(any(), any(), any(), any(), any(), any());
         verify(this.agentExecutionService).execute(any(), any());
         verify(this.contextOptimizerProperties).getLastMessagesLimit();
     }
@@ -267,10 +273,73 @@ class ChatExecutionAsyncProcessorTest {
                 this.agentRuleRepository,
                 this.conversationContextSnapshotRepository,
                 this.conversationContextBuilder,
+                this.projectRuntimeContextResolver,
                 this.contextOptimizerProperties,
                 this.agentExecutionService,
                 this.postChatWorkflowDispatcher
         );
+    }
+
+    @Test
+    void givenProjectConversation_whenProcess_thenBuildContextUsingResolvedProjectRuntimeContext() {
+        //given
+        final UUID executionId = UUID.fromString("db8d40b8-0ecd-4206-8daf-35c7dfb2fef8");
+        final UUID projectId = UUID.fromString("f78544da-72e3-4f8e-b528-9586cc034a43");
+        final ChatExecution queued = this.getExecution(executionId, ChatExecutionStatus.QUEUED, null);
+        final ChatExecution inProgress = this.getExecution(executionId, ChatExecutionStatus.IN_PROGRESS, null);
+        final ChatExecution completed = this.getExecution(executionId, ChatExecutionStatus.COMPLETED, Instant.parse("2026-04-29T00:00:02Z"));
+        final Conversation conversation = this.getConversation(queued.getConversationId(), queued.getUserId()).toBuilder()
+                .projectId(projectId)
+                .build();
+        final Agent agent = this.getAgent(queued.getAgentId(), queued.getUserId());
+        final ConversationMessage userMessage = this.getUserMessage(queued.getConversationId(), queued.getUserId(), queued.getRequestMessage());
+        final ConversationMessage assistantMessage = ConversationMessage.builder()
+                .id(UUID.fromString("89f94302-bf98-4125-81ea-fcf601146c62"))
+                .conversationId(queued.getConversationId())
+                .authorId(queued.getAgentId().toString())
+                .content("explicit answer")
+                .createdAt(Instant.parse("2026-04-29T00:00:03Z"))
+                .build();
+        final Optional<ProjectRuntimeContext> projectRuntimeContext = Optional.of(new ProjectRuntimeContext(
+                projectId,
+                "Project Atlas",
+                "Use deterministic context ordering"
+        ));
+
+        when(this.chatExecutionRepository.findByExecutionIdAndStatus(executionId, ChatExecutionStatus.QUEUED)).thenReturn(Optional.of(queued));
+        when(this.chatExecutionRepository.save(any(ChatExecution.class)))
+                .thenReturn(inProgress)
+                .thenReturn(completed);
+        when(this.conversationRepository.findActiveByIdAndUserIdAndAgentId(queued.getConversationId(), queued.getUserId(), queued.getAgentId()))
+                .thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversation.getId())).thenReturn(List.of());
+        when(this.agentRepository.findVisibleByIdAndUserId(queued.getAgentId(), queued.getUserId())).thenReturn(Optional.of(agent));
+        when(this.conversationMessageRepository.findById(queued.getInputMessageId())).thenReturn(Optional.of(userMessage));
+        when(this.contextOptimizerProperties.getLastMessagesLimit()).thenReturn(5);
+        when(this.conversationMessageRepository.findLastByConversationIdOrderByCreatedAtAsc(conversation.getId(), 5))
+                .thenReturn(List.of(userMessage));
+        when(this.agentRuleRepository.findAllByAgentIdAndUserIdAndFiltersOrderByCreatedAtAsc(
+                queued.getAgentId(),
+                queued.getUserId(),
+                AgentRuleStatus.ACTIVE,
+                null
+        )).thenReturn(List.of());
+        when(this.conversationContextSnapshotRepository.findByConversationId(conversation.getId())).thenReturn(Optional.empty());
+        when(this.projectRuntimeContextResolver.resolve(queued.getUserId(), projectId)).thenReturn(projectRuntimeContext);
+        when(this.conversationContextBuilder.build("instruction", List.of(), "", projectRuntimeContext, List.of(userMessage), userMessage))
+                .thenReturn(new UserAgentExecutionContext("instruction", "context"));
+        when(this.agentExecutionService.execute(agent, new UserAgentExecutionContext("instruction", "context")))
+                .thenReturn("explicit answer");
+        when(this.conversationMessageRepository.save(any(ConversationMessage.class))).thenReturn(assistantMessage);
+        when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
+
+        //when
+        this.processor.process(executionId);
+
+        //then
+        verify(this.projectRuntimeContextResolver).resolve(queued.getUserId(), projectId);
+        verify(this.conversationContextBuilder).build("instruction", List.of(), "", projectRuntimeContext, List.of(userMessage), userMessage);
+        verify(this.postChatWorkflowDispatcher).dispatch(any(ChatCompletedContext.class));
     }
 
     private Conversation getConversation(final UUID conversationId, final Long userId) {

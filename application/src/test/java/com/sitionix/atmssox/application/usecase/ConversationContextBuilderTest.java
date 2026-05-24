@@ -9,6 +9,7 @@ import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,7 @@ class ConversationContextBuilderTest {
                 "Follow architecture guidance.",
                 List.of(rule),
                 "Project Alpha uses Spring Boot and Kafka.",
+                Optional.empty(),
                 given,
                 userMessage
         );
@@ -97,12 +99,88 @@ class ConversationContextBuilderTest {
                 "Instruction",
                 List.of(),
                 "",
+                Optional.empty(),
                 given,
                 currentUserMessage
         );
 
         //then
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenProjectRuntimeContextWithDetails_whenBuild_thenPlaceProjectSectionBeforeMessages() {
+        //given
+        final ConversationMessage currentUserMessage = this.getConversationMessage(
+                UUID.fromString("b31113f8-f718-44d1-a4e4-5284e5c3602a"),
+                ConversationParticipantType.USER,
+                "17",
+                "What should we optimize first?",
+                Instant.parse("2026-04-21T10:02:00Z")
+        );
+        final ConversationMessage previousMessage = this.getConversationMessage(
+                UUID.fromString("a6f42af6-a3c4-4dbf-9778-dde9864e53c3"),
+                ConversationParticipantType.AGENT,
+                "agent-1",
+                "Let's inspect execution latency trends.",
+                Instant.parse("2026-04-21T10:01:00Z")
+        );
+        final Optional<ProjectRuntimeContext> projectRuntimeContext = Optional.of(new ProjectRuntimeContext(
+                UUID.fromString("77e3cc4a-f43f-4ad7-9dd6-661f9586f717"),
+                "Project Atlas",
+                "Focus on deterministic context assembly."
+        ));
+
+        //when
+        final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                "Instruction",
+                List.of(),
+                "",
+                projectRuntimeContext,
+                List.of(previousMessage),
+                currentUserMessage
+        );
+
+        //then
+        final String expectedInput = """
+                Focus on deterministic context assembly.
+
+                Messages:
+                AGENT: Let's inspect execution latency trends.
+                USER: What should we optimize first?
+                Respond as AGENT to the latest USER message.
+                """.stripTrailing();
+        assertThat(actual.input()).isEqualTo(expectedInput);
+    }
+
+    @Test
+    void givenProjectRuntimeContextWithoutDetails_whenBuild_thenUseFallbackProjectDetailsText() {
+        //given
+        final ConversationMessage currentUserMessage = this.getConversationMessage(
+                UUID.fromString("8204348a-f7ed-4d50-aa8b-d4c11eb9f3e6"),
+                ConversationParticipantType.USER,
+                "17",
+                "Summarize context",
+                Instant.parse("2026-04-21T10:04:00Z")
+        );
+        final Optional<ProjectRuntimeContext> projectRuntimeContext = Optional.of(new ProjectRuntimeContext(
+                UUID.fromString("66c779a0-81de-4294-bfdf-4f934bbaf4a5"),
+                "Project Beta",
+                "   "
+        ));
+
+        //when
+        final UserAgentExecutionContext actual = this.conversationContextBuilder.build(
+                "Instruction",
+                List.of(),
+                "",
+                projectRuntimeContext,
+                List.of(),
+                currentUserMessage
+        );
+
+        //then
+        assertThat(actual.input()).contains("No additional project context provided.");
     }
 
     private ConversationMessage getConversationMessage(

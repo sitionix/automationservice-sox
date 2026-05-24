@@ -40,6 +40,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
     private final ConversationMessageRepository conversationMessageRepository;
     private final ConversationContextSnapshotRepository conversationContextSnapshotRepository;
     private final ConversationContextBuilder conversationContextBuilder;
+    private final ProjectRuntimeContextResolver projectRuntimeContextResolver;
     private final ContextOptimizerProperties contextOptimizerProperties;
     private final AgentExecutionService agentExecutionService;
     private final PostChatWorkflowDispatcher postChatWorkflowDispatcher;
@@ -86,6 +87,10 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 null
         );
         final Optional<ConversationContextSnapshot> snapshot = this.conversationContextSnapshotRepository.findByConversationId(conversation.getId());
+        final Optional<ProjectRuntimeContext> projectRuntimeContext = this.projectRuntimeContextResolver.resolve(
+                userId,
+                conversation.getProjectId()
+        );
         log.debug(
                 "Prepared chat execution context for conversationId={}, agentId={}, lastMessagesCount={}, activeRulesCount={}, snapshotCoveredUntil={}",
                 conversation.getId(),
@@ -99,6 +104,7 @@ public class DirectConversationChatHandler implements ConversationChatHandler {
                 agent.getInstruction(),
                 activeRules,
                 snapshot.map(ConversationContextSnapshot::getSummary).orElse(""),
+                projectRuntimeContext,
                 lastMessages,
                 userMessage
         );
