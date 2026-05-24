@@ -1,6 +1,7 @@
 package com.sitionix.atmssox.it;
 
 import com.sitionix.atmssox.domain.client.OpenAiChatClient;
+import com.sitionix.atmssox.application.usecase.ChatExecutionAsyncProcessor;
 import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
@@ -32,6 +33,9 @@ class DeleteConversationFlowIT {
 
     @MockBean
     private OpenAiChatClient openAiChatClient;
+
+    @MockBean
+    private ChatExecutionAsyncProcessor chatExecutionAsyncProcessor;
 
     @Test
     @DisplayName("Should soft delete conversation and hide it from retrieval endpoints")
