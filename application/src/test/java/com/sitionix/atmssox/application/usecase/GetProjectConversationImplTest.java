@@ -5,6 +5,7 @@ import com.sitionix.atmssox.domain.exception.AgentNotFoundException;
 import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.Conversation;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
 import com.sitionix.atmssox.domain.model.ProjectAgent;
@@ -84,13 +85,14 @@ class GetProjectConversationImplTest {
         final Conversation conversation = mock(Conversation.class);
         final ConversationParticipant participant = mock(ConversationParticipant.class);
         final ProjectAgent projectAgent = mock(ProjectAgent.class);
+        final ConversationMessage message = mock(ConversationMessage.class);
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.agentProjectRepository.findVisibleByIdAndOwnerUserId(projectId, 17L)).thenReturn(Optional.of(project));
         when(this.conversationRepository.findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId)).thenReturn(Optional.of(conversation));
         when(this.agentProjectMemberRepository.findVisibleProjectAgents(projectId, 17L)).thenReturn(List.of(projectAgent));
         when(this.conversationParticipantRepository.findAllByConversationId(conversationId)).thenReturn(List.of(participant));
-        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId)).thenReturn(List.of());
+        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId)).thenReturn(List.of(message));
         when(conversation.getId()).thenReturn(conversationId);
         when(projectAgent.getId()).thenReturn(agentId);
         when(projectAgent.getName()).thenReturn("Writer");
@@ -107,6 +109,7 @@ class GetProjectConversationImplTest {
         assertThat(actual.getConversation()).isEqualTo(conversation);
         assertThat(actual.getProject()).isEqualTo(project);
         assertThat(actual.getParticipants()).hasSize(1);
+        assertThat(actual.getMessages()).containsExactly(message);
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.agentProjectRepository).findVisibleByIdAndOwnerUserId(projectId, 17L);
         verify(this.conversationRepository).findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId);

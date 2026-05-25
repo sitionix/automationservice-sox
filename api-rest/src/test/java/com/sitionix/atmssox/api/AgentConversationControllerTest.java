@@ -5,7 +5,10 @@ import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
+import com.sitionix.atmssox.domain.model.ChatExecution;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
@@ -186,4 +189,26 @@ class AgentConversationControllerTest {
         verify(this.agentApiMapper).asProjectConversationDetailsDto(response);
     }
 
+    @Test
+    void givenConversationIdAndRequest_whenSubmitConversationExecution_thenReturnMappedResponse() {
+        //given
+        final UUID conversationId = UUID.randomUUID();
+        final String message = "submit";
+        final SubmitConversationExecutionRequestDTO requestDto = mock(SubmitConversationExecutionRequestDTO.class);
+        final ChatExecution execution = mock(ChatExecution.class);
+        final SubmitConversationExecutionResponseDTO responseDto = mock(SubmitConversationExecutionResponseDTO.class);
+        when(requestDto.getMessage()).thenReturn(message);
+        when(this.submitConversationExecution.execute(conversationId, message)).thenReturn(execution);
+        when(this.agentApiMapper.asSubmitConversationExecutionResponseDto(execution)).thenReturn(responseDto);
+
+        //when
+        final ResponseEntity<SubmitConversationExecutionResponseDTO> actual =
+                this.agentConversationController.submitConversationExecution(conversationId, requestDto);
+
+        //then
+        assertThat(actual).isEqualTo(ResponseEntity.ok(responseDto));
+        verify(requestDto).getMessage();
+        verify(this.submitConversationExecution).execute(conversationId, message);
+        verify(this.agentApiMapper).asSubmitConversationExecutionResponseDto(execution);
+    }
 }
