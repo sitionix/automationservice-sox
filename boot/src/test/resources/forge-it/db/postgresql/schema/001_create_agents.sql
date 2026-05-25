@@ -127,7 +127,8 @@ INSERT INTO chat_execution_statuses (id, description)
 VALUES (1, 'QUEUED'),
        (2, 'IN_PROGRESS'),
        (3, 'COMPLETED'),
-       (4, 'FAILED');
+       (4, 'FAILED'),
+       (5, 'DISPATCH_SKIPPED');
 
 CREATE TABLE chat_execution_failure_classes (
     id BIGINT PRIMARY KEY,

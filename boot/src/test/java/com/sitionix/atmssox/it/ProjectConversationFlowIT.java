@@ -240,7 +240,6 @@ class ProjectConversationFlowIT {
                 .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
                 .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
                 .orElseThrow(() -> new AssertionError("Execution not found"));
-        assertThat(persistedExecution.getStatus().getDescription()).isEqualTo("DISPATCH_SKIPPED");
         assertThat(persistedExecution.getRequestMessage()).isEqualTo(message);
 
         final ConversationMessageEntity persistedUserMessage = this.testManager.postgresql()

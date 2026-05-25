@@ -47,12 +47,11 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
         }
 
         final List<ConversationParticipant> participants = this.conversationParticipantRepository.findAllByConversationId(conversationId);
-        final List<ConversationParticipant> activeAgentParticipants = participants.stream()
+        final List<ConversationParticipant> agentParticipants = participants.stream()
                 .filter(participant -> participant.getParticipantType() == ConversationParticipantType.AGENT)
-                .filter(participant -> participant.getStatus() == AgentStatus.ACTIVE)
                 .toList();
-        if (activeAgentParticipants.isEmpty()) {
-            throw new AgentValidationException("Conversation must contain at least one active participant");
+        if (agentParticipants.isEmpty()) {
+            throw new AgentValidationException("Conversation must contain at least one agent participant");
         }
 
         final Instant now = Instant.now();
@@ -74,7 +73,7 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
             throw new AgentValidationException("Runtime dispatch is not supported for conversation execution endpoint");
         }
 
-        final ChatExecution execution = this.buildDispatchSkippedExecution(conversationId, userId, normalizedMessage, userMessage, now, activeAgentParticipants);
+        final ChatExecution execution = this.buildDispatchSkippedExecution(conversationId, userId, normalizedMessage, userMessage, now, agentParticipants);
         log.info(
                 "[CONVERSATION_EXECUTION] dispatch skipped conversationId={} inputMessageId={} executionId={} status={}",
                 conversationId,
@@ -90,11 +89,11 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
                                                         final String normalizedMessage,
                                                         final ConversationMessage userMessage,
                                                         final Instant now,
-                                                        final List<ConversationParticipant> activeAgentParticipants) {
-        if (activeAgentParticipants.size() == 1) {
+                                                        final List<ConversationParticipant> agentParticipants) {
+        if (agentParticipants.size() == 1) {
             final ChatExecution persisted = this.chatExecutionRepository.save(ChatExecution.builder()
                     .executionId(UUID.randomUUID())
-                    .agentId(UUID.fromString(activeAgentParticipants.get(0).getParticipantId()))
+                    .agentId(UUID.fromString(agentParticipants.get(0).getParticipantId()))
                     .conversationId(conversationId)
                     .userId(userId)
                     .status(ChatExecutionStatus.DISPATCH_SKIPPED)
