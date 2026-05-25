@@ -6,6 +6,8 @@ import com.app_afesox.atmssox.api_first.dto.AgentConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.domain.model.ConversationDetails;
 import com.sitionix.atmssox.domain.model.CreateProjectConversationCommand;
@@ -16,6 +18,7 @@ import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
 import com.sitionix.atmssox.domain.usecase.GetProjectConversation;
 import com.sitionix.atmssox.domain.usecase.ListProjectConversations;
+import com.sitionix.atmssox.domain.usecase.SubmitConversationExecution;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,7 @@ public class AgentConversationController implements AgentConversationApi {
     private final CreateProjectConversation createProjectConversation;
     private final ListProjectConversations listProjectConversations;
     private final GetProjectConversation getProjectConversation;
+    private final SubmitConversationExecution submitConversationExecution;
     private final AgentApiMapper agentApiMapper;
 
     @Override
@@ -67,5 +71,13 @@ public class AgentConversationController implements AgentConversationApi {
     @Override
     public ResponseEntity<ProjectConversationDetailsDTO> getProjectConversation(final UUID projectId, final UUID conversationId) {
         return ResponseEntity.ok(this.agentApiMapper.asProjectConversationDetailsDto(this.getProjectConversation.execute(projectId, conversationId)));
+    }
+
+    @Override
+    public ResponseEntity<SubmitConversationExecutionResponseDTO> submitConversationExecution(final UUID conversationId,
+                                                                                              @Valid final SubmitConversationExecutionRequestDTO submitConversationExecutionRequestDTO) {
+        return ResponseEntity.ok(this.agentApiMapper.asSubmitConversationExecutionResponseDto(
+                this.submitConversationExecution.execute(conversationId, submitConversationExecutionRequestDTO.getMessage())
+        ));
     }
 }

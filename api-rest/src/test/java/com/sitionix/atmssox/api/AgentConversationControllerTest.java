@@ -16,6 +16,7 @@ import com.sitionix.atmssox.domain.usecase.ListProjectConversations;
 import com.sitionix.atmssox.domain.usecase.GetProjectConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversation;
 import com.sitionix.atmssox.domain.usecase.GetAgentConversations;
+import com.sitionix.atmssox.domain.usecase.SubmitConversationExecution;
 import java.util.UUID;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -43,16 +44,35 @@ class AgentConversationControllerTest {
     @Mock private CreateProjectConversation createProjectConversation;
     @Mock private ListProjectConversations listProjectConversations;
     @Mock private GetProjectConversation getProjectConversation;
+    @Mock private SubmitConversationExecution submitConversationExecution;
     @Mock private AgentApiMapper agentApiMapper;
 
     @BeforeEach
     void setUp() {
-        this.agentConversationController = new AgentConversationController(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
+        this.agentConversationController = new AgentConversationController(
+                this.getAgentConversations,
+                this.getAgentConversation,
+                this.deleteAgentConversation,
+                this.createProjectConversation,
+                this.listProjectConversations,
+                this.getProjectConversation,
+                this.submitConversationExecution,
+                this.agentApiMapper
+        );
     }
 
     @AfterEach
     void tearDown() {
-        verifyNoMoreInteractions(this.getAgentConversations, this.getAgentConversation, this.deleteAgentConversation, this.createProjectConversation, this.listProjectConversations, this.getProjectConversation, this.agentApiMapper);
+        verifyNoMoreInteractions(
+                this.getAgentConversations,
+                this.getAgentConversation,
+                this.deleteAgentConversation,
+                this.createProjectConversation,
+                this.listProjectConversations,
+                this.getProjectConversation,
+                this.submitConversationExecution,
+                this.agentApiMapper
+        );
     }
 
     @Test
@@ -165,4 +185,5 @@ class AgentConversationControllerTest {
         verify(this.getProjectConversation).execute(projectId, conversationId);
         verify(this.agentApiMapper).asProjectConversationDetailsDto(response);
     }
+
 }

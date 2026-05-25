@@ -11,6 +11,7 @@ import com.sitionix.atmssox.domain.model.ProjectAgent;
 import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
 import com.sitionix.atmssox.domain.repository.AgentProjectMemberRepository;
 import com.sitionix.atmssox.domain.repository.AgentProjectRepository;
+import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import java.util.List;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +44,8 @@ class GetProjectConversationImplTest {
     @Mock
     private ConversationParticipantRepository conversationParticipantRepository;
     @Mock
+    private ConversationMessageRepository conversationMessageRepository;
+    @Mock
     private AgentProjectMemberRepository agentProjectMemberRepository;
     @Mock
     private AuthenticatedUserProvider authenticatedUserProvider;
@@ -52,6 +56,7 @@ class GetProjectConversationImplTest {
                 this.agentProjectRepository,
                 this.conversationRepository,
                 this.conversationParticipantRepository,
+                this.conversationMessageRepository,
                 this.agentProjectMemberRepository,
                 this.authenticatedUserProvider
         );
@@ -63,6 +68,7 @@ class GetProjectConversationImplTest {
                 this.agentProjectRepository,
                 this.conversationRepository,
                 this.conversationParticipantRepository,
+                this.conversationMessageRepository,
                 this.agentProjectMemberRepository,
                 this.authenticatedUserProvider
         );
@@ -84,6 +90,7 @@ class GetProjectConversationImplTest {
         when(this.conversationRepository.findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId)).thenReturn(Optional.of(conversation));
         when(this.agentProjectMemberRepository.findVisibleProjectAgents(projectId, 17L)).thenReturn(List.of(projectAgent));
         when(this.conversationParticipantRepository.findAllByConversationId(conversationId)).thenReturn(List.of(participant));
+        when(this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId)).thenReturn(List.of());
         when(conversation.getId()).thenReturn(conversationId);
         when(projectAgent.getId()).thenReturn(agentId);
         when(projectAgent.getName()).thenReturn("Writer");
@@ -105,7 +112,8 @@ class GetProjectConversationImplTest {
         verify(this.conversationRepository).findActiveByIdAndUserIdAndProjectId(conversationId, 17L, projectId);
         verify(this.agentProjectMemberRepository).findVisibleProjectAgents(projectId, 17L);
         verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);
-        verify(conversation).getId();
+        verify(this.conversationMessageRepository).findAllByConversationIdOrderByCreatedAtAsc(conversationId);
+        verify(conversation, times(2)).getId();
         verify(participant).getParticipantType();
         verify(participant).getParticipantId();
         verify(participant).toBuilder();

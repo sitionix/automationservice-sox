@@ -18,6 +18,7 @@ import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationParticipantDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationProjectDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentProject;
@@ -73,6 +74,10 @@ public interface AgentApiMapper {
     @Mapping(target = "status", source = "status")
     @Mapping(target = "inputMessageId", source = "inputMessageId")
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
+
+    @Mapping(target = "executionStatus", source = "status")
+    @Mapping(target = "inputMessageId", source = "inputMessageId")
+    SubmitConversationExecutionResponseDTO asSubmitConversationExecutionResponseDto(ChatExecution src);
 
     @Mapping(target = "status", source = "status")
     @Mapping(target = "error", source = "failure")

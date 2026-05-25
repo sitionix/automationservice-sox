@@ -16,6 +16,7 @@ public interface ChatExecutionStatusApiMapper {
             case IN_PROGRESS -> ExecutionStatusDTO.IN_PROGRESS;
             case COMPLETED -> ExecutionStatusDTO.SUCCEEDED;
             case FAILED -> ExecutionStatusDTO.FAILED;
+            case DISPATCH_SKIPPED -> ExecutionStatusDTO.DISPATCH_SKIPPED;
         };
     }
 }
