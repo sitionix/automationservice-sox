@@ -24,6 +24,8 @@ import com.app_afesox.atmssox.api_first.dto.ProjectAgentsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateProjectConversationRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationDetailsDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionRequestDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
 import com.sitionix.forgeit.domain.endpoint.Endpoint;
 import com.sitionix.forgeit.domain.endpoint.HttpMethod;
@@ -418,6 +420,19 @@ public class ControllerEndpoint {
                 ProjectConversationDetailsDTO.class,
                 (MockmvcDefault) context -> context
                         .header("X-Forge-User-Sub", "1")
+                        .expectStatus(200)
+        );
+    }
+
+    public static Endpoint<SubmitConversationExecutionRequestDTO, SubmitConversationExecutionResponseDTO> submitConversationExecution() {
+        return Endpoint.createContract(
+                "/api/v1/conversations/{conversationId}/executions",
+                HttpMethod.POST,
+                SubmitConversationExecutionRequestDTO.class,
+                SubmitConversationExecutionResponseDTO.class,
+                (MockmvcDefault) context -> context
+                        .header("X-Forge-User-Sub", "1")
+                        .withRequest("submitConversationExecutionRequest.json")
                         .expectStatus(200)
         );
     }
