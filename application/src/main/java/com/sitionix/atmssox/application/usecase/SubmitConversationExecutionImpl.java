@@ -10,6 +10,7 @@ import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
+import com.sitionix.atmssox.domain.model.ConversationStatus;
 import com.sitionix.atmssox.domain.repository.ChatExecutionRepository;
 import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
     private final ChatExecutionRepository chatExecutionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final ConversationExecutionProperties conversationExecutionProperties;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -44,6 +47,9 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
                 .orElseThrow(() -> new AgentNotFoundException("Conversation not found"));
         if (conversation.getProjectId() == null) {
             throw new AgentNotFoundException("Conversation not found");
+        }
+        if (conversation.getStatus() != ConversationStatus.ACTIVE) {
+            throw new AgentValidationException("Conversation is not active");
         }
 
         final List<ConversationParticipant> participants = this.conversationParticipantRepository.findAllByConversationId(conversationId);
@@ -69,52 +75,29 @@ public class SubmitConversationExecutionImpl implements SubmitConversationExecut
                 .build());
         log.info("[CONVERSATION_EXECUTION] user message persisted conversationId={} inputMessageId={}", conversationId, userMessage.getId());
 
-        if (this.conversationExecutionProperties.isRuntimeDispatchEnabled()) {
-            throw new AgentValidationException("Runtime dispatch is not supported for conversation execution endpoint");
-        }
-
-        final ChatExecution execution = this.buildDispatchSkippedExecution(conversationId, userId, normalizedMessage, userMessage, now, agentParticipants);
-        log.info(
-                "[CONVERSATION_EXECUTION] dispatch skipped conversationId={} inputMessageId={} executionId={} status={}",
-                conversationId,
-                userMessage.getId(),
-                execution.getExecutionId(),
-                execution.getStatus()
-        );
-        return execution;
-    }
-
-    private ChatExecution buildDispatchSkippedExecution(final UUID conversationId,
-                                                        final Long userId,
-                                                        final String normalizedMessage,
-                                                        final ConversationMessage userMessage,
-                                                        final Instant now,
-                                                        final List<ConversationParticipant> agentParticipants) {
-        if (agentParticipants.size() == 1) {
-            final ChatExecution persisted = this.chatExecutionRepository.save(ChatExecution.builder()
-                    .executionId(UUID.randomUUID())
-                    .agentId(UUID.fromString(agentParticipants.get(0).getParticipantId()))
+        if (!this.conversationExecutionProperties.isRuntimeDispatchEnabled()) {
+            return ChatExecution.builder()
                     .conversationId(conversationId)
                     .userId(userId)
-                    .status(ChatExecutionStatus.DISPATCH_SKIPPED)
                     .requestMessage(normalizedMessage)
                     .inputMessageId(userMessage.getId())
                     .createdAt(now)
-                    .completedAt(now)
-                    .build());
-            return persisted.toBuilder().idempotencyReplayed(false).build();
+                    .idempotencyReplayed(false)
+                    .build();
         }
-        return ChatExecution.builder()
-                .executionId(null)
+
+        final ChatExecution execution = this.chatExecutionRepository.save(ChatExecution.builder()
+                .executionId(UUID.randomUUID())
+                .agentId(UUID.fromString(agentParticipants.get(0).getParticipantId()))
                 .conversationId(conversationId)
                 .userId(userId)
-                .status(ChatExecutionStatus.DISPATCH_SKIPPED)
+                .status(ChatExecutionStatus.QUEUED)
                 .requestMessage(normalizedMessage)
                 .inputMessageId(userMessage.getId())
                 .createdAt(now)
-                .completedAt(now)
-                .idempotencyReplayed(false)
-                .build();
+                .build()).toBuilder().idempotencyReplayed(false).build();
+        this.applicationEventPublisher.publishEvent(new ChatExecutionSubmittedEvent(execution.getExecutionId()));
+        return execution;
     }
 
     private String normalizeMessage(final String message) {

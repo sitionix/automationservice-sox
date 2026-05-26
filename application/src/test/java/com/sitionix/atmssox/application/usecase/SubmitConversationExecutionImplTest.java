@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,8 @@ class SubmitConversationExecutionImplTest {
     private ChatExecutionRepository chatExecutionRepository;
     @Mock
     private AuthenticatedUserProvider authenticatedUserProvider;
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -62,7 +65,8 @@ class SubmitConversationExecutionImplTest {
                 this.conversationMessageRepository,
                 this.chatExecutionRepository,
                 this.authenticatedUserProvider,
-                conversationExecutionProperties
+                conversationExecutionProperties,
+                this.applicationEventPublisher
         );
     }
 
@@ -73,13 +77,25 @@ class SubmitConversationExecutionImplTest {
                 this.conversationParticipantRepository,
                 this.conversationMessageRepository,
                 this.chatExecutionRepository,
-                this.authenticatedUserProvider
+                this.authenticatedUserProvider,
+                this.applicationEventPublisher
         );
     }
 
     @Test
-    void givenSingleActiveAgent_whenExecute_thenPersistDispatchSkippedExecution() {
+    void givenSingleActiveAgent_whenExecute_thenPersistQueuedExecution() {
         //given
+        final ConversationExecutionProperties conversationExecutionProperties = new ConversationExecutionProperties();
+        conversationExecutionProperties.setRuntimeDispatchEnabled(true);
+        this.submitConversationExecution = new SubmitConversationExecutionImpl(
+                this.conversationRepository,
+                this.conversationParticipantRepository,
+                this.conversationMessageRepository,
+                this.chatExecutionRepository,
+                this.authenticatedUserProvider,
+                conversationExecutionProperties,
+                this.applicationEventPublisher
+        );
         final UUID conversationId = UUID.fromString("dc948cb2-c5eb-4f1b-b7ad-c3a676cb9fce");
         final UUID agentId = UUID.fromString("7e3f0b49-4d4b-4d8f-b16a-f785e85589ea");
         final UUID messageId = UUID.fromString("6f8ad305-5f9d-49ce-939d-9796467a9aa3");
@@ -101,12 +117,12 @@ class SubmitConversationExecutionImplTest {
 
         //then
         assertThat(actual.getExecutionId()).isEqualTo(executionId);
-        assertThat(actual.getStatus()).isEqualTo(ChatExecutionStatus.DISPATCH_SKIPPED);
+        assertThat(actual.getStatus()).isEqualTo(ChatExecutionStatus.QUEUED);
         assertThat(actual.isIdempotencyReplayed()).isFalse();
         final ArgumentCaptor<ChatExecution> executionCaptor = ArgumentCaptor.forClass(ChatExecution.class);
         verify(this.chatExecutionRepository).save(executionCaptor.capture());
         final ChatExecution toSave = executionCaptor.getValue();
-        assertThat(toSave.getStatus()).isEqualTo(ChatExecutionStatus.DISPATCH_SKIPPED);
+        assertThat(toSave.getStatus()).isEqualTo(ChatExecutionStatus.QUEUED);
         assertThat(toSave.getRequestMessage()).isEqualTo("hello");
         assertThat(toSave.getAgentId()).isEqualTo(agentId);
         verify(this.authenticatedUserProvider).getUserId();
@@ -114,10 +130,11 @@ class SubmitConversationExecutionImplTest {
         verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);
         verify(this.conversationMessageRepository).save(any(ConversationMessage.class));
         verify(this.conversationRepository).save(any(Conversation.class));
+        verify(this.applicationEventPublisher).publishEvent(any(ChatExecutionSubmittedEvent.class));
     }
 
     @Test
-    void givenMultipleActiveAgents_whenExecute_thenReturnDispatchSkippedWithoutExecutionId() {
+    void givenMultipleActiveAgents_whenExecute_thenReturnMessageOnlyResponse() {
         //given
         final UUID conversationId = UUID.fromString("dc948cb2-c5eb-4f1b-b7ad-c3a676cb9fce");
         final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("5366d56e-1e31-4ef8-8924-77f317f7f6a2"));
@@ -141,7 +158,7 @@ class SubmitConversationExecutionImplTest {
 
         //then
         assertThat(actual.getExecutionId()).isNull();
-        assertThat(actual.getStatus()).isEqualTo(ChatExecutionStatus.DISPATCH_SKIPPED);
+        assertThat(actual.getStatus()).isNull();
         assertThat(actual.getInputMessageId()).isEqualTo(messageId);
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
@@ -149,6 +166,7 @@ class SubmitConversationExecutionImplTest {
         verify(this.conversationMessageRepository).save(any(ConversationMessage.class));
         verify(this.conversationRepository).save(any(Conversation.class));
         verifyNoInteractions(this.chatExecutionRepository);
+        verifyNoInteractions(this.applicationEventPublisher);
     }
 
     @Test
@@ -167,7 +185,8 @@ class SubmitConversationExecutionImplTest {
                 this.conversationRepository,
                 this.conversationParticipantRepository,
                 this.conversationMessageRepository,
-                this.chatExecutionRepository
+                this.chatExecutionRepository,
+                this.applicationEventPublisher
         );
     }
 
@@ -186,7 +205,8 @@ class SubmitConversationExecutionImplTest {
                 .hasMessage("Conversation not found");
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
-        verifyNoInteractions(this.conversationParticipantRepository, this.conversationMessageRepository, this.chatExecutionRepository);
+        verifyNoInteractions(this.conversationParticipantRepository, this.conversationMessageRepository, this.chatExecutionRepository,
+                this.applicationEventPublisher);
     }
 
     private Conversation getConversation(final UUID conversationId, final Long userId, final UUID projectId) {
@@ -236,11 +256,10 @@ class SubmitConversationExecutionImplTest {
                 .conversationId(conversationId)
                 .agentId(agentId)
                 .userId(userId)
-                .status(ChatExecutionStatus.DISPATCH_SKIPPED)
+                .status(ChatExecutionStatus.QUEUED)
                 .requestMessage(message)
                 .inputMessageId(inputMessageId)
                 .createdAt(Instant.parse("2026-05-10T10:00:01Z"))
-                .completedAt(Instant.parse("2026-05-10T10:00:01Z"))
                 .build();
     }
 }
