@@ -230,6 +230,8 @@ class ProjectConversationFlowIT {
                 .withPathParameters(PathParams.create().add("conversationId", conversationId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.conversationId").value(conversationId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.runtimeDispatched").value(false))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionId").doesNotExist())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").doesNotExist())
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(message)));
 
         //then
@@ -261,6 +263,170 @@ class ProjectConversationFlowIT {
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].authorType").value("USER"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].content").value(message))
                 .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentConversation())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].content").value(message))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.execution").doesNotExist())
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given existing project conversation when submit execution with blank message then return bad request and persist no side effects")
+    void givenExistingProjectConversation_whenSubmitExecutionWithBlankMessage_thenReturnBadRequestAndPersistNoSideEffects() {
+        //given
+        final UUID projectId = this.createProjectForUser("1");
+        final UUID firstAgentId = this.createAndActivateAgent("1");
+        this.attachAgent(projectId, firstAgentId, "1");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(firstAgentId))));
+        final UUID conversationId = this.findLatestConversationForProject(projectId).getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .expectStatus(HttpStatus.BAD_REQUEST)
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage("   ")));
+
+        //then
+        final long executionCount = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
+                .count();
+        assertThat(executionCount).isZero();
+        final long messageCount = this.testManager.postgresql()
+                .get(ConversationMessageEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .count();
+        assertThat(messageCount).isZero();
+    }
+
+    @Test
+    @DisplayName("given existing project conversation when submit execution by another user then return not found and persist no side effects")
+    void givenExistingProjectConversation_whenSubmitExecutionByAnotherUser_thenReturnNotFoundAndPersistNoSideEffects() {
+        //given
+        final UUID projectId = this.createProjectForUser("1");
+        final UUID firstAgentId = this.createAndActivateAgent("1");
+        this.attachAgent(projectId, firstAgentId, "1");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(firstAgentId))));
+        final UUID conversationId = this.findLatestConversationForProject(projectId).getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .header("X-Forge-User-Sub", "2")
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        final long executionCount = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
+                .count();
+        assertThat(executionCount).isZero();
+        final long messageCount = this.testManager.postgresql()
+                .get(ConversationMessageEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .count();
+        assertThat(messageCount).isZero();
+    }
+
+    @Test
+    @DisplayName("given deleted conversation when submit execution then return not found and persist no side effects")
+    void givenDeletedConversation_whenSubmitExecution_thenReturnNotFoundAndPersistNoSideEffects() {
+        //given
+        final UUID projectId = this.createProjectForUser("1");
+        final UUID firstAgentId = this.createAndActivateAgent("1");
+        this.attachAgent(projectId, firstAgentId, "1");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(firstAgentId))));
+        final UUID conversationId = this.findLatestConversationForProject(projectId).getConversationId();
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.deleteAgentConversation())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .assertDefault();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .expectStatus(HttpStatus.NOT_FOUND)
+                .assertDefault();
+
+        //then
+        final long executionCount = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
+                .count();
+        assertThat(executionCount).isZero();
+    }
+
+    @Test
+    @DisplayName("given existing project conversation when submit execution twice with dispatch disabled then persist messages and no execution")
+    void givenExistingProjectConversation_whenSubmitExecutionTwiceWithDispatchDisabled_thenPersistMessagesAndNoExecution() {
+        //given
+        final UUID projectId = this.createProjectForUser("1");
+        final UUID firstAgentId = this.createAndActivateAgent("1");
+        this.attachAgent(projectId, firstAgentId, "1");
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(firstAgentId))));
+        final UUID conversationId = this.findLatestConversationForProject(projectId).getConversationId();
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.runtimeDispatched").value(false))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").doesNotExist())
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage("first disabled message")));
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.runtimeDispatched").value(false))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").doesNotExist())
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage("second disabled message")));
+
+        //then
+        final long executionCount = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
+                .count();
+        assertThat(executionCount).isZero();
+        final List<ConversationMessageEntity> messages = this.testManager.postgresql()
+                .get(ConversationMessageEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .sorted(Comparator.comparing(ConversationMessageEntity::getCreatedAt))
+                .toList();
+        assertThat(messages).hasSize(2);
+        assertThat(messages.get(0).getContent()).isEqualTo("first disabled message");
+        assertThat(messages.get(1).getContent()).isEqualTo("second disabled message");
     }
 
     @Test
