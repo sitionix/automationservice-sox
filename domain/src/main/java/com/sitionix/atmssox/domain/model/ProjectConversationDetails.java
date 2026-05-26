@@ -14,6 +14,8 @@ public class ProjectConversationDetails {
 
     List<ConversationParticipant> participants;
 
+    List<ConversationMessage> messages;
+
     public List<ConversationParticipant> getAgentParticipants() {
         if (this.participants == null) {
             return List.of();
@@ -24,6 +26,6 @@ public class ProjectConversationDetails {
     }
 
     public List<ConversationMessage> getMessages() {
-        return List.of();
+        return this.messages == null ? List.of() : this.messages;
     }
 }

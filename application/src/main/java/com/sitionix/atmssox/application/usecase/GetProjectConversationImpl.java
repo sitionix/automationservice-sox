@@ -6,10 +6,12 @@ import com.sitionix.atmssox.domain.model.AgentProject;
 import com.sitionix.atmssox.domain.model.Conversation;
 import com.sitionix.atmssox.domain.model.ConversationParticipant;
 import com.sitionix.atmssox.domain.model.ConversationParticipantType;
+import com.sitionix.atmssox.domain.model.ConversationMessage;
 import com.sitionix.atmssox.domain.model.ProjectConversationDetails;
 import com.sitionix.atmssox.domain.model.ProjectAgent;
 import com.sitionix.atmssox.domain.repository.AgentProjectMemberRepository;
 import com.sitionix.atmssox.domain.repository.AgentProjectRepository;
+import com.sitionix.atmssox.domain.repository.ConversationMessageRepository;
 import com.sitionix.atmssox.domain.repository.ConversationParticipantRepository;
 import com.sitionix.atmssox.domain.repository.ConversationRepository;
 import com.sitionix.atmssox.domain.usecase.GetProjectConversation;
@@ -29,6 +31,7 @@ public class GetProjectConversationImpl implements GetProjectConversation {
     private final AgentProjectRepository agentProjectRepository;
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository conversationParticipantRepository;
+    private final ConversationMessageRepository conversationMessageRepository;
     private final AgentProjectMemberRepository agentProjectMemberRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
 
@@ -58,11 +61,13 @@ public class GetProjectConversationImpl implements GetProjectConversation {
                             .build();
                 })
                 .toList();
+        final List<ConversationMessage> messages = this.conversationMessageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversation.getId());
 
         return ProjectConversationDetails.builder()
                 .conversation(conversation)
                 .project(project)
                 .participants(participants)
+                .messages(messages)
                 .build();
     }
 }

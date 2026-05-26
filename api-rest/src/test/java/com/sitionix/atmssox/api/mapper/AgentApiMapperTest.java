@@ -20,6 +20,7 @@ import com.app_afesox.atmssox.api_first.dto.ProjectConversationParticipantDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationProjectDTO;
 import com.app_afesox.atmssox.api_first.dto.ProjectConversationsResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.SubmitChatExecutionResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.SubmitConversationExecutionResponseDTO;
 import com.sitionix.atmssox.domain.model.Agent;
 import com.sitionix.atmssox.domain.model.AgentStatus;
 import com.sitionix.atmssox.domain.model.ChatAgentCommand;
@@ -304,6 +305,22 @@ class AgentApiMapperTest {
         assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
         assertThat(actual.getInputMessageId()).isEqualTo(given.getInputMessageId());
         assertThat(actual.getStatus()).isEqualTo(ExecutionStatusDTO.ACCEPTED);
+    }
+
+    @Test
+    void givenChatExecution_whenAsSubmitConversationExecutionResponseDto_thenReturnExecutionEnvelope() {
+        //given
+        final ChatExecution given = this.getQueuedChatExecution();
+        when(this.chatExecutionStatusApiMapper.map(ChatExecutionStatus.QUEUED)).thenReturn(ExecutionStatusDTO.ACCEPTED);
+
+        //when
+        final SubmitConversationExecutionResponseDTO actual = this.agentApiMapper.asSubmitConversationExecutionResponseDto(given);
+
+        //then
+        assertThat(actual.getExecutionId()).isEqualTo(given.getExecutionId());
+        assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
+        assertThat(actual.getInputMessageId()).isEqualTo(given.getInputMessageId());
+        assertThat(actual.getExecutionStatus()).isEqualTo(ExecutionStatusDTO.ACCEPTED);
     }
 
     @Test

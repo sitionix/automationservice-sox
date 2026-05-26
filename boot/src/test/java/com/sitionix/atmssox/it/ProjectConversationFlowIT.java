@@ -6,7 +6,9 @@ import com.sitionix.atmssox.domain.model.ConversationType;
 import com.sitionix.atmssox.it.infra.ControllerEndpoint;
 import com.sitionix.atmssox.it.infra.TestManager;
 import com.sitionix.atmssox.postgresql.entity.agent.AgentEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ChatExecutionEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationEntity;
+import com.sitionix.atmssox.postgresql.entity.conversation.ConversationMessageEntity;
 import com.sitionix.atmssox.postgresql.entity.conversation.ConversationParticipantEntity;
 import com.sitionix.atmssox.postgresql.entity.project.AgentProjectEntity;
 import com.sitionix.forgeit.core.test.IntegrationTest;
@@ -203,6 +205,63 @@ class ProjectConversationFlowIT {
                         .add("conversationId", conversationId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.id").value(conversationId.toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.projectId").value(projectId.toString()))
+                .assertDefault();
+    }
+
+    @Test
+    @DisplayName("given existing project conversation when submit execution then persist user message and show it in details")
+    void givenExistingProjectConversation_whenSubmitExecution_thenPersistUserMessageAndShowItInDetails() {
+        //given
+        final UUID projectId = this.createProjectForUser("1");
+        final UUID firstAgentId = this.createAndActivateAgent("1");
+        this.attachAgent(projectId, firstAgentId, "1");
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.createProjectConversation())
+                .withPathParameters(PathParams.create().add("projectId", projectId))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setAgentIds(Set.of(firstAgentId))));
+
+        final UUID conversationId = this.findLatestConversationForProject(projectId).getConversationId();
+        final String message = "Conversation submit message";
+
+        //when
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.submitConversationExecution())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.conversationId").value(conversationId.toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").value("DISPATCH_SKIPPED"))
+                .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(message)));
+
+        //then
+        final ChatExecutionEntity persistedExecution = this.testManager.postgresql()
+                .get(ChatExecutionEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
+                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
+                .orElseThrow(() -> new AssertionError("Execution not found"));
+        assertThat(persistedExecution.getRequestMessage()).isEqualTo(message);
+
+        final ConversationMessageEntity persistedUserMessage = this.testManager.postgresql()
+                .get(ConversationMessageEntity.class)
+                .getAll()
+                .stream()
+                .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
+                .filter(entity -> Objects.equals(entity.getMessageId(), persistedExecution.getInputMessageId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Conversation user message not found"));
+        assertThat(persistedUserMessage.getContent()).isEqualTo(message);
+        assertThat(persistedUserMessage.getAuthorType().name()).isEqualTo("USER");
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getProjectConversation())
+                .withPathParameters(PathParams.create()
+                        .add("projectId", projectId)
+                        .add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].id").value(persistedExecution.getInputMessageId().toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].authorType").value("USER"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].content").value(message))
                 .assertDefault();
     }
 
