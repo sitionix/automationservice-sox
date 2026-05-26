@@ -293,6 +293,42 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenNullString_whenMapUuid_thenReturnNull() {
+        //given
+        final String given = null;
+
+        //when
+        final UUID actual = this.agentApiMapper.map(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenInvalidString_whenMapUuid_thenReturnNull() {
+        //given
+        final String given = "not-a-uuid";
+
+        //when
+        final UUID actual = this.agentApiMapper.map(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenValidString_whenMapUuid_thenReturnUuid() {
+        //given
+        final String given = "6b7e9e8c-8f8a-4a34-8a38-e4ac4fe2f35e";
+
+        //when
+        final UUID actual = this.agentApiMapper.map(given);
+
+        //then
+        assertThat(actual).isEqualTo(UUID.fromString(given));
+    }
+
+    @Test
     void givenChatExecution_whenAsSubmitChatExecutionResponseDto_thenReturnExecutionEnvelope() {
         //given
         final ChatExecution given = this.getQueuedChatExecution();
