@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChatExecutionStatusApiMapperTest {
 
@@ -47,5 +48,16 @@ class ChatExecutionStatusApiMapperTest {
 
         //then
         assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenDeprecatedDispatchSkippedStatusName_whenResolvingDomainEnum_thenThrowException() {
+        //given
+        final String given = "DISPATCH_SKIPPED";
+
+        //when
+        //then
+        assertThatThrownBy(() -> ChatExecutionStatus.valueOf(given))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

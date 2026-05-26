@@ -134,22 +134,18 @@ class SubmitConversationExecutionImplTest {
     }
 
     @Test
-    void givenMultipleActiveAgents_whenExecute_thenReturnMessageOnlyResponse() {
+    void givenRuntimeDispatchDisabledAndSingleActiveAgent_whenExecute_thenReturnMessageOnlyResponseWithoutExecutionSideEffects() {
         //given
         final UUID conversationId = UUID.fromString("dc948cb2-c5eb-4f1b-b7ad-c3a676cb9fce");
         final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("5366d56e-1e31-4ef8-8924-77f317f7f6a2"));
-        final UUID firstAgentId = UUID.fromString("e8ce979b-2a8e-4525-a6fc-e20454515b10");
-        final UUID secondAgentId = UUID.fromString("fdbe740a-4f5c-4f01-b394-21b8a4671525");
+        final UUID agentId = UUID.fromString("e8ce979b-2a8e-4525-a6fc-e20454515b10");
         final UUID messageId = UUID.fromString("6f8ad305-5f9d-49ce-939d-9796467a9aa3");
         final ConversationMessage persistedMessage = this.getUserMessage(messageId, conversationId, "hello");
 
         when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
         when(this.conversationRepository.findActiveByIdAndUserId(conversationId, 17L)).thenReturn(Optional.of(conversation));
         when(this.conversationParticipantRepository.findAllByConversationId(conversationId))
-                .thenReturn(List.of(
-                        this.getActiveAgentParticipant(conversationId, firstAgentId),
-                        this.getActiveAgentParticipant(conversationId, secondAgentId)
-                ));
+                .thenReturn(List.of(this.getActiveAgentParticipant(conversationId, agentId)));
         when(this.conversationMessageRepository.save(any(ConversationMessage.class))).thenReturn(persistedMessage);
         when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
@@ -160,6 +156,77 @@ class SubmitConversationExecutionImplTest {
         assertThat(actual.getExecutionId()).isNull();
         assertThat(actual.getStatus()).isNull();
         assertThat(actual.getInputMessageId()).isEqualTo(messageId);
+        final ArgumentCaptor<Conversation> conversationCaptor = ArgumentCaptor.forClass(Conversation.class);
+        verify(this.conversationRepository).save(conversationCaptor.capture());
+        final Conversation persistedConversation = conversationCaptor.getValue();
+        assertThat(persistedConversation.getUpdatedAt()).isNotNull();
+        assertThat(persistedConversation.getLastMessageAt()).isNotNull();
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
+        verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);
+        verify(this.conversationMessageRepository).save(any(ConversationMessage.class));
+        verifyNoInteractions(this.chatExecutionRepository);
+        verifyNoInteractions(this.applicationEventPublisher);
+    }
+
+    @Test
+    void givenSingleActiveAgentAndRuntimeDispatchDisabled_whenExecute_thenSkipExecutionPersistenceAndDispatch() {
+        //given
+        final UUID conversationId = UUID.fromString("826fa071-78b6-4fe6-bb0f-d7730a8a2fd8");
+        final UUID agentId = UUID.fromString("c7c6d74d-b2a4-46a1-865d-c7c71f0bc493");
+        final UUID messageId = UUID.fromString("bd88746a-115f-4c8f-a0bc-d8bb55f3892e");
+        final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("5366d56e-1e31-4ef8-8924-77f317f7f6a2"));
+        final ConversationMessage persistedMessage = this.getUserMessage(messageId, conversationId, "hello");
+
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.conversationRepository.findActiveByIdAndUserId(conversationId, 17L)).thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversationId))
+                .thenReturn(List.of(this.getActiveAgentParticipant(conversationId, agentId)));
+        when(this.conversationMessageRepository.save(any(ConversationMessage.class))).thenReturn(persistedMessage);
+        when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
+
+        //when
+        final ChatExecution actual = this.submitConversationExecution.execute(conversationId, "hello");
+
+        //then
+        assertThat(actual.getExecutionId()).isNull();
+        assertThat(actual.getStatus()).isNull();
+        assertThat(actual.getInputMessageId()).isEqualTo(messageId);
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
+        verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);
+        verify(this.conversationMessageRepository).save(any(ConversationMessage.class));
+        verify(this.conversationRepository).save(any(Conversation.class));
+        verifyNoInteractions(this.chatExecutionRepository);
+        verifyNoInteractions(this.applicationEventPublisher);
+    }
+
+    @Test
+    void givenSingleActiveAgentAndRuntimeDispatchDisabled_whenExecute_thenReturnMessageOnlyResponseWithoutDispatchSideEffects() {
+        //given
+        final UUID conversationId = UUID.fromString("97fcbd84-84b5-49d5-a31c-13ca27acd91a");
+        final UUID agentId = UUID.fromString("2a7f40bf-0d0c-4e1c-b357-6f2aaaf05490");
+        final UUID messageId = UUID.fromString("e4c5a386-14f8-4e4a-b578-ba6b7b8b2c82");
+        final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("2f9d8e49-4488-4e56-ac99-c04b2ddd8f44"));
+        final ConversationMessage persistedMessage = this.getUserMessage(messageId, conversationId, "runtime off");
+
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.conversationRepository.findActiveByIdAndUserId(conversationId, 17L)).thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversationId))
+                .thenReturn(List.of(this.getActiveAgentParticipant(conversationId, agentId)));
+        when(this.conversationMessageRepository.save(any(ConversationMessage.class))).thenReturn(persistedMessage);
+        when(this.conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
+
+        //when
+        final ChatExecution actual = this.submitConversationExecution.execute(conversationId, "  runtime off  ");
+
+        //then
+        assertThat(actual.getExecutionId()).isNull();
+        assertThat(actual.getStatus()).isNull();
+        assertThat(actual.getConversationId()).isEqualTo(conversationId);
+        assertThat(actual.getInputMessageId()).isEqualTo(messageId);
+        assertThat(actual.getRequestMessage()).isEqualTo("runtime off");
+        assertThat(actual.isIdempotencyReplayed()).isFalse();
         verify(this.authenticatedUserProvider).getUserId();
         verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
         verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);

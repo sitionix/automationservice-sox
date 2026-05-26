@@ -57,6 +57,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -322,6 +323,42 @@ class AgentApiMapperTest {
         assertThat(actual.getInputMessageId()).isEqualTo(given.getInputMessageId());
         assertThat(actual.getRuntimeDispatched()).isTrue();
         assertThat(actual.getExecutionStatus()).isEqualTo(ExecutionStatusDTO.ACCEPTED);
+    }
+
+    @Test
+    void givenChatExecutionWithoutStatus_whenAsSubmitConversationExecutionResponseDto_thenRuntimeNotDispatchedAndExecutionStatusNull() {
+        //given
+        final ChatExecution given = this.getQueuedChatExecution().toBuilder()
+                .status(null)
+                .build();
+
+        //when
+        final SubmitConversationExecutionResponseDTO actual = this.agentApiMapper.asSubmitConversationExecutionResponseDto(given);
+
+        //then
+        assertThat(actual.getExecutionId()).isEqualTo(given.getExecutionId());
+        assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
+        assertThat(actual.getInputMessageId()).isEqualTo(given.getInputMessageId());
+        assertThat(actual.getRuntimeDispatched()).isFalse();
+        assertThat(actual.getExecutionStatus()).isNull();
+        verify(this.chatExecutionStatusApiMapper).map(null);
+    }
+
+    @Test
+    void givenChatExecutionWithoutStatus_whenAsSubmitConversationExecutionResponseDto_thenReturnNotDispatchedResponse() {
+        //given
+        final ChatExecution given = this.getSubmitConversationExecutionWithoutRuntimeDispatch();
+
+        //when
+        final SubmitConversationExecutionResponseDTO actual = this.agentApiMapper.asSubmitConversationExecutionResponseDto(given);
+
+        //then
+        assertThat(actual.getExecutionId()).isNull();
+        assertThat(actual.getConversationId()).isEqualTo(given.getConversationId());
+        assertThat(actual.getInputMessageId()).isEqualTo(given.getInputMessageId());
+        assertThat(actual.getRuntimeDispatched()).isFalse();
+        assertThat(actual.getExecutionStatus()).isNull();
+        verify(this.chatExecutionStatusApiMapper).map(null);
     }
 
     @Test
@@ -929,6 +966,14 @@ class AgentApiMapperTest {
                 .agentId(UUID.fromString("6e4e32f8-2f48-4600-9a73-bb026f98dbf4"))
                 .status(ChatExecutionStatus.FAILED)
                 .failure(this.getExecutionFailure())
+                .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
+                .build();
+    }
+
+    private ChatExecution getSubmitConversationExecutionWithoutRuntimeDispatch() {
+        return ChatExecution.builder()
+                .conversationId(UUID.fromString("5bddb194-5ca2-4461-9b6b-c5f986fa86ea"))
+                .inputMessageId(UUID.fromString("56fca8c8-6f35-408c-9f6d-4929ab6f2467"))
                 .createdAt(Instant.parse("2026-04-29T10:00:00Z"))
                 .build();
     }
