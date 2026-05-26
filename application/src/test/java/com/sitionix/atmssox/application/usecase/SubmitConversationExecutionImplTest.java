@@ -276,6 +276,48 @@ class SubmitConversationExecutionImplTest {
                 this.applicationEventPublisher);
     }
 
+    @Test
+    void givenInactiveConversation_whenExecute_thenThrowValidationException() {
+        //given
+        final UUID conversationId = UUID.fromString("38f9ca14-c252-4c56-9f56-f5a2d2a5eb60");
+        final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("5366d56e-1e31-4ef8-8924-77f317f7f6a2"))
+                .toBuilder()
+                .status(ConversationStatus.DELETED)
+                .build();
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.conversationRepository.findActiveByIdAndUserId(conversationId, 17L)).thenReturn(Optional.of(conversation));
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.submitConversationExecution.execute(conversationId, "hello"))
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("Conversation is not active");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
+        verifyNoInteractions(this.conversationParticipantRepository, this.conversationMessageRepository, this.chatExecutionRepository,
+                this.applicationEventPublisher);
+    }
+
+    @Test
+    void givenConversationWithoutAgentParticipants_whenExecute_thenThrowValidationException() {
+        //given
+        final UUID conversationId = UUID.fromString("01f05ee7-f35d-4cf7-93d0-dd5e10fc0608");
+        final Conversation conversation = this.getConversation(conversationId, 17L, UUID.fromString("5366d56e-1e31-4ef8-8924-77f317f7f6a2"));
+        when(this.authenticatedUserProvider.getUserId()).thenReturn(17L);
+        when(this.conversationRepository.findActiveByIdAndUserId(conversationId, 17L)).thenReturn(Optional.of(conversation));
+        when(this.conversationParticipantRepository.findAllByConversationId(conversationId)).thenReturn(List.of());
+
+        //when
+        //then
+        assertThatThrownBy(() -> this.submitConversationExecution.execute(conversationId, "hello"))
+                .isInstanceOf(AgentValidationException.class)
+                .hasMessage("Conversation must contain at least one agent participant");
+        verify(this.authenticatedUserProvider).getUserId();
+        verify(this.conversationRepository).findActiveByIdAndUserId(conversationId, 17L);
+        verify(this.conversationParticipantRepository).findAllByConversationId(conversationId);
+        verifyNoInteractions(this.conversationMessageRepository, this.chatExecutionRepository, this.applicationEventPublisher);
+    }
+
     private Conversation getConversation(final UUID conversationId, final Long userId, final UUID projectId) {
         return Conversation.builder()
                 .id(conversationId)

@@ -362,6 +362,18 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenNullChatExecution_whenAsSubmitConversationExecutionResponseDto_thenReturnNull() {
+        //given
+        final ChatExecution given = null;
+
+        //when
+        final SubmitConversationExecutionResponseDTO actual = this.agentApiMapper.asSubmitConversationExecutionResponseDto(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
     void givenChatExecutionWithFailure_whenAsChatExecutionDto_thenReturnMappedExecutionAndFailure() {
         //given
         final ChatExecution given = this.getFailedChatExecution();
