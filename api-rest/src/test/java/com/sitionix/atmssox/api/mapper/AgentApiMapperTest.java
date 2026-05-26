@@ -329,6 +329,43 @@ class AgentApiMapperTest {
     }
 
     @Test
+    void givenNullExecutions_whenMapExecution_thenReturnNull() {
+        //given
+        final List<ChatExecution> given = null;
+
+        //when
+        final ChatExecution actual = this.agentApiMapper.mapExecution(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenEmptyExecutions_whenMapExecution_thenReturnNull() {
+        //given
+        final List<ChatExecution> given = List.of();
+
+        //when
+        final ChatExecution actual = this.agentApiMapper.mapExecution(given);
+
+        //then
+        assertThat(actual).isNull();
+    }
+
+    @Test
+    void givenExecutionList_whenMapExecution_thenReturnLastExecution() {
+        //given
+        final ChatExecution firstExecution = this.getQueuedChatExecution();
+        final ChatExecution secondExecution = this.getFailedChatExecution();
+
+        //when
+        final ChatExecution actual = this.agentApiMapper.mapExecution(List.of(firstExecution, secondExecution));
+
+        //then
+        assertThat(actual).isEqualTo(secondExecution);
+    }
+
+    @Test
     void givenChatExecution_whenAsSubmitChatExecutionResponseDto_thenReturnExecutionEnvelope() {
         //given
         final ChatExecution given = this.getQueuedChatExecution();
