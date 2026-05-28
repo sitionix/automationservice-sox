@@ -61,7 +61,7 @@ class AgentProjectApiMapperTest {
     }
 
     @Test
-    void givenFlowNodeWithoutDesignStatusAndPosition_whenAsAgentProjectFlowNodeDto_thenReturnDefaultDesignStatusAndNullPosition() {
+    void givenFlowNodeWithoutPosition_whenAsAgentProjectFlowNodeDto_thenReturnNullPosition() {
         //given
         final AgentProjectFlowNode given = AgentProjectFlowNode.builder()
                 .id(UUID.fromString("5608c89a-2b20-4cbf-bf44-0931a0f3ab20"))
@@ -78,7 +78,6 @@ class AgentProjectApiMapperTest {
 
         //then
         assertThat(actual.getReferenceId()).isNull();
-        assertThat(actual.getDesignStatus()).isEqualTo("ACTIVE");
         assertThat(actual.getPosition()).isNull();
     }
 
@@ -100,7 +99,6 @@ class AgentProjectApiMapperTest {
 
         //then
         assertThat(actual.getPosition()).isEqualTo(AgentProjectFlowNodePositionDTO.builder().x(11.5).y(22.5).build());
-        assertThat(actual.getDesignStatus()).isEqualTo("INACTIVE");
     }
 
     private AgentProject getAgentProject() {

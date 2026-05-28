@@ -29,7 +29,6 @@ import java.util.UUID;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface AgentProjectApiMapper {
@@ -49,7 +48,6 @@ public interface AgentProjectApiMapper {
     AgentProjectFlowResponseDTO asAgentProjectFlowResponseDto(AgentProjectFlow src);
 
     @Mapping(target = "position", expression = "java(this.mapPosition(src))")
-    @Mapping(target = "designStatus", source = "designStatus", qualifiedByName = "mapFlowDesignStatus")
     AgentProjectFlowNodeDTO asAgentProjectFlowNodeDto(AgentProjectFlowNode src);
 
     AgentProjectFlowEdgeDTO asAgentProjectFlowEdgeDto(AgentProjectFlowEdge src);
@@ -73,11 +71,6 @@ public interface AgentProjectApiMapper {
             return null;
         }
         return AgentProjectFlowNodePositionDTO.builder().x(src.getPositionX()).y(src.getPositionY()).build();
-    }
-
-    @Named("mapFlowDesignStatus")
-    default String mapFlowDesignStatus(final String value) {
-        return value == null ? "ACTIVE" : value;
     }
 
     default OffsetDateTime map(final Instant value) {
