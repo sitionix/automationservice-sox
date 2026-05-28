@@ -76,6 +76,7 @@ public interface AgentApiMapper {
     SubmitChatExecutionResponseDTO asSubmitChatExecutionResponseDto(ChatExecution src);
 
     @Mapping(target = "executionStatus", source = "status")
+    @Mapping(target = "runtimeDispatched", expression = "java(src != null && src.getStatus() != null)")
     @Mapping(target = "inputMessageId", source = "inputMessageId")
     SubmitConversationExecutionResponseDTO asSubmitConversationExecutionResponseDto(ChatExecution src);
 
@@ -99,6 +100,13 @@ public interface AgentApiMapper {
         return value == null ? null : value.atOffset(ZoneOffset.UTC);
     }
 
+    default ChatExecution mapExecution(final List<ChatExecution> executions) {
+        if (executions == null || executions.isEmpty()) {
+            return null;
+        }
+        return executions.get(executions.size() - 1);
+    }
+
     default AgentsResponseDTO asAgentsResponseDto(final List<Agent> agents) {
         return new AgentsResponseDTO()
                 .items(this.asAgentDtos(agents));
@@ -116,7 +124,7 @@ public interface AgentApiMapper {
     @Mapping(target = "updatedAt", source = "conversation.updatedAt")
     @Mapping(target = "lastMessageAt", source = "conversation.lastMessageAt")
     @Mapping(target = "messages", source = "messages")
-    @Mapping(target = "executions", source = "executions")
+    @Mapping(target = "execution", source = "executions")
     AgentConversationDetailsDTO asAgentConversationDetailsDto(ConversationDetails details);
 
     default ProjectConversationsResponseDTO asProjectConversationsResponseDto(final List<ProjectConversationDetails> details) {

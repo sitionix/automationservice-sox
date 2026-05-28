@@ -229,26 +229,26 @@ class ProjectConversationFlowIT {
                 .ping(ControllerEndpoint.submitConversationExecution())
                 .withPathParameters(PathParams.create().add("conversationId", conversationId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.conversationId").value(conversationId.toString()))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").value("DISPATCH_SKIPPED"))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.runtimeDispatched").value(false))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionId").doesNotExist())
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.executionStatus").doesNotExist())
                 .assertDefault(defaults -> defaults.mutateRequest(request -> request.setMessage(message)));
 
         //then
-        final ChatExecutionEntity persistedExecution = this.testManager.postgresql()
+        final List<ChatExecutionEntity> persistedExecutions = this.testManager.postgresql()
                 .get(ChatExecutionEntity.class)
                 .getAll()
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversationId(), conversationId))
-                .max(Comparator.comparing(ChatExecutionEntity::getCreatedAt))
-                .orElseThrow(() -> new AssertionError("Execution not found"));
-        assertThat(persistedExecution.getRequestMessage()).isEqualTo(message);
+                .toList();
+        assertThat(persistedExecutions).isEmpty();
 
         final ConversationMessageEntity persistedUserMessage = this.testManager.postgresql()
                 .get(ConversationMessageEntity.class)
                 .getAll()
                 .stream()
                 .filter(entity -> Objects.equals(entity.getConversation().getConversationId(), conversationId))
-                .filter(entity -> Objects.equals(entity.getMessageId(), persistedExecution.getInputMessageId()))
-                .findFirst()
+                .max(Comparator.comparing(ConversationMessageEntity::getCreatedAt))
                 .orElseThrow(() -> new AssertionError("Conversation user message not found"));
         assertThat(persistedUserMessage.getContent()).isEqualTo(message);
         assertThat(persistedUserMessage.getAuthorType().name()).isEqualTo("USER");
@@ -259,9 +259,17 @@ class ProjectConversationFlowIT {
                         .add("projectId", projectId)
                         .add("conversationId", conversationId))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages.length()").value(1))
-                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].id").value(persistedExecution.getInputMessageId().toString()))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].id").value(persistedUserMessage.getMessageId().toString()))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].authorType").value("USER"))
                 .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].content").value(message))
+                .assertDefault();
+
+        this.testManager.mockMvc()
+                .ping(ControllerEndpoint.getAgentConversation())
+                .withPathParameters(PathParams.create().add("conversationId", conversationId))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages.length()").value(1))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.messages[0].content").value(message))
+                .andExpectPath(MockMvcResultMatchers.jsonPath("$.execution").doesNotExist())
                 .assertDefault();
     }
 
