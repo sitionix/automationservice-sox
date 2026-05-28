@@ -1,12 +1,17 @@
 package com.sitionix.atmssox.api.mapper;
 
 import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectFlowNodeDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectFlowNodePositionDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentProjectFlowNode;
 import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.AgentProjectStatus;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,13 +51,56 @@ class AgentProjectApiMapperTest {
         final AgentProjectsPage given = this.getAgentProjectsPage();
 
         //when
-        final var actual = this.mapper.asAgentProjectsPageResponseDto(given);
+        final AgentProjectsPageResponseDTO actual = this.mapper.asAgentProjectsPageResponseDto(given);
 
         //then
         assertThat(actual.getItems()).hasSize(1);
         assertThat(actual.getPage()).isZero();
         assertThat(actual.getSize()).isEqualTo(20);
         assertThat(actual.getHasNext()).isFalse();
+    }
+
+    @Test
+    void givenFlowNodeWithoutDesignStatusAndPosition_whenAsAgentProjectFlowNodeDto_thenReturnDefaultDesignStatusAndNullPosition() {
+        //given
+        final AgentProjectFlowNode given = AgentProjectFlowNode.builder()
+                .id(UUID.fromString("5608c89a-2b20-4cbf-bf44-0931a0f3ab20"))
+                .nodeType("USER")
+                .referenceId(null)
+                .positionX(null)
+                .positionY(null)
+                .designStatus(null)
+                .config(Map.of("key", "value"))
+                .build();
+
+        //when
+        final AgentProjectFlowNodeDTO actual = this.mapper.asAgentProjectFlowNodeDto(given);
+
+        //then
+        assertThat(actual.getReferenceId()).isNull();
+        assertThat(actual.getDesignStatus()).isEqualTo("ACTIVE");
+        assertThat(actual.getPosition()).isNull();
+    }
+
+    @Test
+    void givenFlowNodeWithPosition_whenAsAgentProjectFlowNodeDto_thenReturnPosition() {
+        //given
+        final AgentProjectFlowNode given = AgentProjectFlowNode.builder()
+                .id(UUID.fromString("9ddf311f-f5c8-4bf9-9c4b-402537908c8e"))
+                .nodeType("AGENT")
+                .referenceId(UUID.fromString("95f2ed77-e130-4726-b547-4a697f6a0cb8"))
+                .positionX(11.5)
+                .positionY(22.5)
+                .designStatus("INACTIVE")
+                .config(Map.of())
+                .build();
+
+        //when
+        final AgentProjectFlowNodeDTO actual = this.mapper.asAgentProjectFlowNodeDto(given);
+
+        //then
+        assertThat(actual.getPosition()).isEqualTo(AgentProjectFlowNodePositionDTO.builder().x(11.5).y(22.5).build());
+        assertThat(actual.getDesignStatus()).isEqualTo("INACTIVE");
     }
 
     private AgentProject getAgentProject() {
