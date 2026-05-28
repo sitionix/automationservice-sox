@@ -3,6 +3,8 @@ package com.sitionix.atmssox.api;
 import com.app_afesox.atmssox.api_first.api.AgentProjectApi;
 import com.app_afesox.atmssox.api_first.dto.AddAgentToProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentProjectDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectFlowPaletteResponseDTO;
+import com.app_afesox.atmssox.api_first.dto.AgentProjectFlowResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.AgentProjectsPageResponseDTO;
 import com.app_afesox.atmssox.api_first.dto.CreateAgentProjectRequestDTO;
 import com.app_afesox.atmssox.api_first.dto.PatchAgentProjectRequestDTO;
@@ -11,6 +13,8 @@ import com.app_afesox.atmssox.api_first.dto.ProjectAgentsResponseDTO;
 import com.sitionix.atmssox.api.mapper.AgentApiMapper;
 import com.sitionix.atmssox.api.mapper.AgentProjectApiMapper;
 import com.sitionix.atmssox.domain.model.AgentProject;
+import com.sitionix.atmssox.domain.model.AgentProjectFlow;
+import com.sitionix.atmssox.domain.model.AgentProjectFlowPalette;
 import com.sitionix.atmssox.domain.model.AgentProjectsPage;
 import com.sitionix.atmssox.domain.model.CreateAgentProjectCommand;
 import com.sitionix.atmssox.domain.model.GetAgentProjectsQuery;
@@ -19,6 +23,8 @@ import com.sitionix.atmssox.domain.usecase.AddAgentToProject;
 import com.sitionix.atmssox.domain.usecase.CreateAgentProject;
 import com.sitionix.atmssox.domain.usecase.DeleteAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentProjectAgents;
+import com.sitionix.atmssox.domain.usecase.GetAgentProjectFlow;
+import com.sitionix.atmssox.domain.usecase.GetAgentProjectFlowPalette;
 import com.sitionix.atmssox.domain.usecase.GetAgentProject;
 import com.sitionix.atmssox.domain.usecase.GetAgentProjects;
 import com.sitionix.atmssox.domain.usecase.PatchAgentProject;
@@ -41,6 +47,8 @@ public class AgentProjectController implements AgentProjectApi {
     private final PatchAgentProject patchAgentProject;
     private final DeleteAgentProject deleteAgentProject;
     private final GetAgentProjectAgents getAgentProjectAgents;
+    private final GetAgentProjectFlow getAgentProjectFlow;
+    private final GetAgentProjectFlowPalette getAgentProjectFlowPalette;
     private final AddAgentToProject addAgentToProject;
     private final RemoveAgentFromProject removeAgentFromProject;
     private final AgentApiMapper agentApiMapper;
@@ -75,6 +83,19 @@ public class AgentProjectController implements AgentProjectApi {
     public ResponseEntity<Void> deleteAgentProject(final UUID projectId) {
         this.deleteAgentProject.execute(projectId);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @Override
+    public ResponseEntity<AgentProjectFlowResponseDTO> getAgentProjectFlow(final UUID projectId) {
+        final AgentProjectFlow response = this.getAgentProjectFlow.execute(projectId);
+        return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectFlowResponseDto(response));
+    }
+
+    @Override
+    public ResponseEntity<AgentProjectFlowPaletteResponseDTO> getAgentProjectFlowPalette(final UUID projectId) {
+        final AgentProjectFlowPalette response = this.getAgentProjectFlowPalette.execute(projectId);
+        return ResponseEntity.ok(this.agentProjectApiMapper.asAgentProjectFlowPaletteResponseDto(response));
     }
 
     @Override
