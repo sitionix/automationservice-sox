@@ -129,6 +129,7 @@ jobs:
           FLYWAY_PASSWORD: ${{ secrets[needs.resolve-migration-contract.outputs.database_password_secret_name] }}
           DEPLOY_VM_HOST: ${{ secrets.DEPLOY_VM_HOST }}
           DEPLOY_VM_USER: ${{ secrets.DEPLOY_VM_USER }}
+          DEPLOY_VM_PORT: ${{ vars.DEPLOY_VM_PORT }}
           DEPLOY_VM_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_VM_SSH_PRIVATE_KEY }}
           SSH_TUNNEL_LOCAL_PORT: ${{ needs.resolve-migration-contract.outputs.tunnel_local_port }}
           SSH_TUNNEL_REMOTE_HOST: ${{ needs.resolve-migration-contract.outputs.tunnel_remote_host }}
