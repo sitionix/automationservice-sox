@@ -27,9 +27,6 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: read
-
 jobs:
   resolve-deploy-target:
     runs-on: ubuntu-latest
@@ -59,6 +56,8 @@ jobs:
 
   detect-migration-changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       migration_changed: ${{ steps.detect.outputs.migration_changed }}
     steps:
@@ -96,6 +95,8 @@ jobs:
       - resolve-deploy-target
     if: needs.detect-migration-changes.outputs.migration_changed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       database_name: ${{ steps.resolve.outputs.database_name }}
       database_url: ${{ steps.resolve.outputs.database_url }}
