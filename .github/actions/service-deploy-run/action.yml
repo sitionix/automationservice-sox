@@ -79,6 +79,8 @@ runs:
     - name: Resolve runtime DB contract
       id: runtime_db
       shell: bash
+      env:
+        TARGET_ENVIRONMENT_ID: ${{ inputs.github_environment }}
       run: |
         ruby - <<'INNER_RUBY'
         require "yaml"
@@ -89,7 +91,8 @@ runs:
         model = YAML.load_file(workspace.join("db-migration/db-model.yaml"))
         database = model.fetch("database")
         database_name = database.fetch("name")
-        environment = database.fetch("environments").fetch("dev")
+        environment_id = ENV.fetch("TARGET_ENVIRONMENT_ID")
+        environment = database.fetch("environments").fetch(environment_id)
         database_username = environment.fetch("username")
 
         unless database_name.match?(/\A[a-z0-9_]+\z/)
